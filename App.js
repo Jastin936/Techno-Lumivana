@@ -1,20 +1,68 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { View, ActivityIndicator } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 
-export default function App() {
+// Import font hook
+import { useFonts, Milonga_400Regular } from '@expo-google-fonts/milonga';
+
+// Screens
+import GetStartedScreen from './src/screens/GetStartedScreen';
+import SignInScreen from './src/screens/SignInScreen';
+import HomeScreen from './src/screens/HomeScreen';
+import CommissionsScreen from './src/screens/CommissionsScreen';
+import AcceptedCommissionsScreen from './src/screens/AcceptedCommissionsScreen';
+import FAQsScreen from './src/screens/FAQsScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
+import MyAccountScreen from './src/screens/MyAccountScreen';
+import EditProfileScreen from './src/screens/EditProfileScreen';
+import SignUpScreen from './src/screens/SignUpScreen';
+import ForgotPasswordEmailScreen from './src/screens/ForgotPasswordEmailScreen';
+import OTPScreen from './src/screens/OTPScreen';
+import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
+
+const Stack = createStackNavigator();
+
+const App = () => {
+  // Load Google Font
+  const [fontsLoaded] = useFonts({
+    Milonga: Milonga_400Regular, // 👈 assign a custom key
+  });
+
+  if (!fontsLoaded) {
+    // Show a spinner while font loads
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Lumivana App!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator
+        initialRouteName="GetStarted"
+        screenOptions={{
+          headerShown: false,
+          cardStyle: { backgroundColor: '#ffffff' },
+        }}
+      >
+        <Stack.Screen name="GetStarted" component={GetStartedScreen} />
+        <Stack.Screen name="SignIn" component={SignInScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="Commissions" component={CommissionsScreen} />
+        <Stack.Screen name="AcceptedCommissions" component={AcceptedCommissionsScreen} />
+        <Stack.Screen name="FAQs" component={FAQsScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="MyAccount" component={MyAccountScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
+        <Stack.Screen name="ForgotPasswordEmail" component={ForgotPasswordEmailScreen} />
+        <Stack.Screen name="OTP" component={OTPScreen} />
+        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
-}
+};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default App;
