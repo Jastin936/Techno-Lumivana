@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts } from 'expo-font';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
@@ -23,6 +24,11 @@ const CommissionsScreen = ({ navigation }) => {
 
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
+  });
+
+  const [userData, setUserData] = useState({
+    name: 'Lumivana Vivistera',
+    profileImage: null
   });
 
   const commissionCategories = [
@@ -45,6 +51,46 @@ const CommissionsScreen = ({ navigation }) => {
       description: 'Content writing and editing services'
     }
   ];
+
+  // Load user data from AsyncStorage
+  const loadUserData = async () => {
+    try {
+      const savedUserData = await AsyncStorage.getItem('userProfileData');
+      if (savedUserData) {
+        const parsedData = JSON.parse(savedUserData);
+        setUserData(prevData => ({
+          ...prevData,
+          name: parsedData.name || 'Lumivana Vivistera',
+          profileImage: parsedData.profileImage || null
+        }));
+      }
+
+      // Also load profile image from AsyncStorage (in case it's stored separately)
+      const savedProfileImage = await AsyncStorage.getItem('profileImage');
+      if (savedProfileImage) {
+        setUserData(prevData => ({
+          ...prevData,
+          profileImage: savedProfileImage
+        }));
+      }
+    } catch (error) {
+      console.log('Error loading user data:', error);
+    }
+  };
+
+  // Load data when component mounts
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  // Set up focus listener to refresh data when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadUserData();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   if (!fontsLoaded) {
     return (
@@ -80,7 +126,14 @@ const CommissionsScreen = ({ navigation }) => {
               style={styles.profileIcon}
               onPress={() => navigation.navigate('Profile')}
             >
-              <Ionicons name="person-circle-outline" size={36} color="#FFD700" />
+              {userData.profileImage ? (
+                <Image 
+                  source={{ uri: userData.profileImage }} 
+                  style={styles.profileImage} 
+                />
+              ) : (
+                <Ionicons name="person-circle-outline" size={36} color="#FFD700" />
+              )}
             </TouchableOpacity>
           </View>
 
@@ -171,28 +224,38 @@ const CommissionsScreen = ({ navigation }) => {
             style={styles.footerItem}
             onPress={() => navigation.navigate('Home')}
           >
-            <Ionicons name="search-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>Home Feed</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.footerItem, styles.activeFooterItem]}>
-            <Ionicons name="briefcase-outline" size={24} color="#FFD700" />
-            <Text style={[styles.footerText, styles.activeFooterText]}>Commissions</Text>
+            <Ionicons name="home-outline" size={24} color="#FFD700" />
+            <Text style={styles.footerText}>Home</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={styles.footerItem}
-            onPress={() => navigation.navigate('AcceptedCommissions')}
+            onPress={() => navigation.navigate('Search')}
           >
-            <Ionicons name="pencil-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>Accepted{"\n"}Commissions</Text>
+            <Ionicons name="search-outline" size={24} color="#FFD700" />
+            <Text style={styles.footerText}>Search</Text>
+          </TouchableOpacity>
+
+          {/* Plus Square Icon in Center */}
+          <TouchableOpacity 
+            style={styles.plusSquareButton}
+            onPress={() => navigation.navigate('Request')}
+          >
+            <View style={styles.plusSquareContainer}>
+              <Ionicons name="add" size={30} color="#FFD700" />
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.footerItem}>
+            <Ionicons name="briefcase" size={24} color="#FFD700" />
+            <Text style={[styles.footerText, styles.activeFooterText]}>Commissions</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={styles.footerItem}
             onPress={() => navigation.navigate('FAQs')}
           >
-            <Ionicons name="question-mark-outline" size={24} color="#FFD700" />
+            <Ionicons name="help-circle-outline" size={24} color="#FFD700" />
             <Text style={styles.footerText}>FAQs</Text>
           </TouchableOpacity>
         </View>
@@ -232,7 +295,19 @@ const styles = StyleSheet.create({
     fontSize: 28, 
     color: '#fff' 
   },
-  profileIcon: {},
+  profileIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    overflow: 'hidden',
+  },
+  profileImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#FFD700',
+  },
   headerBottom: {
     // Contains the title and search bar
   },
@@ -365,6 +440,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
+    alignItems: 'center',
     paddingVertical: 10,
     paddingBottom: 40,
     borderTopLeftRadius: 20,
@@ -372,7 +448,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.2)',
   },
   footerItem: { 
-    alignItems: 'center'
+    alignItems: 'center',
+    flex: 1,
   },
   activeFooterItem: {
     transform: [{ scale: 1.1 }],
@@ -386,6 +463,24 @@ const styles = StyleSheet.create({
   activeFooterText: {
     color: '#FFD700',
     fontWeight: 'bold',
+  },
+  // Plus Square Button
+  plusSquareButton: {
+    alignItems: 'center',
+    marginHorizontal: 10,
+  },
+  plusSquareContainer: {
+    width: 45,
+    height: 45,
+    borderWidth: 2,
+    borderColor: '#FFD700',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
 });
 

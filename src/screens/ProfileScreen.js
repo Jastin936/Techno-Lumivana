@@ -23,7 +23,8 @@ const ProfileScreen = ({ navigation }) => {
   });
 
   const [userData, setUserData] = useState({
-    name: 'Lumivana Vivistera'
+    name: '',
+    profileImage: null
   });
 
   // Load saved data when component mounts
@@ -37,12 +38,20 @@ const ProfileScreen = ({ navigation }) => {
       const savedUserData = await AsyncStorage.getItem('userProfileData');
       if (savedUserData) {
         const parsedData = JSON.parse(savedUserData);
-        if (parsedData.name) {
-          setUserData(prevData => ({
-            ...prevData,
-            name: parsedData.name
-          }));
-        }
+        setUserData(prevData => ({
+          ...prevData,
+          name: parsedData.name || '',
+          profileImage: parsedData.profileImage || null
+        }));
+      }
+
+      // Also load profile image from AsyncStorage (in case it's stored separately)
+      const savedProfileImage = await AsyncStorage.getItem('profileImage');
+      if (savedProfileImage) {
+        setUserData(prevData => ({
+          ...prevData,
+          profileImage: savedProfileImage
+        }));
       }
     } catch (error) {
       console.log('Error loading user data:', error);
@@ -108,7 +117,7 @@ const ProfileScreen = ({ navigation }) => {
           {/* Back Button on Upper Right */}
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => navigation.navigate('Home')}
           >
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
@@ -116,13 +125,20 @@ const ProfileScreen = ({ navigation }) => {
 
         {/* Main Content */}
         <View style={styles.content}>
-          {/* Profile Icon */}
+          {/* Profile Icon - Same as MyAccountScreen */}
           <View style={styles.imageContainer}>
-            <Ionicons
-              name="person-circle-outline"
-              size={200}
-              color="#FFD700"
-            />
+            {userData.profileImage ? (
+              <Image 
+                source={{ uri: userData.profileImage }} 
+                style={styles.profileImage} 
+              />
+            ) : (
+              <Ionicons
+                name="person-circle-outline"
+                size={200}
+                color="#FFD700"
+              />
+            )}
           </View>
 
           {/* Name */}
@@ -178,7 +194,18 @@ const styles = StyleSheet.create({
   logo: { width: 50, height: 50, marginRight: 12 },
   logoText: { fontSize: 32, color: '#fff' },
   content: { flex: 1, paddingHorizontal: 24, justifyContent: 'space-between' },
-  imageContainer: { alignItems: 'center', justifyContent: 'center', flex: 1 },
+  imageContainer: { 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    flex: 1 
+  },
+  profileImage: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    borderWidth: 2,
+    borderColor: '#FFD700',
+  },
   textContainer: { alignItems: 'center', paddingBottom: 100 },
   nameText: { 
     fontSize: 36, 
