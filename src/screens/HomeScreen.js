@@ -333,26 +333,43 @@ const HomeScreen = ({ navigation }) => {
 
         {/* FOOTER */}
         <View style={styles.footer}>
-          <TouchableOpacity style={styles.footerItem}>
+          <TouchableOpacity 
+            style={styles.footerItem}
+            onPress={() => navigation.navigate("Home")}
+          >
             <Ionicons name="home" size={24} color="#FFD700" />
-            <Text style={[styles.footerText, styles.activeFooterText]}>
-              Home
-            </Text>
+            <Text style={[styles.footerText, styles.activeFooterText]}>Home</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.footerItem}>
+              
+          <TouchableOpacity 
+            style={styles.footerItem}
+            onPress={() => navigation.navigate("Search")}
+          >
             <Ionicons name="search-outline" size={24} color="#FFD700" />
             <Text style={styles.footerText}>Search</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.plusSquareButton}>
+              
+          <TouchableOpacity 
+            style={styles.plusSquareButton}
+            onPress={() => navigation.navigate("Request")}
+          >
             <View style={styles.plusSquareContainer}>
               <Ionicons name="add" size={30} color="#FFD700" />
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.footerItem}>
+              
+          <TouchableOpacity 
+            style={styles.footerItem}
+            onPress={() => navigation.navigate("Commissions")}
+          >
             <Ionicons name="briefcase-outline" size={24} color="#FFD700" />
             <Text style={styles.footerText}>Commissions</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.footerItem}>
+              
+          <TouchableOpacity 
+            style={styles.footerItem}
+            onPress={() => navigation.navigate("FAQs")}
+          >
             <Ionicons name="help-circle-outline" size={24} color="#FFD700" />
             <Text style={styles.footerText}>FAQs</Text>
           </TouchableOpacity>
