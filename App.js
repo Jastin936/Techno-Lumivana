@@ -10,6 +10,7 @@ import { useFonts, Milonga_400Regular } from '@expo-google-fonts/milonga';
 import GetStartedScreen from './src/screens/GetStartedScreen';
 import SignInScreen from './src/screens/SignInScreen';
 import HomeScreen from './src/screens/HomeScreen';
+import RecommendedScreen from "./src/screens/RecommendedScreen";
 import SearchScreen from './src/screens/SearchScreen';
 import RequestScreen from './src/screens/RequestScreen';
 import RequestCommissionScreen from './src/screens/RequestCommissionScreen';
@@ -53,6 +54,7 @@ const App = () => {
         <Stack.Screen name="GetStarted" component={GetStartedScreen} />
         <Stack.Screen name="SignIn" component={SignInScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen name="RecommendedScreen" component={RecommendedScreen} />
         <Stack.Screen name="Search" component={SearchScreen} />
         <Stack.Screen name="Request" component={RequestScreen} />
         <Stack.Screen name="RequestCommission" component={RequestCommissionScreen} />

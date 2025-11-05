@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,372 +6,236 @@ import {
   StyleSheet,
   SafeAreaView,
   StatusBar,
-  Image,
   ScrollView,
-  TextInput,
-  Modal,
-  Animated,
-  Easing,
+  FlatList,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useFonts } from "expo-font";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const HomeScreen = ({ navigation }) => {
-  const [fontsLoaded] = useFonts({
-    Milonga: require("../../assets/fonts/Milonga-Regular.ttf"),
-  });
+  const [activeTab, setActiveTab] = useState("Home");
+  const [following, setFollowing] = useState({});
 
-  const [userData, setUserData] = useState({
-    name: "Lumivana Vivistera",
-    profileImage: null,
-  });
-
-  const FILTERS = [
-    "All",
-    "Artist",
-    "Writer",
-    "Programmer",
-    "Producer",
-    "Editor",
+  // Mock Recommended Users
+  const recommendedUsers = [
+    { id: 1, name: "Kreidedeprinz", role: "Illustrator", followers: 707 },
+    { id: 2, name: "Chiori", role: "Crafter, Graphic Designer", followers: 680 },
+    { id: 3, name: "Aelric", role: "Writer", followers: 423 },
   ];
-  const USERS = [
+
+  // Mock Feed Posts
+  const allPosts = [
     {
       id: 1,
-      name: "Kreldeprint",
+      user: "Kreidedeprinz",
       role: "Artist",
-      followers: 707,
-      title: "Bouquet",
-      description: "Creates handcrafted bouquet gifts with floral art.",
+      title: "Logo Design",
+      description: "Unique logos for student organizations or small businesses.",
+      likes: 707,
+      type: "home",
     },
     {
       id: 2,
-      name: "Trevenaa",
-      role: "Writer",
-      followers: 532,
-      title: "Logo Design",
-      description: "Designs sleek, minimal logos for small businesses.",
+      user: "Timaeus",
+      role: "Tutor",
+      title: "Peer Tutoring",
+      description: "Helping college students excel in creative writing.",
+      likes: 542,
+      type: "home",
     },
     {
       id: 3,
-      name: "Pierra",
-      role: "Producer",
-      followers: 401,
-      title: "Peer Tutoring",
-      description: "Guides college students in creative writing projects.",
-    },
-    {
-      id: 4,
-      name: "Chieil",
-      role: "Editor",
-      followers: 689,
-      title: "Poster Design",
-      description: "Creates stunning poster art and visual campaigns.",
-    },
-    {
-      id: 5,
-      name: "Enjoe",
-      role: "Programmer",
-      followers: 298,
-      title: "App Development",
-      description: "Builds mobile and web apps using React Native.",
+      user: "Pierro",
+      role: "Designer",
+      title: "Poster Commission",
+      description: "Offering custom poster designs for events and orgs.",
+      likes: 430,
+      type: "request",
     },
   ];
 
-  const [selectedFilter, setSelectedFilter] = useState("All");
-  const [following, setFollowing] = useState({});
-  const [blockedUsers, setBlockedUsers] = useState([]);
-  const [moreModal, setMoreModal] = useState({ visible: false, user: null });
-  const [filterVisible, setFilterVisible] = useState(false);
-
-  const slideAnim = useState(new Animated.Value(300))[0];
-
-  const slideUp = () => {
-    slideAnim.setValue(300);
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 250,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const loadUserData = async () => {
-    try {
-      const savedUserData = await AsyncStorage.getItem("userProfileData");
-      if (savedUserData) {
-        const parsedData = JSON.parse(savedUserData);
-        setUserData((prev) => ({
-          ...prev,
-          name: parsedData.name || "Lumivana Vivistera",
-          profileImage: parsedData.profileImage || null,
-        }));
-      }
-      const savedProfileImage = await AsyncStorage.getItem("profileImage");
-      if (savedProfileImage) {
-        setUserData((prev) => ({ ...prev, profileImage: savedProfileImage }));
-      }
-    } catch (error) {
-      console.log("Error loading user data:", error);
+  // Filter logic based on active tab
+  const filteredPosts = allPosts.filter((post) => {
+    if (activeTab === "Following") {
+      return following[post.user];
     }
+    if (activeTab === "Requests") {
+      return post.type === "request";
+    }
+    return true; // Home tab shows all
+  });
+
+  const toggleFollow = (userName) => {
+    setFollowing((prev) => ({ ...prev, [userName]: !prev[userName] }));
   };
 
-  useEffect(() => {
-    loadUserData();
-  }, []);
+  const renderPostCard = ({ item }) => (
+    <View style={styles.postCard}>
+      <View style={styles.postHeader}>
+        <View style={styles.postUser}>
+          <View style={styles.avatar} />
+          <View>
+            <Text style={styles.userName}>{item.user}</Text>
+            <Text style={styles.userRole}>{item.role}</Text>
+          </View>
+        </View>
 
-  const filteredUsers = USERS.filter(
-    (u) =>
-      (selectedFilter === "All" || u.role === selectedFilter) &&
-      !blockedUsers.includes(u.id)
+        <TouchableOpacity
+          style={[
+            styles.followBtn,
+            following[item.user] && styles.followingBtn,
+          ]}
+          onPress={() => toggleFollow(item.user)}
+        >
+          <Text
+            style={[
+              styles.followText,
+              following[item.user] && styles.followingText,
+            ]}
+          >
+            {following[item.user] ? "Following" : "Follow"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.imagePlaceholder} />
+
+      <View style={styles.postBody}>
+        <Text style={styles.postTitle}>{item.title}</Text>
+        <Text style={styles.postDesc}>{item.description}</Text>
+      </View>
+
+      <View style={styles.postFooter}>
+        <Ionicons name="heart" size={18} color="#FF5555" />
+        <Text style={styles.likeCount}>{item.likes}</Text>
+      </View>
+    </View>
   );
-
-  const toggleFollow = (id) => {
-    setFollowing((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleBlockUser = (user) => {
-    setBlockedUsers((prev) => [...prev, user.id]);
-    setMoreModal({ visible: false, user: null });
-  };
-
-  const openMoreModal = (user) => {
-    setMoreModal({ visible: true, user });
-    slideUp();
-  };
-
-  const openFilterModal = () => {
-    setFilterVisible(true);
-    slideUp();
-  };
-
-  if (!fontsLoaded) return null;
 
   return (
     <LinearGradient colors={["#0E0E0E", "#1A1A1A"]} style={styles.container}>
       <SafeAreaView style={{ flex: 1 }}>
-        <StatusBar
-          barStyle="light-content"
-          translucent
-          backgroundColor="transparent"
-        />
+        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
         {/* HEADER */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Image
-              source={require("../../assets/lumivana.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={[styles.logoText, { fontFamily: "Milonga" }]}>
-              Lumivana
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.profileIcon}
-            onPress={() => navigation.navigate("Profile")}
-          >
-            {userData.profileImage ? (
-              <Image
-                source={{ uri: userData.profileImage }}
-                style={styles.profileImage}
-              />
-            ) : (
-              <Ionicons name="person-circle-outline" size={36} color="#FFD700" />
-            )}
-          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Home Feeds</Text>
         </View>
 
-        {/* SEARCH BAR + FILTER */}
-        <View style={styles.searchRow}>
-          <View style={styles.searchBar}>
-            <Ionicons
-              name="search-outline"
-              size={20}
-              color="#000"
-              style={{ marginHorizontal: 8 }}
-            />
-            <TextInput
-              placeholder="Search"
-              placeholderTextColor="#444"
-              style={{ flex: 1, color: "#000" }}
-            />
-          </View>
-          <TouchableOpacity onPress={openFilterModal}>
-            <Ionicons name="filter" size={24} color="#FFD700" />
-          </TouchableOpacity>
-        </View>
-
-        {/* CONTENT */}
-        <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.sectionTitle}>Recommended Users</Text>
-
-          {/* User Cards */}
-          {filteredUsers.map((user) => (
-            <View key={user.id} style={styles.userCard}>
-              <View style={styles.cardInner}>
-                <View style={styles.avatar} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.userName}>{user.name}</Text>
-                  <Text style={styles.userSub}>
-                    {user.role} · {user.followers} followers
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  style={[
-                    styles.followBtn,
-                    following[user.id] && styles.followingBtn,
-                  ]}
-                  onPress={() => toggleFollow(user.id)}
-                >
-                  <Text
-                    style={[
-                      styles.followText,
-                      following[user.id] && styles.followingText,
-                    ]}
-                  >
-                    {following[user.id] ? "Following" : "Follow"}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => openMoreModal(user)}>
-                  <Text style={styles.actionText}>⋮</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.innerPost}>
-                <View style={styles.imagePlaceholder} />
-                <Text style={styles.postTitle}>{user.title}</Text>
-                <Text style={styles.postDesc}>{user.description}</Text>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
-
-        {/* MORE OPERATIONS TAB */}
-        <Modal transparent visible={moreModal.visible} animationType="none">
-          <Animated.View
-            style={[
-              styles.bottomSheet,
-              { transform: [{ translateY: slideAnim }] },
-            ]}
-          >
-            <Text style={styles.modalTitle}>More Operations</Text>
-            <View style={styles.iconRow}>
-              <Ionicons name="logo-facebook" size={28} color="#1877F2" />
-              <Ionicons name="mail-outline" size={28} color="#EA4335" />
-              <Ionicons name="send-outline" size={28} color="#1DA1F2" />
-              <Ionicons name="logo-twitter" size={28} color="#fff" />
-            </View>
-            <View style={styles.optionRow}>
-              <Ionicons name="heart-dislike-outline" size={22} color="red" />
-              <Text style={styles.optionText}>Not interested</Text>
-            </View>
-            <View style={styles.optionRow}>
-              <Ionicons name="flag-outline" size={22} color="red" />
-              <Text style={styles.optionText}>Report Post</Text>
-            </View>
+        {/* TOP TABS */}
+        <View style={styles.tabRow}>
+          {["Following", "Home", "Requests"].map((tab) => (
             <TouchableOpacity
-              style={styles.optionRow}
-              onPress={() => handleBlockUser(moreModal.user)}
+              key={tab}
+              onPress={() => setActiveTab(tab)}
+              style={[
+                styles.tabButton,
+                activeTab === tab && styles.activeTabButton,
+              ]}
             >
-              <Ionicons name="close-circle-outline" size={22} color="red" />
-              <Text style={styles.optionText}>Block user</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.closeBtn}
-              onPress={() => setMoreModal({ visible: false, user: null })}
-            >
-              <Ionicons name="close" size={24} color="#FFD700" />
-            </TouchableOpacity>
-          </Animated.View>
-        </Modal>
-
-        {/* FILTER TAB */}
-        <Modal transparent visible={filterVisible} animationType="none">
-          <Animated.View
-            style={[
-              styles.bottomSheet,
-              { transform: [{ translateY: slideAnim }] },
-            ]}
-          >
-            <Text style={styles.modalTitle}>Filter</Text>
-            {FILTERS.map((f) => (
-              <TouchableOpacity
-                key={f}
+              <Text
                 style={[
-                  styles.filterOption,
-                  selectedFilter === f && styles.filterOptionActive,
+                  styles.tabText,
+                  activeTab === tab && styles.activeTabText,
                 ]}
-                onPress={() => {
-                  setSelectedFilter(f);
-                  setFilterVisible(false);
-                }}
               >
-                <Text
-                  style={[
-                    styles.optionText,
-                    selectedFilter === f && { color: "#FFD700" },
-                  ]}
-                >
-                  {f}
-                </Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity
-              style={styles.closeBtn}
-              onPress={() => setFilterVisible(false)}
-            >
-              <Ionicons name="close" size={24} color="#FFD700" />
+                {tab}
+              </Text>
             </TouchableOpacity>
-          </Animated.View>
-        </Modal>
+          ))}
+        </View>
+
+        <ScrollView>
+          {/* Recommended Users (Home Tab only) */}
+          {activeTab === "Home" && (
+            <View style={styles.recommendedSection}>
+              <View style={styles.recommendedHeader}>
+                <Text style={styles.sectionTitle}>Recommended Users</Text>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("RecommendedScreen")}
+                >
+                  <Text style={styles.viewMore}>View More</Text>
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {recommendedUsers.map((user) => (
+                  <View key={user.id} style={styles.recommendedCard}>
+                    <View style={styles.avatarLarge} />
+                    <Text style={styles.recUserName}>{user.name}</Text>
+                    <Text style={styles.recUserRole}>{user.role}</Text>
+                    <TouchableOpacity
+                      style={[
+                        styles.followBtn,
+                        following[user.name] && styles.followingBtn,
+                      ]}
+                      onPress={() => toggleFollow(user.name)}
+                    >
+                      <Text
+                        style={[
+                          styles.followText,
+                          following[user.name] && styles.followingText,
+                        ]}
+                      >
+                        {following[user.name] ? "Following" : "Follow"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* POSTS */}
+          <FlatList
+            data={filteredPosts}
+            renderItem={renderPostCard}
+            keyExtractor={(item) => item.id.toString()}
+            scrollEnabled={false}
+            contentContainerStyle={{ paddingBottom: 100 }}
+          />
+        </ScrollView>
 
         {/* FOOTER */}
         <View style={styles.footer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.footerItem}
             onPress={() => navigation.navigate("Home")}
           >
             <Ionicons name="home" size={24} color="#FFD700" />
             <Text style={[styles.footerText, styles.activeFooterText]}>Home</Text>
           </TouchableOpacity>
-              
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.footerItem}
             onPress={() => navigation.navigate("Search")}
           >
             <Ionicons name="search-outline" size={24} color="#FFD700" />
             <Text style={styles.footerText}>Search</Text>
           </TouchableOpacity>
-              
-          <TouchableOpacity 
-            style={styles.plusSquareButton}
-            onPress={() => navigation.navigate("Request")}
+
+          <TouchableOpacity
+            style={styles.plusButton}
+            onPress={() => navigation.navigate("OfferCommission")}
           >
-            <View style={styles.plusSquareContainer}>
-              <Ionicons name="add" size={30} color="#FFD700" />
-            </View>
+            <Ionicons name="add" size={30} color="#FFD700" />
           </TouchableOpacity>
-              
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.footerItem}
             onPress={() => navigation.navigate("Commissions")}
           >
             <Ionicons name="briefcase-outline" size={24} color="#FFD700" />
             <Text style={styles.footerText}>Commissions</Text>
           </TouchableOpacity>
-              
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.footerItem}
-            onPress={() => navigation.navigate("FAQs")}
+            onPress={() => navigation.navigate("Profile")}
           >
-            <Ionicons name="help-circle-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>FAQs</Text>
+            <Ionicons name="person-outline" size={24} color="#FFD700" />
+            <Text style={styles.footerText}>Profile</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -382,119 +246,104 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
     paddingTop: 50,
-    paddingHorizontal: 24,
-    paddingBottom: 16,
-    backgroundColor: "#0E0E0E",
-  },
-  headerLeft: { flexDirection: "row", alignItems: "center" },
-  logo: { width: 40, height: 40, marginRight: 8 },
-  logoText: { fontSize: 28, color: "#FFD700" },
-  profileIcon: { width: 36, height: 36, borderRadius: 18, overflow: "hidden" },
-  profileImage: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#FFD700",
-  },
-  searchRow: {
-    flexDirection: "row",
+    paddingBottom: 12,
     alignItems: "center",
-    backgroundColor: "#1A1A1A",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    justifyContent: "space-between",
   },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ccc",
-    borderRadius: 8,
-    flex: 1,
-    marginRight: 10,
-    paddingHorizontal: 6,
-  },
-  content: { paddingHorizontal: 20, paddingBottom: 80 },
-  sectionTitle: {
+  headerTitle: {
+    color: "#FFD700",
     fontSize: 20,
     fontWeight: "bold",
-    color: "#FFD700",
-    marginBottom: 16,
   },
-  userCard: {
+  tabRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    backgroundColor: "#1A1A1A",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderColor: "#333",
+  },
+  tabButton: { paddingHorizontal: 8 },
+  tabText: { color: "#999", fontSize: 14 },
+  activeTabButton: { borderBottomWidth: 2, borderColor: "#FFD700" },
+  activeTabText: { color: "#FFD700", fontWeight: "bold" },
+
+  recommendedSection: { paddingVertical: 10, paddingHorizontal: 16 },
+  recommendedHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  sectionTitle: { color: "#FFD700", fontSize: 16, fontWeight: "bold" },
+  viewMore: { color: "#FFD700", fontSize: 13, textDecorationLine: "underline" },
+  recommendedCard: {
+    width: 140,
+    backgroundColor: "#2A2A2A",
+    borderRadius: 12,
+    padding: 12,
+    marginRight: 10,
+    alignItems: "center",
+  },
+  avatarLarge: {
+    width: 60,
+    height: 60,
+    backgroundColor: "#FFD700",
+    borderRadius: 30,
+    marginBottom: 8,
+  },
+  recUserName: { color: "#fff", fontWeight: "bold", fontSize: 14 },
+  recUserRole: { color: "#ccc", fontSize: 12, textAlign: "center" },
+
+  postCard: {
     backgroundColor: "#1C1C1C",
-    borderRadius: 15,
+    borderRadius: 14,
+    marginHorizontal: 16,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#FFD700",
-    overflow: "hidden",
+    borderColor: "#FFD70030",
+    padding: 12,
   },
-  cardInner: { flexDirection: "row", alignItems: "center", padding: 16 },
+  postHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  postUser: { flexDirection: "row", alignItems: "center" },
   avatar: {
-    width: 45,
-    height: 45,
+    width: 40,
+    height: 40,
     backgroundColor: "#FFD700",
-    borderRadius: 22.5,
-    marginRight: 12,
+    borderRadius: 20,
+    marginRight: 10,
   },
-  userName: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-  userSub: { color: "#999", fontSize: 13 },
+  userName: { color: "#fff", fontWeight: "bold", fontSize: 15 },
+  userRole: { color: "#bbb", fontSize: 12 },
   followBtn: {
     backgroundColor: "#FFD700",
+    paddingVertical: 4,
+    paddingHorizontal: 12,
     borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
   },
   followText: { color: "#000", fontWeight: "600" },
   followingBtn: { backgroundColor: "#333" },
   followingText: { color: "#FFD700" },
-  actionText: { color: "#FFD700", marginLeft: 8, fontSize: 20 },
-  innerPost: {
-    backgroundColor: "#2A2A2A",
+  imagePlaceholder: {
+    backgroundColor: "#333",
     borderRadius: 12,
-    marginHorizontal: 10,
-    marginBottom: 12,
-    padding: 12,
+    height: 150,
+    marginVertical: 10,
   },
+  postBody: { marginBottom: 8 },
   postTitle: { color: "#fff", fontWeight: "bold", fontSize: 15 },
   postDesc: { color: "#ccc", fontSize: 13 },
-  bottomSheet: {
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
-    backgroundColor: "#2A2A2A",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderWidth: 1,
-    borderColor: "#FFD700",
-    padding: 20,
-  },
-  modalTitle: {
-    color: "#FFD700",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  iconRow: {
+  postFooter: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 16,
+    alignItems: "center",
+    justifyContent: "flex-end",
   },
-  optionRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
-  optionText: { color: "#fff", marginLeft: 8, fontSize: 15 },
-  filterOption: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
-  },
-  filterOptionActive: {
-    backgroundColor: "#FFD70020",
-  },
-  closeBtn: { position: "absolute", top: 10, right: 15 },
+  likeCount: { color: "#fff", marginLeft: 6 },
+
   footer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -504,17 +353,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#0E0E0E",
   },
   footerItem: { alignItems: "center", flex: 1 },
-  footerText: { color: "#fff", fontSize: 12, marginTop: 2, textAlign: "center" },
+  footerText: { color: "#fff", fontSize: 12, marginTop: 2 },
   activeFooterText: { color: "#FFD700", fontWeight: "bold" },
-  plusSquareButton: { alignItems: "center", marginHorizontal: 10 },
-  plusSquareContainer: {
-    width: 45,
-    height: 45,
+  plusButton: {
+    width: 50,
+    height: 50,
     borderWidth: 2,
     borderColor: "#FFD700",
-    borderRadius: 12,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
+    marginTop: -20,
+    backgroundColor: "#1A1A1A",
   },
 });
 
