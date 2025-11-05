@@ -1,17 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
-  Alert,
-} from 'react-native';
+import {View,Text,TextInput,TouchableOpacity,StyleSheet,SafeAreaView,StatusBar,KeyboardAvoidingView,Platform,Image,Alert,} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -119,17 +107,9 @@ const SignInScreen = ({ navigation }) => {
 
               <View style={styles.divider}>
                 <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>Or</Text>
+    
                 <View style={styles.dividerLine} />
               </View>
-
-              <TouchableOpacity style={styles.googleButton}>
-                <Image
-                  source={require('../../assets/google.png')}
-                  style={styles.googleIcon}
-                />
-                <Text style={styles.googleButtonText}>Sign in with Google</Text>
-              </TouchableOpacity>
 
               <View style={styles.bottomText}>
                 <Text style={styles.bottomNormal}>Don’t have an account? </Text>
