@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,14 +11,56 @@ import {
   Platform,
   Image,
   Alert,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+
+const rotateValue = new Animated.Value(0);
 
 const SignInScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  // Continuous rotation loop (30s rotate, 30s rest)
+  useEffect(() => {
+    const startRotation = () => {
+      // Reset rotation value
+      rotateValue.setValue(0);
+      
+      // Rotate for 30 seconds
+      Animated.timing(rotateValue, {
+        toValue: 10,
+        duration: 30000,
+        useNativeDriver: true,
+      }).start(() => {
+        // After rotation completes, wait 30 seconds then restart
+        setTimeout(() => {
+          startRotation();
+        }, 30000);
+      });
+    };
+
+    // Start the loop
+    startRotation();
+    
+    // Cleanup function
+    return () => {
+      rotateValue.stopAnimation();
+    };
+  }, []);
+
+  // Interpolate rotation value
+  const rotateInterpolate = rotateValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  // Animated style for logo
+  const animatedLogoStyle = {
+    transform: [{ rotate: rotateInterpolate }],
+  };
 
   const handleSignIn = () => {
     if (!email || !password) {
@@ -61,9 +103,9 @@ const SignInScreen = ({ navigation }) => {
         >
           <View style={styles.header}>
             <View style={styles.logoCircle}>
-              <Image
+              <Animated.Image
                 source={require('../../assets/lumivana.png')}
-                style={styles.logoCircle}
+                style={[styles.logoCircle, animatedLogoStyle]}
                 resizeMode="contain"
               />
             </View>
@@ -132,7 +174,7 @@ const SignInScreen = ({ navigation }) => {
               </TouchableOpacity>
 
               <View style={styles.bottomText}>
-                <Text style={styles.bottomNormal}>Don’t have an account? </Text>
+                <Text style={styles.bottomNormal}>Don't have an account? </Text>
                 <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
                   <Text style={styles.bottomLink}>Sign up</Text>
                 </TouchableOpacity>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StatusBar,
   Image,
   Dimensions,
+  Animated,
 } from 'react-native';
 
 // Gradient background
@@ -16,6 +17,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 // Import Google Font hook
 import { useFonts } from 'expo-font';
 
+const rotateValue = new Animated.Value(0);
+
 const { width, height } = Dimensions.get('window');
 
 const GetStartedScreen = ({ navigation }) => {
@@ -23,6 +26,63 @@ const GetStartedScreen = ({ navigation }) => {
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
   });
+
+  // Rotate animation function
+  const rotateLogo = () => {
+    // Reset rotation value
+    rotateValue.setValue(0);
+    
+    // Create rotation animation
+    Animated.timing(rotateValue, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  // Continuous rotation loop (30s rotate, 30s rest)
+  const startContinuousRotation = () => {
+    const startRotation = () => {
+      // Reset rotation value
+      rotateValue.setValue(0);
+      
+      // Rotate for 30 seconds (30000ms)
+      Animated.timing(rotateValue, {
+        toValue: 10,
+        duration: 30000, // 30 seconds
+        useNativeDriver: true,
+      }).start(() => {
+        // After rotation completes, wait 30 seconds then restart
+        setTimeout(() => {
+          startRotation();
+        }, 30000); // 30 seconds rest
+      });
+    };
+
+    // Start the loop
+    startRotation();
+  };
+
+  // Interpolate rotation value
+  const rotateInterpolate = rotateValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  // Animated style for logo
+  const animatedLogoStyle = {
+    transform: [{ rotate: rotateInterpolate }],
+  };
+
+  // Start continuous rotation when component mounts
+  useEffect(() => {
+    startContinuousRotation();
+    
+    // Cleanup function to stop animations when component unmounts
+    return () => {
+      rotateValue.stopAnimation();
+    };
+  }, []);
 
   if (!fontsLoaded) return null;
 
@@ -41,11 +101,13 @@ const GetStartedScreen = ({ navigation }) => {
           {/* Illustration/Image Section */}
           <View style={styles.imageContainer}>
             <View style={styles.illustration}>
-              <Image
-                source={require('../../assets/lumivana.png')}
-                style={styles.illustrationImage}
-                resizeMode="contain"
-              />
+              <TouchableOpacity onPress={rotateLogo} style={styles.logoButton}>
+                <Animated.Image
+                  source={require('../../assets/lumivana.png')}
+                  style={[styles.illustrationImage, animatedLogoStyle]}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
             </View>
           </View>
 
