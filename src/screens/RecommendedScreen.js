@@ -6,9 +6,7 @@ import {
   StyleSheet,
   SafeAreaView,
   StatusBar,
-  Image,
   ScrollView,
-  TextInput,
   Modal,
   Animated,
   Easing,
@@ -83,7 +81,6 @@ const RecommendedScreen = ({ navigation }) => {
   const [following, setFollowing] = useState({});
   const [blockedUsers, setBlockedUsers] = useState([]);
   const [moreModal, setMoreModal] = useState({ visible: false, user: null });
-  const [filterVisible, setFilterVisible] = useState(false);
 
   const slideAnim = useState(new Animated.Value(300))[0];
 
@@ -123,8 +120,8 @@ const RecommendedScreen = ({ navigation }) => {
 
   const filteredUsers = USERS.filter(
     (u) =>
-      (selectedFilter === "All" || u.role === selectedFilter) &&
-      !blockedUsers.includes(u.id)
+      !blockedUsers.includes(u.id) &&
+      (selectedFilter === "All" || u.role === selectedFilter)
   );
 
   const toggleFollow = (id) => {
@@ -141,11 +138,6 @@ const RecommendedScreen = ({ navigation }) => {
     slideUp();
   };
 
-  const openFilterModal = () => {
-    setFilterVisible(true);
-    slideUp();
-  };
-
   if (!fontsLoaded) return null;
 
   return (
@@ -157,98 +149,87 @@ const RecommendedScreen = ({ navigation }) => {
           backgroundColor="transparent"
         />
 
-        {/* HEADER */}
+        {/* HEADER - Simplified without logo and profile */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Image
-              source={require("../../assets/lumivana.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={[styles.logoText, { fontFamily: "Milonga" }]}>
-              Lumivana
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.navigate('Home')}
+            >
+              <Text style={styles.backButtonText}>←</Text>
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { fontFamily: "Milonga" }]}>
+              Recommended Users
             </Text>
           </View>
-          <TouchableOpacity
-            style={styles.profileIcon}
-            onPress={() => navigation.navigate("Profile")}
-          >
-            {userData.profileImage ? (
-              <Image
-                source={{ uri: userData.profileImage }}
-                style={styles.profileImage}
-              />
-            ) : (
-              <Ionicons name="person-circle-outline" size={36} color="#FFD700" />
-            )}
-          </TouchableOpacity>
         </View>
 
-        {/* SEARCH BAR + FILTER */}
-        <View style={styles.searchRow}>
-          <View style={styles.searchBar}>
-            <Ionicons
-              name="search-outline"
-              size={20}
-              color="#000"
-              style={{ marginHorizontal: 8 }}
-            />
-            <TextInput
-              placeholder="Search"
-              placeholderTextColor="#444"
-              style={{ flex: 1, color: "#000" }}
-            />
-          </View>
-          <TouchableOpacity onPress={openFilterModal}>
-            <Ionicons name="filter" size={24} color="#FFD700" />
-          </TouchableOpacity>
+        {/* FILTER TABS - SAME POSITION AND STYLING AS HOME SCREEN */}
+        <View style={styles.tabContainer}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tabRow}
+          >
+            {FILTERS.map((filter) => (
+              <TouchableOpacity
+                key={filter}
+                onPress={() => setSelectedFilter(filter)}
+                style={[styles.tabButton, selectedFilter === filter && styles.activeTabButton]}
+              >
+                <Text style={[styles.tabText, selectedFilter === filter && styles.activeTabText]}>{filter}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
 
         {/* CONTENT */}
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.sectionTitle}>Recommended Users</Text>
-
           {/* User Cards */}
-          {filteredUsers.map((user) => (
-            <View key={user.id} style={styles.userCard}>
-              <View style={styles.cardInner}>
-                <View style={styles.avatar} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.userName}>{user.name}</Text>
-                  <Text style={styles.userSub}>
-                    {user.role} · {user.followers} followers
-                  </Text>
+          {filteredUsers.length > 0 ? (
+            filteredUsers.map((user) => (
+              <View key={user.id} style={styles.userCard}>
+                <View style={styles.cardInner}>
+                  <View style={styles.avatar} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.userName}>{user.name}</Text>
+                    <Text style={styles.userSub}>
+                      {user.role} · {user.followers} followers
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.followBtn,
+                      following[user.id] && styles.followingBtn,
+                    ]}
+                    onPress={() => toggleFollow(user.id)}
+                  >
+                    <Text
+                      style={[
+                        styles.followText,
+                        following[user.id] && styles.followingText,
+                      ]}
+                    >
+                      {following[user.id] ? "Following" : "Follow"}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity onPress={() => openMoreModal(user)}>
+                    <Text style={styles.actionText}>⋮</Text>
+                  </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity
-                  style={[
-                    styles.followBtn,
-                    following[user.id] && styles.followingBtn,
-                  ]}
-                  onPress={() => toggleFollow(user.id)}
-                >
-                  <Text
-                    style={[
-                      styles.followText,
-                      following[user.id] && styles.followingText,
-                    ]}
-                  >
-                    {following[user.id] ? "Following" : "Follow"}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => openMoreModal(user)}>
-                  <Text style={styles.actionText}>⋮</Text>
-                </TouchableOpacity>
+                <View style={styles.innerPost}>
+                  <View style={styles.imagePlaceholder} />
+                  <Text style={styles.postTitle}>{user.title}</Text>
+                  <Text style={styles.postDesc}>{user.description}</Text>
+                </View>
               </View>
-
-              <View style={styles.innerPost}>
-                <View style={styles.imagePlaceholder} />
-                <Text style={styles.postTitle}>{user.title}</Text>
-                <Text style={styles.postDesc}>{user.description}</Text>
-              </View>
-            </View>
-          ))}
+            ))
+          ) : (
+            <Text style={styles.noUsersText}>No users found</Text>
+          )}
         </ScrollView>
 
         {/* MORE OPERATIONS TAB */}
@@ -291,64 +272,25 @@ const RecommendedScreen = ({ navigation }) => {
           </Animated.View>
         </Modal>
 
-        {/* FILTER TAB */}
-        <Modal transparent visible={filterVisible} animationType="none">
-          <Animated.View
-            style={[
-              styles.bottomSheet,
-              { transform: [{ translateY: slideAnim }] },
-            ]}
-          >
-            <Text style={styles.modalTitle}>Filter</Text>
-            {FILTERS.map((f) => (
-              <TouchableOpacity
-                key={f}
-                style={[
-                  styles.filterOption,
-                  selectedFilter === f && styles.filterOptionActive,
-                ]}
-                onPress={() => {
-                  setSelectedFilter(f);
-                  setFilterVisible(false);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.optionText,
-                    selectedFilter === f && { color: "#FFD700" },
-                  ]}
-                >
-                  {f}
-                </Text>
-              </TouchableOpacity>
-            ))}
-            <TouchableOpacity
-              style={styles.closeBtn}
-              onPress={() => setFilterVisible(false)}
-            >
-              <Ionicons name="close" size={24} color="#FFD700" />
-            </TouchableOpacity>
-          </Animated.View>
-        </Modal>
-
-        {/* FOOTER */}
+        {/* FOOTER - From SearchScreen */}
         <View style={styles.footer}>
           <TouchableOpacity 
             style={styles.footerItem}
             onPress={() => navigation.navigate("Home")}
           >
-            <Ionicons name="home" size={24} color="#FFD700" />
-            <Text style={[styles.footerText, styles.activeFooterText]}>Home</Text>
+            <Ionicons name="home-outline" size={24} color="#FFD700" />
+            <Text style={styles.footerText}>Home</Text>
           </TouchableOpacity>
-              
+
           <TouchableOpacity 
             style={styles.footerItem}
             onPress={() => navigation.navigate("Search")}
           >
-            <Ionicons name="search-outline" size={24} color="#FFD700" />
+            <Ionicons name="search" size={24} color="#FFD700" />
             <Text style={styles.footerText}>Search</Text>
           </TouchableOpacity>
-              
+
+          {/* Plus Square Icon in Center */}
           <TouchableOpacity 
             style={styles.plusSquareButton}
             onPress={() => navigation.navigate("Request")}
@@ -357,7 +299,7 @@ const RecommendedScreen = ({ navigation }) => {
               <Ionicons name="add" size={30} color="#FFD700" />
             </View>
           </TouchableOpacity>
-              
+
           <TouchableOpacity 
             style={styles.footerItem}
             onPress={() => navigation.navigate("Commissions")}
@@ -365,7 +307,7 @@ const RecommendedScreen = ({ navigation }) => {
             <Ionicons name="briefcase-outline" size={24} color="#FFD700" />
             <Text style={styles.footerText}>Commissions</Text>
           </TouchableOpacity>
-              
+
           <TouchableOpacity 
             style={styles.footerItem}
             onPress={() => navigation.navigate("FAQs")}
@@ -381,50 +323,67 @@ const RecommendedScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 50,
-    paddingHorizontal: 24,
-    paddingBottom: 16,
-    backgroundColor: "#0E0E0E",
+  
+  // HEADER STYLES - Simplified without logo and profile
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingTop: 50, 
+    paddingHorizontal: 24, 
+    paddingBottom: 16, 
+    borderBottomLeftRadius: 20, 
+    borderBottomRightRadius: 20, 
+    backgroundColor: 'rgba(0,0,0,0.2)' 
   },
-  headerLeft: { flexDirection: "row", alignItems: "center" },
-  logo: { width: 40, height: 40, marginRight: 8 },
-  logoText: { fontSize: 28, color: "#FFD700" },
-  profileIcon: { width: 36, height: 36, borderRadius: 18, overflow: "hidden" },
-  profileImage: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#FFD700",
+  headerLeft: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
   },
-  searchRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  backButton: {
+    marginRight: 12,
+    padding: 4,
+  },
+  backButtonText: {
+    fontSize: 28,
+    color: '#FFD700',
+    fontWeight: 'bold',
+  },
+  headerTitle: { 
+    fontSize: 24, 
+    color: '#fff',
+  },
+
+  // FILTER TABS - SAME POSITION AND STYLING AS HOME SCREEN
+  tabContainer: {
     backgroundColor: "#1A1A1A",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderColor: "#333",
+    marginTop: 10, // Added to match HomeScreen positioning
   },
-  searchBar: {
+  tabRow: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ccc",
-    borderRadius: 8,
-    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  tabButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     marginRight: 10,
-    paddingHorizontal: 6,
   },
-  content: { paddingHorizontal: 20, paddingBottom: 80 },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#FFD700",
-    marginBottom: 16,
+  tabText: { color: "#999", fontSize: 13 },
+  activeTabButton: { borderBottomWidth: 2, borderColor: "#FFD700" },
+  activeTabText: { color: "#FFD700", fontWeight: "bold" },
+
+  // Content area
+  content: { 
+    paddingHorizontal: 20, 
+    paddingBottom: 80,
+    paddingTop: 10,
+    flexGrow: 1,
   },
+
+  // User Cards Styles
   userCard: {
     backgroundColor: "#1C1C1C",
     borderRadius: 15,
@@ -460,8 +419,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     padding: 12,
   },
+  imagePlaceholder: {
+    backgroundColor: "#333",
+    borderRadius: 12,
+    height: 150,
+    marginVertical: 10,
+  },
   postTitle: { color: "#fff", fontWeight: "bold", fontSize: 15 },
   postDesc: { color: "#ccc", fontSize: 13 },
+  noUsersText: {
+    color: "#999",
+    textAlign: "center",
+    fontSize: 16,
+    marginTop: 50,
+  },
+
+  // Modal Styles
   bottomSheet: {
     position: "absolute",
     bottom: 0,
@@ -486,39 +459,50 @@ const styles = StyleSheet.create({
   },
   optionRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
   optionText: { color: "#fff", marginLeft: 8, fontSize: 15 },
-  filterOption: {
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
-  },
-  filterOptionActive: {
-    backgroundColor: "#FFD70020",
-  },
   closeBtn: { position: "absolute", top: 10, right: 15 },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingBottom: 40,
-    backgroundColor: "#0E0E0E",
+
+  // FOOTER STYLES - From SearchScreen
+  footer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
+    alignItems: 'center',
+    paddingVertical: 10, 
+    paddingBottom: 40, 
+    borderTopLeftRadius: 20, 
+    borderTopRightRadius: 20, 
+    backgroundColor: 'rgba(0,0,0,0.2)' 
   },
-  footerItem: { alignItems: "center", flex: 1 },
-  footerText: { color: "#fff", fontSize: 12, marginTop: 2, textAlign: "center" },
-  activeFooterText: { color: "#FFD700", fontWeight: "bold" },
-  plusSquareButton: { alignItems: "center", marginHorizontal: 10 },
+  footerItem: { 
+    alignItems: 'center',
+    flex: 1,
+  },
+  footerText: { 
+    color: '#fff', 
+    fontSize: 12, 
+    marginTop: 2, 
+    textAlign: 'center' 
+  },
+  activeFooterText: { 
+    color: '#FFD700', 
+    fontWeight: 'bold' 
+  },
+  plusSquareButton: {
+    alignItems: 'center',
+    marginHorizontal: 10,
+  },
   plusSquareContainer: {
     width: 45,
     height: 45,
     borderWidth: 2,
-    borderColor: "#FFD700",
+    borderColor: '#FFD700',
     borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
 });
 
 export default RecommendedScreen;
-
-
-

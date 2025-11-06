@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,12 @@ import {
   ScrollView,
   FlatList,
   Dimensions,
-  Modal, // Import Modal
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts } from 'expo-font';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -33,17 +34,7 @@ const FILTER_CATEGORY_MAP = [
 
 // --- Component for the Filter Modal ---
 
-const FilterModal = ({ isVisible, onClose }) => {
-  const [selectedCategories, setSelectedCategories] = useState([]);
-
-  const toggleCategory = (category) => {
-    setSelectedCategories((prev) => 
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
-    );
-  };
-  
+const FilterModal = ({ isVisible, onClose, selectedCategory, onCategorySelect }) => {
   return (
     <Modal
       animationType="slide"
@@ -66,22 +57,25 @@ const FilterModal = ({ isVisible, onClose }) => {
               <TouchableOpacity
                 key={item.name}
                 style={modalStyles.categoryItem}
-                onPress={() => toggleCategory(item.name)}
+                onPress={() => {
+                  onCategorySelect(item.name);
+                  onClose();
+                }}
               >
                 {/* ICON ADDED HERE */}
                 <View style={modalStyles.categoryTextContainer}>
                   <Ionicons 
                     name={item.icon} 
                     size={25} 
-                    color="#FFD700" // Use the gold color for icons
+                    color="#FFD700"
                     style={modalStyles.categoryIcon}
                   />
                   <Text style={modalStyles.categoryText}>{item.name}</Text>
                 </View>
                 {/* END ICON ADDED */}
 
-                <View style={modalStyles.checkbox(selectedCategories.includes(item.name))}>
-                  {selectedCategories.includes(item.name) && (
+                <View style={modalStyles.checkbox(selectedCategory === item.name)}>
+                  {selectedCategory === item.name && (
                     <Ionicons name="checkmark-sharp" size={16} color="#000" />
                   )}
                 </View>
@@ -94,8 +88,7 @@ const FilterModal = ({ isVisible, onClose }) => {
   );
 };
 
-
-// --- SearchScreen Component (Rest of the component remains the same) ---
+// --- SearchScreen Component ---
 
 const COMMISSION_QUICK_LINKS = [
   { 
@@ -150,6 +143,50 @@ const SearchScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('All');
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [userData, setUserData] = useState({
+    name: '',
+    profileImage: null
+  });
+
+  // Load user data from AsyncStorage
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const savedUserData = await AsyncStorage.getItem('userProfileData');
+      if (savedUserData) {
+        const parsedData = JSON.parse(savedUserData);
+        setUserData(prevData => ({
+          ...prevData,
+          name: parsedData.name || '',
+          profileImage: parsedData.profileImage || null
+        }));
+      }
+
+      // Also load profile image from AsyncStorage
+      const savedProfileImage = await AsyncStorage.getItem('profileImage');
+      if (savedProfileImage) {
+        setUserData(prevData => ({
+          ...prevData,
+          profileImage: savedProfileImage
+        }));
+      }
+    } catch (error) {
+      console.log('Error loading user data:', error);
+    }
+  };
+
+  // Refresh data when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadUserData();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   // Sample data and filtering logic remains the same
   const SEARCH_CATEGORIES = ['All', 'Creative', 'Writing', 'Customize', 'Food', 'Tools', 'Accessories', 'Gears', 'School Supplies'];
@@ -190,7 +227,11 @@ const SearchScreen = ({ navigation }) => {
     return false;
   });
 
-  // ... (renderSearchItem logic remains the same)
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category);
+    setActiveTab(category);
+  };
+
   const renderSearchItem = ({ item }) => {
     if (item.type === 'user') {
       return (
@@ -250,13 +291,11 @@ const SearchScreen = ({ navigation }) => {
     return null;
   };
   
-  // ... (handleQuickLinkPress logic remains the same)
   const handleQuickLinkPress = (searchTag) => {
     setSearchQuery(searchTag);
     setActiveTab('Commissions'); 
   };
   
-  // ... (renderQuickLink logic remains the same)
   const renderQuickLink = ({ item }) => (
     <TouchableOpacity 
       style={styles.quickLinkItem} 
@@ -275,15 +314,11 @@ const SearchScreen = ({ navigation }) => {
   if (!fontsLoaded) return null;
 
   return (
-    <LinearGradient
-      colors={['#CFAD01', '#30204D', '#0B005F']}
-      locations={[0, 0.58, 0.84]}
-      style={styles.container}
-    >
+    <LinearGradient colors={["#0E0E0E", "#1A1A1A"]} style={styles.container}>
       <SafeAreaView style={{ flex: 1 }}>
         <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-        {/* HEADER */}
+        {/* HEADER - Updated Profile Icon */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Image
@@ -293,11 +328,20 @@ const SearchScreen = ({ navigation }) => {
             />
             <Text style={[styles.logoText, { fontFamily: 'Milonga' }]}>Lumivana</Text>
           </View>
+          
+          {/* Updated Profile Icon - Same as HomeScreen */}
           <TouchableOpacity
             style={styles.profileIcon}
             onPress={() => navigation.navigate('Profile')}
           >
-            <Ionicons name="person-circle-outline" size={36} color="#FFD700" />
+            {userData.profileImage ? (
+              <Image 
+                source={{ uri: userData.profileImage }} 
+                style={styles.profileImage} 
+              />
+            ) : (
+              <Ionicons name="person-circle-outline" size={36} color="#FFD700" />
+            )}
           </TouchableOpacity>
         </View>
 
@@ -309,65 +353,51 @@ const SearchScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* MAIN CONTENT AREA - Encapsulated in a ScrollView */}
-        <ScrollView contentContainerStyle={styles.mainScrollContent} style={styles.mainContent}>
-
-          {/* Search Categories */}
-          <ScrollView 
-            horizontal 
-            showsHorizontalScrollIndicator={false} 
-            style={styles.categoriesContainer}
-          >
-            {SEARCH_CATEGORIES.map((category) => (
-              <TouchableOpacity
-                key={category}
-                style={[
-                  styles.categoryChip,
-                  activeTab === category && styles.categoryChipActive,
-                ]}
-                onPress={() => setActiveTab(category)}
-              >
-                <Text
-                  style={[
-                    styles.categoryText,
-                    activeTab === category && styles.categoryTextActive,
-                  ]}
+        {/* FIXED SEARCH AND FILTER SECTION (NOT SCROLLABLE) */}
+        <View style={styles.fixedSection}>
+          {/* FILTER TABS - SAME STYLE AS HOME SCREEN */}
+          <View style={filterTabStyles.tabContainer}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={filterTabStyles.tabRow}
+            >
+              {SEARCH_CATEGORIES.map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  onPress={() => setActiveTab(category)}
+                  style={[filterTabStyles.tabButton, activeTab === category && filterTabStyles.activeTabButton]}
                 >
-                  {category}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                  <Text style={[filterTabStyles.tabText, activeTab === category && filterTabStyles.activeTabText]}>{category}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
 
           {/* Search Bar */}
-          <View style={styles.searchRow}>
-            <View style={styles.searchContainer}>
-              <Ionicons name="search-outline" size={20} color="#999" style={styles.searchIcon} />
+          <View style={searchBarStyles.searchBarContainer}>
+            <View style={searchBarStyles.searchBar}>
+              <Ionicons name="search-outline" size={20} color="#FFD700" />
               <TextInput
-                style={styles.searchInput}
-                placeholder="Search users, posts, commissions..."
-                placeholderTextColor="#999"
+                placeholder="Search users..."
+                placeholderTextColor="#aaa"
+                style={searchBarStyles.searchInput}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
-                  <Ionicons name="close-circle" size={20} color="#999" />
-                </TouchableOpacity>
-              )}
             </View>
-            
-            {/* Right Icons - Filter/Funnel */}
-            <View style={styles.rightIcons}>
-              <TouchableOpacity 
-                style={styles.iconButton}
-                onPress={() => setIsFilterModalVisible(true)}
-              >
-                <Ionicons name="funnel-outline" size={24} color="#FFD700" />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={searchBarStyles.filterButton} onPress={() => setIsFilterModalVisible(true)}>
+              <Ionicons name="filter-outline" size={22} color="#FFD700" />
+            </TouchableOpacity>
           </View>
-          
+        </View>
+
+        {/* SCROLLABLE CONTENT AREA */}
+        <ScrollView 
+          style={styles.scrollableContent}
+          contentContainerStyle={styles.scrollableContentContainer}
+          showsVerticalScrollIndicator={false}
+        >
           {/* FEATURE: Commission Quick Links / Categories (Only visible when search bar is empty) */}
           {searchQuery.length === 0 && (
             <View style={styles.quickLinksSection}>
@@ -399,13 +429,14 @@ const SearchScreen = ({ navigation }) => {
               </>
             )}
           </View>
-          
         </ScrollView>
 
         {/* Filter Modal Integration */}
         <FilterModal 
           isVisible={isFilterModalVisible} 
-          onClose={() => setIsFilterModalVisible(false)} 
+          onClose={() => setIsFilterModalVisible(false)}
+          selectedCategory={selectedCategory}
+          onCategorySelect={handleCategorySelect}
         />
 
         {/* FOOTER */}
@@ -478,6 +509,15 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#FFD700',
   },
   
   // Image Placeholder Styles
@@ -502,74 +542,18 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   
-  // Main content area
-  mainContent: {
+  // FIXED SECTION (NOT SCROLLABLE)
+  fixedSection: {
+    // No padding here - individual components handle their own padding
+  },
+  
+  // SCROLLABLE CONTENT
+  scrollableContent: {
     flex: 1,
+  },
+  scrollableContentContainer: {
     paddingHorizontal: 24,
-    paddingTop: 0,
-  },
-  mainScrollContent: {
-    paddingBottom: 16, 
-  },
-  
-  // Search Categories
-  categoriesContainer: {
-    marginBottom: 16,
-    maxHeight: 40,
-  },
-  categoryChip: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 8,
-  },
-  categoryChipActive: {
-    backgroundColor: '#f6c33b',
-  },
-  categoryText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  categoryTextActive: {
-    color: '#000',
-    fontWeight: '600',
-  },
-  
-  // Search Bar
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  searchContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 25,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 12, 
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
-    padding: 0,
-  },
-  rightIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconButton: {
-    padding: 10, 
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 8,
+    paddingBottom: 16,
   },
 
   // Quick Links / Categories Styles
@@ -735,7 +719,73 @@ const styles = StyleSheet.create({
   },
 });
 
-// --- Modal Specific Styles (COLOR CORRECTED) ---
+// --- Filter Tab Styles - SAME AS HOME SCREEN ---
+const filterTabStyles = StyleSheet.create({
+  tabContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    paddingHorizontal: 16,
+    backgroundColor: "#1A1A1A",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: "#333",
+    marginTop: 10,
+  },
+  tabRow: {
+    flexDirection: "row",
+  },
+  tabButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginRight: 10,
+  },
+  tabText: { 
+    color: "#999", 
+    fontSize: 13 
+  },
+  activeTabButton: { 
+    borderBottomWidth: 2, 
+    borderColor: "#FFD700" 
+  },
+  activeTabText: { 
+    color: "#FFD700", 
+    fontWeight: "bold" 
+  },
+});
+
+// --- Search Bar Styles ---
+const searchBarStyles = StyleSheet.create({
+  searchBarContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 20,
+    paddingHorizontal: 24,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1C1C1C",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 38,
+  },
+  searchInput: { 
+    flex: 1, 
+    color: "#fff", 
+    marginLeft: 8, 
+    fontSize: 14 
+  },
+  filterButton: {
+    marginLeft: 10,
+    backgroundColor: "#1C1C1C",
+    borderRadius: 10,
+    padding: 10,
+  },
+});
+
+// --- Modal Specific Styles ---
 const modalStyles = StyleSheet.create({
   centeredView: {
     flex: 1,
@@ -745,8 +795,8 @@ const modalStyles = StyleSheet.create({
   },
   modalView: {
     width: '100%',
-    height: SCREEN_HEIGHT * 0.45, // Retained at 45% size
-    backgroundColor: '#30204D', // <-- CORRECTED COLOR HERE
+    height: SCREEN_HEIGHT * 0.45,
+    backgroundColor: '#1C1C1C',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 25,
@@ -766,7 +816,7 @@ const modalStyles = StyleSheet.create({
   },
   closeButton: {
     padding: 5,
-    backgroundColor: 'rgba(255,255,255,0.1)', // Adjusted background for contrast
+    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 20,
     position: 'absolute', 
     right: 20,

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,23 +8,92 @@ import {
   StatusBar,
   ScrollView,
   FlatList,
+  TextInput,
+  Modal,
   Image,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const HomeScreen = ({ navigation }) => {
-  const [activeTab, setActiveTab] = useState("Home");
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const HomeScreen = ({ navigation, route }) => {
+  const [activeTab, setActiveTab] = useState(route.params?.activeTab || "Home");
   const [following, setFollowing] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterVisible, setFilterVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [userData, setUserData] = useState({
+    name: '',
+    profileImage: null
+  });
 
-  // Mock Recommended Users
-  const recommendedUsers = [
-    { id: 1, name: "Kreidedeprinz", role: "Illustrator", followers: 707 },
-    { id: 2, name: "Chiori", role: "Crafter, Graphic Designer", followers: 680 },
-    { id: 3, name: "Aelric", role: "Writer", followers: 423 },
+  // Use the same categories and icons as SearchScreen
+  const FILTER_CATEGORY_MAP = [
+    { name: 'All', icon: 'apps-outline' },
+    { name: 'Graphic Design', icon: 'color-palette-outline' },
+    { name: 'Illustration', icon: 'brush-outline' },
+    { name: 'Crafting', icon: 'hammer-outline' },
+    { name: 'Writing', icon: 'document-text-outline' },
+    { name: 'Photography', icon: 'camera-outline' },
+    { name: 'Tutoring', icon: 'school-outline' },
   ];
 
-  // Mock Feed Posts
+  // Load user data from AsyncStorage
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const savedUserData = await AsyncStorage.getItem('userProfileData');
+      if (savedUserData) {
+        const parsedData = JSON.parse(savedUserData);
+        setUserData(prevData => ({
+          ...prevData,
+          name: parsedData.name || '',
+          profileImage: parsedData.profileImage || null
+        }));
+      }
+
+      // Also load profile image from AsyncStorage
+      const savedProfileImage = await AsyncStorage.getItem('profileImage');
+      if (savedProfileImage) {
+        setUserData(prevData => ({
+          ...prevData,
+          profileImage: savedProfileImage
+        }));
+      }
+    } catch (error) {
+      console.log('Error loading user data:', error);
+    }
+  };
+
+  // Handle activeTab parameter from navigation
+  useEffect(() => {
+    if (route.params?.activeTab) {
+      setActiveTab(route.params.activeTab);
+    }
+  }, [route.params?.activeTab]);
+  
+  // Refresh data when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadUserData();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const recommendedUsers = [
+    { id: 1, name: "Kreidedeprinz", role: "Illustrator", followers: 707, category: "Illustration" },
+    { id: 2, name: "Chiori", role: "Crafter, Graphic Designer", followers: 680, category: "Crafting" },
+    { id: 3, name: "Aelric", role: "Writer", followers: 423, category: "Writing" },
+    { id: 4, name: "Timaeus", role: "Tutor", followers: 520, category: "Tutoring" },
+  ];
+
   const allPosts = [
     {
       id: 1,
@@ -55,15 +124,16 @@ const HomeScreen = ({ navigation }) => {
     },
   ];
 
-  // Filter logic based on active tab
   const filteredPosts = allPosts.filter((post) => {
-    if (activeTab === "Following") {
-      return following[post.user];
-    }
-    if (activeTab === "Requests") {
-      return post.type === "request";
-    }
-    return true; // Home tab shows all
+    if (activeTab === "Following") return following[post.user];
+    if (activeTab === "Requests") return post.type === "request";
+    return true;
+  });
+
+  const filteredUsers = recommendedUsers.filter((user) => {
+    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === "All" || user.category === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
 
   const toggleFollow = (userName) => {
@@ -82,18 +152,10 @@ const HomeScreen = ({ navigation }) => {
         </View>
 
         <TouchableOpacity
-          style={[
-            styles.followBtn,
-            following[item.user] && styles.followingBtn,
-          ]}
+          style={[styles.followBtn, following[item.user] && styles.followingBtn]}
           onPress={() => toggleFollow(item.user)}
         >
-          <Text
-            style={[
-              styles.followText,
-              following[item.user] && styles.followingText,
-            ]}
-          >
+          <Text style={[styles.followText, following[item.user] && styles.followingText]}>
             {following[item.user] ? "Following" : "Follow"}
           </Text>
         </TouchableOpacity>
@@ -113,70 +175,144 @@ const HomeScreen = ({ navigation }) => {
     </View>
   );
 
+  // Filter Modal Component (Same as SearchScreen)
+  const FilterModal = ({ isVisible, onClose }) => {
+    return (
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isVisible}
+        onRequestClose={onClose}
+      >
+        <View style={modalStyles.centeredView}>
+          <View style={modalStyles.modalView}>
+            <View style={modalStyles.headerRow}>
+              <Text style={modalStyles.title}>Filter</Text>
+              <TouchableOpacity onPress={onClose} style={modalStyles.closeButton}>
+                <Ionicons name="close" size={24} color="#FFD700" /> 
+              </TouchableOpacity>
+            </View>
+            
+            <Text style={modalStyles.categoryHeader}>Category</Text>
+            <ScrollView style={modalStyles.categoryList}>
+              {FILTER_CATEGORY_MAP.map((item) => (
+                <TouchableOpacity
+                  key={item.name}
+                  style={modalStyles.categoryItem}
+                  onPress={() => {
+                    setSelectedCategory(item.name);
+                    onClose();
+                  }}
+                >
+                  <View style={modalStyles.categoryTextContainer}>
+                    <Ionicons 
+                      name={item.icon} 
+                      size={25} 
+                      color="#FFD700"
+                      style={modalStyles.categoryIcon}
+                    />
+                    <Text style={modalStyles.categoryText}>{item.name}</Text>
+                  </View>
+
+                  <View style={modalStyles.checkbox(selectedCategory === item.name)}>
+                    {selectedCategory === item.name && (
+                      <Ionicons name="checkmark-sharp" size={16} color="#000" />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   return (
     <LinearGradient colors={["#0E0E0E", "#1A1A1A"]} style={styles.container}>
       <SafeAreaView style={{ flex: 1 }}>
         <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
-
-        {/* HEADER */}
+        
+        {/* HEADER - Updated Profile Icon */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Home Feeds</Text>
+          <View style={styles.headerLeft}>
+            <Image
+              source={require('../../assets/lumivana.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.logoText}>Lumivana</Text>
+          </View>
+          
+          {/* Updated Profile Icon - Same as ProfileScreen */}
+          <TouchableOpacity
+            style={styles.profileIcon}
+            onPress={() => navigation.navigate('Profile')}
+          >
+            {userData.profileImage ? (
+              <Image 
+                source={{ uri: userData.profileImage }} 
+                style={styles.profileImage} 
+              />
+            ) : (
+              <Ionicons name="person-circle-outline" size={36} color="#FFD700" />
+            )}
+          </TouchableOpacity>
         </View>
 
-        {/* TOP TABS */}
+        {/* 🟡 TOP TABS */}
         <View style={styles.tabRow}>
           {["Following", "Home", "Requests"].map((tab) => (
             <TouchableOpacity
               key={tab}
               onPress={() => setActiveTab(tab)}
-              style={[
-                styles.tabButton,
-                activeTab === tab && styles.activeTabButton,
-              ]}
+              style={[styles.tabButton, activeTab === tab && styles.activeTabButton]}
             >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === tab && styles.activeTabText,
-                ]}
-              >
-                {tab}
-              </Text>
+              <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
+        {/* 🔍 SEARCH BAR BELOW TABS */}
+        <View style={styles.searchBarContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search-outline" size={20} color="#FFD700" />
+            <TextInput
+              placeholder="Search users..."
+              placeholderTextColor="#aaa"
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          <TouchableOpacity style={styles.filterButton} onPress={() => setFilterVisible(true)}>
+            <Ionicons name="filter-outline" size={22} color="#FFD700" />
+          </TouchableOpacity>
+        </View>
+
         <ScrollView>
-          {/* Recommended Users (Home Tab only) */}
+          {/* Recommended Users */}
           {activeTab === "Home" && (
             <View style={styles.recommendedSection}>
               <View style={styles.recommendedHeader}>
                 <Text style={styles.sectionTitle}>Recommended Users</Text>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate("RecommendedScreen")}
-                >
+                <TouchableOpacity onPress={() => navigation.navigate("RecommendedScreen")}>
                   <Text style={styles.viewMore}>View More</Text>
                 </TouchableOpacity>
               </View>
 
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {recommendedUsers.map((user) => (
+                {filteredUsers.map((user) => (
                   <View key={user.id} style={styles.recommendedCard}>
                     <View style={styles.avatarLarge} />
                     <Text style={styles.recUserName}>{user.name}</Text>
                     <Text style={styles.recUserRole}>{user.role}</Text>
                     <TouchableOpacity
-                      style={[
-                        styles.followBtn,
-                        following[user.name] && styles.followingBtn,
-                      ]}
+                      style={[styles.followBtn, following[user.name] && styles.followingBtn]}
                       onPress={() => toggleFollow(user.name)}
                     >
                       <Text
-                        style={[
-                          styles.followText,
-                          following[user.name] && styles.followingText,
-                        ]}
+                        style={[styles.followText, following[user.name] && styles.followingText]}
                       >
                         {following[user.name] ? "Following" : "Follow"}
                       </Text>
@@ -199,74 +335,213 @@ const HomeScreen = ({ navigation }) => {
 
         {/* FOOTER */}
         <View style={styles.footer}>
-          <TouchableOpacity
+          <TouchableOpacity 
             style={styles.footerItem}
-            onPress={() => navigation.navigate("Home")}
+            onPress={() => navigation.navigate('Home')}
           >
             <Ionicons name="home" size={24} color="#FFD700" />
             <Text style={[styles.footerText, styles.activeFooterText]}>Home</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
+          <TouchableOpacity 
             style={styles.footerItem}
-            onPress={() => navigation.navigate("Search")}
+            onPress={() => navigation.navigate('Search')}
           >
             <Ionicons name="search-outline" size={24} color="#FFD700" />
             <Text style={styles.footerText}>Search</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.plusButton}
-            onPress={() => navigation.navigate("OfferCommission")}
+          {/* Plus Square Icon in Center */}
+          <TouchableOpacity 
+            style={styles.plusSquareButton}
+            onPress={() => navigation.navigate('Request')}
           >
-            <Ionicons name="add" size={30} color="#FFD700" />
+            <View style={styles.plusSquareContainer}>
+              <Ionicons name="add" size={30} color="#FFD700" />
+            </View>
           </TouchableOpacity>
 
-          <TouchableOpacity
+          <TouchableOpacity 
             style={styles.footerItem}
-            onPress={() => navigation.navigate("Commissions")}
+            onPress={() => navigation.navigate('Commissions')}
           >
             <Ionicons name="briefcase-outline" size={24} color="#FFD700" />
             <Text style={styles.footerText}>Commissions</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
+          <TouchableOpacity 
             style={styles.footerItem}
-            onPress={() => navigation.navigate("Profile")}
+            onPress={() => navigation.navigate('FAQs')}
           >
-            <Ionicons name="person-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>Profile</Text>
+            <Ionicons name="help-circle-outline" size={24} color="#FFD700" />
+            <Text style={styles.footerText}>FAQs</Text>
           </TouchableOpacity>
         </View>
+
+        {/* 🧩 FILTER MODAL - SAME DESIGN AS SEARCH SCREEN */}
+        <FilterModal 
+          isVisible={filterVisible} 
+          onClose={() => setFilterVisible(false)} 
+        />
       </SafeAreaView>
     </LinearGradient>
   );
 };
 
+// --- Modal Specific Styles (Same as SearchScreen) ---
+const modalStyles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: 'flex-end', 
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  modalView: {
+    width: '100%',
+    height: SCREEN_HEIGHT * 0.45,
+    backgroundColor: '#1C1C1C',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 25,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFD700',
+    flex: 1, 
+    textAlign: 'center',
+  },
+  closeButton: {
+    padding: 5,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 20,
+    position: 'absolute', 
+    right: 20,
+    top: 0,
+  },
+  categoryHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginBottom: 10,
+  },
+  categoryList: {
+    flex: 1, 
+  },
+  categoryItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  categoryTextContainer: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  categoryIcon: {
+    marginRight: 10,
+  },
+  categoryText: {
+    fontSize: 16,
+    color: '#CCC',
+  },
+  checkbox: (isChecked) => ({
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: isChecked ? '#FFD700' : '#FFF', 
+    backgroundColor: isChecked ? '#FFD700' : 'transparent', 
+    justifyContent: 'center',
+    alignItems: 'center',
+  }),
+});
+
+// --- Main Styles (Remain the same) ---
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingTop: 50,
-    paddingBottom: 12,
-    alignItems: "center",
+  
+  // HEADER STYLES - Updated Profile Icon
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'space-between', 
+    paddingTop: 50, 
+    paddingHorizontal: 24, 
+    paddingBottom: 16, 
+    borderBottomLeftRadius: 20, 
+    borderBottomRightRadius: 20, 
+    backgroundColor: 'rgba(0,0,0,0.2)' 
   },
-  headerTitle: {
-    color: "#FFD700",
-    fontSize: 20,
-    fontWeight: "bold",
+  headerLeft: { flexDirection: 'row', alignItems: 'center' },
+  logo: { width: 40, height: 40, marginRight: 8 },
+  logoText: { fontSize: 28, color: '#fff', fontFamily: 'Milonga' },
+  profileIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  profileImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#FFD700',
+  },
+
+  // Original HomeScreen Styles
   tabRow: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "flex-start",
+    paddingHorizontal: 16,
     backgroundColor: "#1A1A1A",
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderColor: "#333",
+    marginTop: 10,
   },
-  tabButton: { paddingHorizontal: 8 },
-  tabText: { color: "#999", fontSize: 14 },
+  tabButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginRight: 10,
+  },
+  tabText: { color: "#999", fontSize: 13 },
   activeTabButton: { borderBottomWidth: 2, borderColor: "#FFD700" },
   activeTabText: { color: "#FFD700", fontWeight: "bold" },
+  searchBarContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1C1C1C",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 38,
+  },
+  searchInput: { flex: 1, color: "#fff", marginLeft: 8, fontSize: 14 },
+  filterButton: {
+    marginLeft: 10,
+    backgroundColor: "#1C1C1C",
+    borderRadius: 10,
+    padding: 10,
+  },
 
   recommendedSection: { paddingVertical: 10, paddingHorizontal: 16 },
   recommendedHeader: {
@@ -344,27 +619,47 @@ const styles = StyleSheet.create({
   },
   likeCount: { color: "#fff", marginLeft: 6 },
 
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingVertical: 10,
-    paddingBottom: 40,
-    backgroundColor: "#0E0E0E",
+  // FOOTER STYLES
+  footer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
+    alignItems: 'center',
+    paddingVertical: 10, 
+    paddingBottom: 40, 
+    borderTopLeftRadius: 20, 
+    borderTopRightRadius: 20, 
+    backgroundColor: 'rgba(0,0,0,0.2)' 
   },
-  footerItem: { alignItems: "center", flex: 1 },
-  footerText: { color: "#fff", fontSize: 12, marginTop: 2 },
-  activeFooterText: { color: "#FFD700", fontWeight: "bold" },
-  plusButton: {
-    width: 50,
-    height: 50,
+  footerItem: { 
+    alignItems: 'center',
+    flex: 1,
+  },
+  footerText: { 
+    color: '#fff', 
+    fontSize: 12, 
+    marginTop: 2, 
+    textAlign: 'center' 
+  },
+  activeFooterText: { 
+    color: '#FFD700', 
+    fontWeight: 'bold' 
+  },
+  plusSquareButton: {
+    alignItems: 'center',
+    marginHorizontal: 10,
+  },
+  plusSquareContainer: {
+    width: 45,
+    height: 45,
     borderWidth: 2,
-    borderColor: "#FFD700",
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: -20,
-    backgroundColor: "#1A1A1A",
+    borderColor: '#FFD700',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
   },
 });
 
