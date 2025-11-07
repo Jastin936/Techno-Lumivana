@@ -1,20 +1,8 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import {View,Text,TextInput,TouchableOpacity,StyleSheet,SafeAreaView,StatusBar,KeyboardAvoidingView,Platform,ScrollView,Alert,ActivityIndicator,Image,} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 
 const SignUpScreen = ({ navigation }) => {
   const [fullName, setFullName] = useState('');
@@ -24,6 +12,7 @@ const SignUpScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [photo, setPhoto] = useState(null); 
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailInvalid = email && !emailRegex.test(email);
@@ -43,7 +32,31 @@ const SignUpScreen = ({ navigation }) => {
       Alert.alert('Error', 'Please enter a password');
       return false;
     }
+    if (!photo) { 
+      Alert.alert('Error', 'Please upload your COR photo');
+      return false;
+    }
     return true;
+  };
+
+  
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'We need access to your photos to upload your COR.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 4],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setPhoto(result.assets[0].uri);
+    }
   };
 
   const handleSignUp = async () => {
@@ -91,7 +104,7 @@ const SignUpScreen = ({ navigation }) => {
             <View style={styles.content}>
               <Text style={styles.title}>Create Account</Text>
               <Text style={styles.subtitle}>
-                Please complete all information to create {"\n"} your account on Lumivana
+                Please complete all information to create {'\n'} your account on Lumivana
               </Text>
 
               {/* Form */}
@@ -174,7 +187,20 @@ const SignUpScreen = ({ navigation }) => {
                   <Text style={styles.errorText}>Passwords do not match</Text>
                 )}
 
-                {/* Create Account Button */}
+            
+                <Text style={styles.label}>Photo of COR:</Text>
+                <TouchableOpacity style={styles.imageUploadBox} onPress={pickImage} disabled={isLoading}>
+                  {photo ? (
+                    <Image source={{ uri: photo }} style={styles.imagePreview} />
+                  ) : (
+                    <View style={styles.placeholderBox}>
+                      <Ionicons name="image-outline" size={40} color="#aaa" />
+                      <Text style={styles.placeholderText}>Attach Photo</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+
+               
                 <TouchableOpacity
                   style={[styles.createAccountButton, isLoading && styles.buttonDisabled]}
                   onPress={handleSignUp}
@@ -243,6 +269,32 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: { backgroundColor: 'rgba(255, 215, 0, 0.5)' },
   createAccountButtonText: { color: '#000', fontSize: 16, fontWeight: '600' },
+
+  // ✅ New styles for image upload
+  imageUploadBox: {
+    borderWidth: 1,
+    borderColor: '#FFD700',
+    borderRadius: 12,
+    height: 150,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  placeholderBox: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderText: {
+    color: '#aaa',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  imagePreview: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
 });
 
 export default SignUpScreen;
