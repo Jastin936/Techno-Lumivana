@@ -24,6 +24,8 @@ import SignUpScreen from './src/screens/SignUpScreen';
 import ForgotPasswordEmailScreen from './src/screens/ForgotPasswordEmailScreen';
 import OTPScreen from './src/screens/OTPScreen';
 import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
+// NEW: Import AgreementFormScreen
+import AgreementFormScreen from './src/screens/AgreementFormScreen';
 
 const Stack = createStackNavigator();
 
@@ -68,6 +70,8 @@ const App = () => {
         <Stack.Screen name="ForgotPasswordEmail" component={ForgotPasswordEmailScreen} />
         <Stack.Screen name="OTP" component={OTPScreen} />
         <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+        {/* ✅ NEW: Add AgreementFormScreen to Stack */}
+        <Stack.Screen name="AgreementForm" component={AgreementFormScreen} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
