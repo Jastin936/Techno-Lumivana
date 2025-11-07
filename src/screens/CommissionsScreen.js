@@ -21,8 +21,82 @@ const rotateValue = new Animated.Value(0);
 
 const { width } = Dimensions.get('window');
 
+// --- Mock Data for Commission List ---
+const mockCommissionsData = [
+  {
+    id: '1',
+    date: 'August 8, 2025',
+    title: 'Gold Earrings',
+    description: 'A pair of shiny gold earrings with a few diamonds.',
+    status: 'On Going',
+  },
+  {
+    id: '2',
+    date: 'August 14, 2025',
+    title: 'Green Wallet',
+    description: 'A sturdy green leather wallet with a few cards.',
+    status: 'On Going',
+  },
+  {
+    id: '3',
+    date: 'August 5, 2025',
+    title: 'Red Bracelet',
+    description: 'Red bracelet with a gold flower ornament',
+    status: 'On Going',
+  },
+  {
+    id: '4',
+    date: 'July 29, 2025',
+    title: 'Brown envelope',
+    description: 'A brown envelop with drawings and notes inside',
+    status: 'Canceled',
+  },
+  {
+    id: '5',
+    date: 'July 28, 2025',
+    title: 'T-square',
+    description: 'A Staedtler T-square Wood',
+    status: 'On Going',
+  },
+];
+
+// --- Helper Component for List Item ---
+const CommissionItem = ({ date, title, description, status }) => {
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'On Going':
+        return '#4CAF50'; // Green
+      case 'Canceled':
+        return '#F44336'; // Red
+      default:
+        return '#aaa';
+    }
+  };
+
+  return (
+    <TouchableOpacity style={styles.commissionItemCard}>
+      <View style={styles.thumbnailPlaceholder}>
+        {/* Placeholder for Image/Thumbnail */}
+        <Ionicons name="image-outline" size={30} color="#555" />
+      </View>
+      <View style={styles.detailsContainer}>
+        <View style={styles.headerRow}>
+          <Text style={styles.dateText}>{date}</Text>
+          <Text style={[styles.statusTag, { backgroundColor: getStatusColor(status) }]}>
+            {status}
+          </Text>
+        </View>
+        <Text style={styles.titleText}>{title}</Text>
+        <Text style={styles.descriptionText}>{description}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+
 const CommissionsScreen = ({ navigation }) => {
-  const [activeCategory, setActiveCategory] = useState('all');
+  // Retained state variables, but removed unused commissionCategories
+  const [activeCategory, setActiveCategory] = useState('all'); 
   const [searchQuery, setSearchQuery] = useState('');
 
   const [fontsLoaded] = useFonts({
@@ -34,29 +108,23 @@ const CommissionsScreen = ({ navigation }) => {
     profileImage: null
   });
 
-  // Continuous rotation loop (30s rotate, 30s rest)
+  // Continuous rotation loop
   useEffect(() => {
     const startRotation = () => {
-      // Reset rotation value
       rotateValue.setValue(0);
-      
-      // Rotate for 30 seconds
       Animated.timing(rotateValue, {
         toValue: 10,
         duration: 30000,
         useNativeDriver: true,
       }).start(() => {
-        // After rotation completes, wait 30 seconds then restart
         setTimeout(() => {
           startRotation();
         }, 30000);
       });
     };
 
-    // Start the loop
     startRotation();
     
-    // Cleanup function
     return () => {
       rotateValue.stopAnimation();
     };
@@ -64,8 +132,8 @@ const CommissionsScreen = ({ navigation }) => {
 
   // Interpolate rotation value
   const rotateInterpolate = rotateValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
+    inputRange: [0, 10],
+    outputRange: ['0deg', '3600deg'],
   });
 
   // Animated style for logo
@@ -73,26 +141,6 @@ const CommissionsScreen = ({ navigation }) => {
     transform: [{ rotate: rotateInterpolate }],
   };
 
-  const commissionCategories = [
-    {
-      id: 'creative',
-      title: 'CREATIVE/ART COMMISSIONS',
-      icon: '🎨',
-      description: 'Art, design, and creative projects'
-    },
-    {
-      id: 'academic',
-      title: 'ACADEMIC COMMISSIONS',
-      icon: '📚',
-      description: 'Academic writing and research'
-    },
-    {
-      id: 'writing',
-      title: 'WRITING/EDITING',
-      icon: '✍️',
-      description: 'Content writing and editing services'
-    }
-  ];
 
   // Load user data from AsyncStorage
   const loadUserData = async () => {
@@ -107,7 +155,6 @@ const CommissionsScreen = ({ navigation }) => {
         }));
       }
 
-      // Also load profile image from AsyncStorage (in case it's stored separately)
       const savedProfileImage = await AsyncStorage.getItem('profileImage');
       if (savedProfileImage) {
         setUserData(prevData => ({
@@ -162,11 +209,12 @@ const CommissionsScreen = ({ navigation }) => {
               <Text style={[styles.logoText, { fontFamily: 'Milonga' }]}>Lumivana</Text>
             </View>
 
-            {/* Profile Icon Navigation */}
+            {/* Profile Icon Navigation (Using the filter icon from the image for consistency) */}
             <TouchableOpacity
               style={styles.profileIcon}
               onPress={() => navigation.navigate('Profile')}
             >
+              {/* This section is slightly different from the image but keeps profile navigation logic */}
               {userData.profileImage ? (
                 <Image 
                   source={{ uri: userData.profileImage }} 
@@ -178,82 +226,40 @@ const CommissionsScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Page Title and Search Bar */}
-          <View style={styles.headerBottom}>
-            <Text style={styles.pageTitle}>COMMISSIONS</Text>
-            
-            {/* Search Bar with Icons */}
+          {/* Search Bar and Filter Button */}
+          <View style={styles.searchBarContainer}> 
             <View style={styles.searchRow}>
               <View style={styles.searchContainer}>
-                <Ionicons name="search-outline" size={20} color="#FFD700" style={styles.searchIcon} />
+                <Ionicons name="search-outline" size={20} color="#aaa" style={styles.searchIcon} />
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Search users..."
+                  placeholder="Search" 
                   placeholderTextColor="#aaa"
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                 />
               </View>
               
-              {/* Right Icons */}
-              <View style={styles.rightIcons}>
-                <TouchableOpacity style={styles.iconButton}>
-                  <Ionicons name="funnel-outline" size={22} color="#FFD700" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.iconButton}>
-                  <Ionicons name="menu-outline" size={22} color="#FFD700" />
-                </TouchableOpacity>
-              </View>
+              {/* Filter Icon */}
+              <TouchableOpacity style={styles.filterButton}> 
+                <Ionicons name="funnel" size={24} color="#FFD700" />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
 
-        {/* Main Content */}
+        {/* Main Content: Commission List */}
         <ScrollView contentContainerStyle={styles.content}>
-          {/* Commission Categories */}
-          <View style={styles.categoriesContainer}>
-            {commissionCategories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryCard,
-                  activeCategory === category.id && styles.activeCategoryCard
-                ]}
-                onPress={() => setActiveCategory(category.id)}
-              >
-                <View style={[
-                  styles.categoryContent,
-                  activeCategory === category.id && styles.activeCategoryContent
-                ]}>
-                  <Text style={styles.categoryIcon}>{category.icon}</Text>
-                  <Text style={[
-                    styles.categoryTitle,
-                    activeCategory === category.id && styles.activeCategoryTitle
-                  ]}>
-                    {category.title}
-                  </Text>
-                  <Text style={[
-                    styles.categoryDescription,
-                    activeCategory === category.id && styles.activeCategoryDescription
-                  ]}>
-                    {category.description}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Additional Content Placeholder */}
           <View style={styles.commissionsList}>
-            <Text style={styles.commissionsTitle}>
-              Available Commissions ({commissionCategories.find(cat => cat.id === activeCategory)?.title || 'ALL'})
-            </Text>
-            <View style={styles.commissionItem}>
-              <Text style={styles.commissionItemText}>No commissions available</Text>
-              <Text style={styles.commissionItemSubtext}>
-                Check back later for new opportunities
-              </Text>
-            </View>
+            {mockCommissionsData.map((item) => (
+              <CommissionItem
+                key={item.id}
+                date={item.date}
+                title={item.title}
+                description={item.description}
+                status={item.status}
+              />
+            ))}
           </View>
         </ScrollView>
 
@@ -281,7 +287,7 @@ const CommissionsScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('Request')}
           >
             <View style={styles.plusSquareContainer}>
-              <Ionicons name="add" size={30} color="#FFD700" />
+              <Ionicons name="add" size={30} color="#0E0E0E" /> 
             </View>
           </TouchableOpacity>
 
@@ -292,10 +298,10 @@ const CommissionsScreen = ({ navigation }) => {
 
           <TouchableOpacity 
             style={styles.footerItem}
-            onPress={() => navigation.navigate('FAQs')}
+            onPress={() => navigation.navigate('Profile')}
           >
-            <Ionicons name="help-circle-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>FAQs</Text>
+            <Ionicons name="person-circle-outline" size={24} color="#FFD700" /> 
+            <Text style={styles.footerText}>Profile</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -304,22 +310,22 @@ const CommissionsScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  // --- General Styles ---
   container: { 
     flex: 1 
   },
   header: {
     paddingTop: 50,
     paddingHorizontal: 24,
-    paddingBottom: 16,
-    borderBottomLeftRadius: 20,
+    borderBottomLeftRadius: 20, 
     borderBottomRightRadius: 20,
     backgroundColor: 'rgba(0,0,0,0.2)',
-  },
+  },  
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 10, // Adjusted marginBottom
   },
   headerLeft: { 
     flexDirection: 'row', 
@@ -332,7 +338,8 @@ const styles = StyleSheet.create({
   },
   logoText: { 
     fontSize: 28, 
-    color: '#fff' 
+    color: '#fff',
+    fontFamily: 'Milonga',
   },
   profileIcon: {
     width: 36,
@@ -349,15 +356,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FFD700',
   },
-  headerBottom: {
-    // Contains the title and search bar
-  },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFD700',
-    textAlign: 'center',
-    marginBottom: 16,
+  
+  // --- Search Bar Styles ---
+  searchBarContainer: { 
+    marginBottom: 10,
   },
   searchRow: {
     flexDirection: 'row',
@@ -368,110 +370,99 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: "#1C1C1C",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    height: 38,
+    backgroundColor: "#2E2E2E", 
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    height: 40,
     marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#444'
   },
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 16,
     color: '#fff',
     padding: 0,
-    marginLeft: 8,
   },
-  rightIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconButton: {
-    marginLeft: 10,
-    backgroundColor: "#1C1C1C",
-    borderRadius: 10,
-    padding: 10,
-  },
-  content: { 
-    flex: 1,
-    paddingHorizontal: 24, 
-    paddingBottom: 20,
-    paddingTop: 20,
-  },
-  categoriesContainer: {
-    marginBottom: 30,
-  },
-  categoryCard: {
-    backgroundColor: 'rgba(30,30,30,0.85)',
+  filterButton: { 
+    backgroundColor: '#2E2E2E',
     borderRadius: 12,
-    marginBottom: 16,
-    padding: 16,
+    padding: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: '#444'
   },
-  activeCategoryCard: {
-    backgroundColor: '#FFD700',
-    borderColor: '#FFD700',
-  },
-  categoryContent: {
-    alignItems: 'center',
-  },
-  activeCategoryContent: {
-    // Active state styling
-  },
-  categoryIcon: {
-    fontSize: 40,
-    marginBottom: 10,
-  },
-  categoryTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  activeCategoryTitle: {
-    color: '#000',
-    fontWeight: '900',
-  },
-  categoryDescription: {
-    fontSize: 14,
-    color: '#aaa',
-    textAlign: 'center',
-  },
-  activeCategoryDescription: {
-    color: '#333',
-    fontWeight: '600',
+
+  // --- Main Content & List Styles ---
+  content: { 
+    flexGrow: 1,
+    paddingHorizontal: 24, 
+    paddingTop: 20,
+    paddingBottom: 20,
   },
   commissionsList: {
-    flex: 1,
+    // List container
   },
-  commissionsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 12,
-  },
-  commissionItem: {
-    backgroundColor: 'rgba(30,30,30,0.85)',
+  
+  // Commission Item Card Styles
+  commissionItemCard: {
+    flexDirection: 'row',
+    backgroundColor: '#1C1C1C', 
     borderRadius: 12,
-    padding: 16,
+    padding: 12,
+    marginBottom: 10,
+    alignItems: 'flex-start',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  thumbnailPlaceholder: {
+    width: 90,
+    height: 90, 
+    backgroundColor: '#333',
+    borderRadius: 8,
+    marginRight: 12,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  commissionItemText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  detailsContainer: {
+    flex: 1,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 4,
   },
-  commissionItemSubtext: {
+  dateText: {
+    fontSize: 12,
     color: '#aaa',
-    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 2,
   },
+  statusTag: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#fff',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    overflow: 'hidden',
+    textTransform: 'uppercase',
+  },
+  titleText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 2,
+  },
+  descriptionText: {
+    fontSize: 12,
+    color: '#aaa',
+  },
+  
+  // --- Footer Styles ---
   footer: { 
     flexDirection: 'row', 
     justifyContent: 'space-around', 
@@ -487,7 +478,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   footerText: { 
-    color: '#fff', 
+    color: '#aaa', 
     fontSize: 12, 
     marginTop: 2, 
     textAlign: 'center' 
@@ -508,10 +499,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
+    shadowColor: '#FFD700', 
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 8,
+    elevation: 5, 
+    backgroundColor: '#FFD700', 
   },
 });
 
