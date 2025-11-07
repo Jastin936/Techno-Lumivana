@@ -153,6 +153,65 @@ const RequestCommissionScreen = ({ navigation }) => {
     return dateString;
   };
 
+  const handleConfirm = () => {
+    // Validate required fields
+    if (!commissionName.trim()) {
+      Alert.alert('Missing Information', 'Please enter a commission name.');
+      return;
+    }
+
+    if (!description.trim()) {
+      Alert.alert('Missing Information', 'Please enter a description.');
+      return;
+    }
+
+    if (!dateRequested.trim()) {
+      Alert.alert('Missing Information', 'Please select a date.');
+      return;
+    }
+
+    if (!contactInfo.trim()) {
+      Alert.alert('Missing Information', 'Please enter your contact information.');
+      return;
+    }
+
+    // Show success alert
+    Alert.alert(
+      'Commission Request Sent!',
+      'Your commission request has been submitted successfully. You will be notified when an artist accepts your request.',
+      [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Navigate to HomeScreen with Requests tab active
+            navigation.navigate('Home', { activeTab: 'Requests' } );
+          }
+        }
+      ]
+    );
+  };
+
+  const handleDecline = () => {
+    Alert.alert(
+      'Cancel Commission Request',
+      'Are you sure you want to cancel this commission request? All entered information will be lost.',
+      [
+        {
+          text: 'No, Keep Editing',
+          style: 'cancel',
+        },
+        {
+          text: 'Yes, Cancel',
+          style: 'destructive',
+          onPress: () => {
+            // Navigate back to previous screen
+            navigation.goBack();
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <LinearGradient
       colors={['#CFAD01', '#30204D', '#0B005F']}
@@ -301,17 +360,14 @@ const RequestCommissionScreen = ({ navigation }) => {
               <View style={styles.buttonRow}>
                 <TouchableOpacity
                   style={[styles.buttonInput, styles.primaryButton]}
-                  onPress={() => {
-                    // Handle accept action
-                    console.log('Commission accepted');
-                  }}
+                  onPress={handleConfirm}
                 >
                   <Text style={styles.primaryButtonText}>Confirm</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity 
                   style={[styles.buttonInput, styles.secondaryButton]}
-                  onPress={() => navigation.goBack()}
+                  onPress={handleDecline}
                 >
                   <Text style={styles.secondaryButtonText}>Decline</Text>
                 </TouchableOpacity>

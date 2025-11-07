@@ -9,11 +9,14 @@ import {
   Image,
   Dimensions,
   Alert,
+  Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const rotateValue = new Animated.Value(0);
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,6 +29,45 @@ const ProfileScreen = ({ navigation }) => {
     name: '',
     profileImage: null
   });
+
+  // Continuous rotation loop (30s rotate, 30s rest)
+  useEffect(() => {
+    const startRotation = () => {
+      // Reset rotation value
+      rotateValue.setValue(0);
+      
+      // Rotate for 30 seconds
+      Animated.timing(rotateValue, {
+        toValue: 10,
+        duration: 30000,
+        useNativeDriver: true,
+      }).start(() => {
+        // After rotation completes, wait 30 seconds then restart
+        setTimeout(() => {
+          startRotation();
+        }, 30000);
+      });
+    };
+
+    // Start the loop
+    startRotation();
+    
+    // Cleanup function
+    return () => {
+      rotateValue.stopAnimation();
+    };
+  }, []);
+
+  // Interpolate rotation value
+  const rotateInterpolate = rotateValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  // Animated style for logo
+  const animatedLogoStyle = {
+    transform: [{ rotate: rotateInterpolate }],
+  };
 
   // Load saved data when component mounts
   useEffect(() => {
@@ -104,9 +146,9 @@ const ProfileScreen = ({ navigation }) => {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Image
+            <Animated.Image
               source={require('../../assets/lumivana.png')}
-              style={styles.logo}
+              style={[styles.logo, animatedLogoStyle]}
               resizeMode="contain"
             />
             <Text style={[styles.logoText, { fontFamily: 'Milonga' }]}>

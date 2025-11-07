@@ -10,11 +10,14 @@ import {
   ScrollView,
   Dimensions,
   TextInput,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts } from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const rotateValue = new Animated.Value(0);
 
 const { width } = Dimensions.get('window');
 
@@ -30,6 +33,45 @@ const CommissionsScreen = ({ navigation }) => {
     name: 'Lumivana Vivistera',
     profileImage: null
   });
+
+  // Continuous rotation loop (30s rotate, 30s rest)
+  useEffect(() => {
+    const startRotation = () => {
+      // Reset rotation value
+      rotateValue.setValue(0);
+      
+      // Rotate for 30 seconds
+      Animated.timing(rotateValue, {
+        toValue: 10,
+        duration: 30000,
+        useNativeDriver: true,
+      }).start(() => {
+        // After rotation completes, wait 30 seconds then restart
+        setTimeout(() => {
+          startRotation();
+        }, 30000);
+      });
+    };
+
+    // Start the loop
+    startRotation();
+    
+    // Cleanup function
+    return () => {
+      rotateValue.stopAnimation();
+    };
+  }, []);
+
+  // Interpolate rotation value
+  const rotateInterpolate = rotateValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  // Animated style for logo
+  const animatedLogoStyle = {
+    transform: [{ rotate: rotateInterpolate }],
+  };
 
   const commissionCategories = [
     {
@@ -102,8 +144,7 @@ const CommissionsScreen = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={['#CFAD01', '#30204D', '#0B005F']}
-      locations={[0, 0.58, 0.84]}
+      colors={["#0E0E0E", "#1A1A1A"]}
       style={styles.container}
     >
       <SafeAreaView style={{ flex: 1 }}>
@@ -113,9 +154,9 @@ const CommissionsScreen = ({ navigation }) => {
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
-              <Image
+              <Animated.Image
                 source={require('../../assets/lumivana.png')}
-                style={styles.logo}
+                style={[styles.logo, animatedLogoStyle]}
                 resizeMode="contain"
               />
               <Text style={[styles.logoText, { fontFamily: 'Milonga' }]}>Lumivana</Text>
@@ -144,11 +185,11 @@ const CommissionsScreen = ({ navigation }) => {
             {/* Search Bar with Icons */}
             <View style={styles.searchRow}>
               <View style={styles.searchContainer}>
-                <Ionicons name="search-outline" size={20} color="#999" style={styles.searchIcon} />
+                <Ionicons name="search-outline" size={20} color="#FFD700" style={styles.searchIcon} />
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Search"
-                  placeholderTextColor="#999"
+                  placeholder="Search users..."
+                  placeholderTextColor="#aaa"
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                 />
@@ -157,10 +198,10 @@ const CommissionsScreen = ({ navigation }) => {
               {/* Right Icons */}
               <View style={styles.rightIcons}>
                 <TouchableOpacity style={styles.iconButton}>
-                  <Ionicons name="funnel-outline" size={24} color="#FFD700" />
+                  <Ionicons name="funnel-outline" size={22} color="#FFD700" />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.iconButton}>
-                  <Ionicons name="menu-outline" size={24} color="#FFD700" />
+                  <Ionicons name="menu-outline" size={22} color="#FFD700" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -180,12 +221,10 @@ const CommissionsScreen = ({ navigation }) => {
                 ]}
                 onPress={() => setActiveCategory(category.id)}
               >
-                <LinearGradient
-                  colors={activeCategory === category.id ? 
-                    ['#FFD700', '#CFAD01'] : 
-                    ['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
-                  style={styles.categoryGradient}
-                >
+                <View style={[
+                  styles.categoryContent,
+                  activeCategory === category.id && styles.activeCategoryContent
+                ]}>
                   <Text style={styles.categoryIcon}>{category.icon}</Text>
                   <Text style={[
                     styles.categoryTitle,
@@ -199,7 +238,7 @@ const CommissionsScreen = ({ navigation }) => {
                   ]}>
                     {category.description}
                   </Text>
-                </LinearGradient>
+                </View>
               </TouchableOpacity>
             ))}
           </View>
@@ -300,6 +339,8 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileImage: {
     width: 36,
@@ -317,10 +358,6 @@ const styles = StyleSheet.create({
     color: '#FFD700',
     textAlign: 'center',
     marginBottom: 16,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 5,
-    letterSpacing: 1,
   },
   searchRow: {
     flexDirection: 'row',
@@ -331,30 +368,31 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 25,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    marginRight: 12,
+    backgroundColor: "#1C1C1C",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 38,
+    marginRight: 10,
   },
   searchIcon: {
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
-    color: '#333',
+    fontSize: 14,
+    color: '#fff',
     padding: 0,
+    marginLeft: 8,
   },
   rightIcons: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   iconButton: {
-    padding: 8,
-    marginLeft: 8,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 8,
+    marginLeft: 10,
+    backgroundColor: "#1C1C1C",
+    borderRadius: 10,
+    padding: 10,
   },
   content: { 
     flex: 1,
@@ -366,26 +404,22 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   categoryCard: {
-    borderRadius: 15,
+    backgroundColor: 'rgba(30,30,30,0.85)',
+    borderRadius: 12,
     marginBottom: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   activeCategoryCard: {
-    shadowColor: '#FFD700',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 12,
+    backgroundColor: '#FFD700',
+    borderColor: '#FFD700',
   },
-  categoryGradient: {
-    padding: 20,
-    borderRadius: 15,
+  categoryContent: {
     alignItems: 'center',
+  },
+  activeCategoryContent: {
+    // Active state styling
   },
   categoryIcon: {
     fontSize: 40,
@@ -397,7 +431,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     textAlign: 'center',
     marginBottom: 8,
-    letterSpacing: 0.5,
   },
   activeCategoryTitle: {
     color: '#000',
@@ -405,7 +438,7 @@ const styles = StyleSheet.create({
   },
   categoryDescription: {
     fontSize: 14,
-    color: '#ccc',
+    color: '#aaa',
     textAlign: 'center',
   },
   activeCategoryDescription: {
@@ -416,55 +449,53 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   commissionsTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 16,
-    textAlign: 'center',
+    marginBottom: 12,
   },
   commissionItem: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: 20,
+    backgroundColor: 'rgba(30,30,30,0.85)',
     borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
   },
   commissionItemText: {
     color: '#fff',
     fontSize: 16,
-    marginBottom: 8,
+    fontWeight: 'bold',
+    marginBottom: 4,
   },
   commissionItemSubtext: {
-    color: '#ccc',
+    color: '#aaa',
     fontSize: 14,
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+  footer: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-around', 
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingBottom: 40,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.2)',
+    paddingVertical: 10, 
+    paddingBottom: 40, 
+    borderTopLeftRadius: 20, 
+    borderTopRightRadius: 20, 
+    backgroundColor: 'rgba(0,0,0,0.2)' 
   },
   footerItem: { 
     alignItems: 'center',
     flex: 1,
   },
-  activeFooterItem: {
-    transform: [{ scale: 1.1 }],
-  },
   footerText: { 
     color: '#fff', 
     fontSize: 12, 
-    marginTop: 2,
-    textAlign: 'center',
+    marginTop: 2, 
+    textAlign: 'center' 
   },
-  activeFooterText: {
-    color: '#FFD700',
-    fontWeight: 'bold',
+  activeFooterText: { 
+    color: '#FFD700', 
+    fontWeight: 'bold' 
   },
-  // Plus Square Button
   plusSquareButton: {
     alignItems: 'center',
     marginHorizontal: 10,
