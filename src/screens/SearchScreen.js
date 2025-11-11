@@ -25,18 +25,17 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // --- Icon Mapping for Filter Categories ---
 const FILTER_CATEGORY_MAP = [
-  { name: 'Creative', icon: 'color-palette-outline' },
-  { name: 'Writing', icon: 'document-text-outline' },
-  { name: 'Customize', icon: 'brush-outline' },
-  { name: 'Food', icon: 'fast-food-outline' },
-  { name: 'Tools', icon: 'hammer-outline' },
-  { name: 'Accessories', icon: 'bag-outline' },
-  { name: 'Gears', icon: 'build-outline' },
-  { name: 'School Supplies', icon: 'book-outline' },
+  { name: 'Creative' },
+  { name: 'Writing' },
+  { name: 'Customize' },
+  { name: 'Food' },
+  { name: 'Tools' },
+  { name: 'Accessories' },
+  { name: 'Gears' },
+  { name: 'School Supplies' },
 ];
 
 // --- Component for the Filter Modal ---
-
 const FilterModal = ({ isVisible, onClose, selectedCategory, onCategorySelect }) => {
   return (
     <Modal
@@ -65,7 +64,6 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, onCategorySelect })
                   onClose();
                 }}
               >
-                {/* ICON ADDED HERE */}
                 <View style={modalStyles.categoryTextContainer}>
                   <Ionicons 
                     name={item.icon} 
@@ -75,7 +73,6 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, onCategorySelect })
                   />
                   <Text style={modalStyles.categoryText}>{item.name}</Text>
                 </View>
-                {/* END ICON ADDED */}
 
                 <View style={modalStyles.checkbox(selectedCategory === item.name)}>
                   {selectedCategory === item.name && (
@@ -99,42 +96,128 @@ const COMMISSION_QUICK_LINKS = [
     title: 'Poster/Banner Design', 
     description: 'Eye-catching posters for school events, org activities, or academic presentations.', 
     icon: 'image-outline',
-    searchTag: 'poster design' 
+    searchTag: 'poster design',
+    category: 'Creative'
   },
   { 
     id: 2, 
     title: 'Caricatures', 
     description: 'Fun, exaggerated portraits for birthdays, events, or gifts.', 
     icon: 'happy-outline',
-    searchTag: 'caricature portrait' 
+    searchTag: 'caricature portrait',
+    category: 'Creative'
   },
   { 
     id: 3, 
     title: 'Invitation designs', 
     description: 'Digital invites for birthdays, parties, or school events.', 
     icon: 'mail-outline',
-    searchTag: 'digital invitation'
+    searchTag: 'digital invitation',
+    category: 'Creative'
   },
   { 
     id: 4, 
     title: 'Cover art', 
     description: 'For Wattpad stories, school publications, or music projects.', 
     icon: 'book-outline',
-    searchTag: 'book cover art'
+    searchTag: 'book cover art',
+    category: 'Writing'
   },
   { 
     id: 5, 
     title: 'Custom Illustrations', 
     description: 'Original artwork for personal or commercial use.', 
     icon: 'color-palette-outline',
-    searchTag: 'custom illustration'
+    searchTag: 'custom illustration',
+    category: 'Creative'
   },
   { 
     id: 6, 
     title: 'Logo/Branding', 
     description: 'Professional logos and branding packages.', 
     icon: 'diamond-outline',
-    searchTag: 'brand logo'
+    searchTag: 'brand logo',
+    category: 'Customize'
+  },
+  { 
+    id: 7, 
+    title: 'Food Photography', 
+    description: 'Professional food shots for menus and social media.', 
+    icon: 'camera-outline',
+    searchTag: 'food photography',
+    category: 'Food'
+  },
+  { 
+    id: 8, 
+    title: 'Recipe Writing', 
+    description: 'Detailed recipe creation and food blog content.', 
+    icon: 'restaurant-outline',
+    searchTag: 'recipe writing',
+    category: 'Writing'
+  },
+  { 
+    id: 9, 
+    title: 'Custom Stickers', 
+    description: 'Personalized sticker designs for planners and laptops.', 
+    icon: 'shapes-outline',
+    searchTag: 'custom stickers',
+    category: 'Accessories'
+  },
+  { 
+    id: 10, 
+    title: 'T-Shirt Design', 
+    description: 'Unique designs for clothing and merchandise.', 
+    icon: 'shirt-outline',
+    searchTag: 't-shirt design',
+    category: 'Accessories'
+  },
+  { 
+    id: 11, 
+    title: 'Notebook Covers', 
+    description: 'Custom designs for school notebooks and journals.', 
+    icon: 'journal-outline',
+    searchTag: 'notebook design',
+    category: 'School Supplies'
+  },
+  { 
+    id: 12, 
+    title: 'Repair Services', 
+    description: 'Fix and maintenance for gadgets and electronics.', 
+    icon: 'construct-outline',
+    searchTag: 'repair services',
+    category: 'Tools'
+  },
+  { 
+    id: 13, 
+    title: 'Essay Writing', 
+    description: 'Academic essays and research papers for students.', 
+    icon: 'newspaper-outline',
+    searchTag: 'essay writing',
+    category: 'Writing'
+  },
+  { 
+    id: 14, 
+    title: 'Story Writing', 
+    description: 'Creative fiction, short stories, and narratives.', 
+    icon: 'book-outline',
+    searchTag: 'story writing',
+    category: 'Writing'
+  },
+  { 
+    id: 15, 
+    title: 'Script Writing', 
+    description: 'Scripts for videos, plays, and presentations.', 
+    icon: 'film-outline',
+    searchTag: 'script writing',
+    category: 'Writing'
+  },
+  { 
+    id: 16, 
+    title: 'Copywriting', 
+    description: 'Marketing copy, ads, and promotional content.', 
+    icon: 'megaphone-outline',
+    searchTag: 'copywriting',
+    category: 'Writing'
   },
 ];
 
@@ -160,38 +243,31 @@ const SearchScreen = ({ navigation }) => {
   // Continuous rotation loop (30s rotate, 30s rest)
   useEffect(() => {
     const startRotation = () => {
-      // Reset rotation value
       rotateValue.setValue(0);
       
-      // Rotate for 30 seconds
       Animated.timing(rotateValue, {
         toValue: 10,
         duration: 30000,
         useNativeDriver: true,
       }).start(() => {
-        // After rotation completes, wait 30 seconds then restart
         setTimeout(() => {
           startRotation();
         }, 30000);
       });
     };
 
-    // Start the loop
     startRotation();
     
-    // Cleanup function
     return () => {
       rotateValue.stopAnimation();
     };
   }, []);
 
-  // Interpolate rotation value
   const rotateInterpolate = rotateValue.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
 
-  // Animated style for logo
   const animatedLogoStyle = {
     transform: [{ rotate: rotateInterpolate }],
   };
@@ -208,7 +284,6 @@ const SearchScreen = ({ navigation }) => {
         }));
       }
 
-      // Also load profile image from AsyncStorage
       const savedProfileImage = await AsyncStorage.getItem('profileImage');
       if (savedProfileImage) {
         setUserData(prevData => ({
@@ -221,7 +296,6 @@ const SearchScreen = ({ navigation }) => {
     }
   };
 
-  // Refresh data when screen comes into focus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadUserData();
@@ -230,112 +304,39 @@ const SearchScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation]);
 
-  // Sample data and filtering logic remains the same
   const SEARCH_CATEGORIES = ['All', 'Creative', 'Writing', 'Customize', 'Food', 'Tools', 'Accessories', 'Gears', 'School Supplies'];
   
-  const SEARCH_RESULTS = [
-    { id: 1, type: 'user', name: 'KendrickPage', role: 'Artist', followers: 124 },
-    { id: 2, type: 'user', name: 'Corbert', role: 'Writer', followers: 95 },
-    { id: 3, type: 'post', title: 'Sunset Illustration', author: 'Grace', likes: 42 },
-    { id: 4, type: 'commission', title: 'Logo Design', budget: '$200', author: 'Marie' },
-    { id: 5, type: 'user', name: 'Enjoe', role: 'Programmer', followers: 67 },
-    { id: 6, type: 'tag', name: '#digitalart', posts: 1243 },
-    { id: 7, type: 'post', title: 'Character Concept', author: 'KendrickPage', likes: 89 },
-    { id: 8, type: 'commission', title: 'Website Development', budget: '$500', author: 'Enjoe' },
-  ];
+  // Filter commission links based on search query and category
+  const getFilteredCommissions = () => {
+    let filtered = COMMISSION_QUICK_LINKS;
 
-  const filteredResults = SEARCH_RESULTS.filter(item => {
-    if (activeTab === 'All') {
-      return item.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-             item.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    // Filter by category
+    if (activeTab !== 'All') {
+      filtered = filtered.filter(item => item.category === activeTab);
     }
-    
-    if (activeTab === 'Users') {
-      return item.type === 'user' && item.name.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // Filter by search query
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(item => 
+        item.title.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query) ||
+        item.searchTag.toLowerCase().includes(query)
+      );
     }
-    
-    if (activeTab === 'Posts') {
-      return item.type === 'post' && item.title.toLowerCase().includes(searchQuery.toLowerCase());
-    }
-    
-    if (activeTab === 'Commissions') {
-      return item.type === 'commission' && item.title.toLowerCase().includes(searchQuery.toLowerCase());
-    }
-    
-    if (activeTab === 'Tags') {
-      return item.type === 'tag' && item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    }
-    
-    return false;
-  });
+
+    return filtered;
+  };
+
+  const filteredCommissions = getFilteredCommissions();
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
     setActiveTab(category);
   };
-
-  const renderSearchItem = ({ item }) => {
-    if (item.type === 'user') {
-      return (
-        <TouchableOpacity style={styles.resultItem}>
-          <View style={styles.avatar} />
-          <View style={styles.resultContent}>
-            <Text style={styles.resultName}>{item.name}</Text>
-            <Text style={styles.resultDetails}>{item.role} · {item.followers} followers</Text>
-          </View>
-          <TouchableOpacity style={styles.followBtn}>
-            <Text style={styles.followText}>Follow</Text>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      );
-    }
-
-    if (item.type === 'post') {
-      return (
-        <TouchableOpacity style={styles.resultItem}>
-          <View style={styles.postThumbnail} />
-          <View style={styles.resultContent}>
-            <Text style={styles.resultName}>{item.title}</Text>
-            <Text style={styles.resultDetails}>by {item.author} · {item.likes} likes</Text>
-          </View>
-        </TouchableOpacity>
-      );
-    }
-
-    if (item.type === 'commission') {
-      return (
-        <TouchableOpacity style={styles.resultItem}>
-          <View style={styles.commissionIcon}>
-            <Ionicons name="briefcase-outline" size={24} color="#FFD700" />
-          </View>
-          <View style={styles.resultContent}>
-            <Text style={styles.resultName}>{item.title}</Text>
-            <Text style={styles.resultDetails}>by {item.author} · Budget: {item.budget}</Text>
-          </View>
-        </TouchableOpacity>
-      );
-    }
-
-    if (item.type === 'tag') {
-      return (
-        <TouchableOpacity style={styles.resultItem}>
-          <View style={styles.tagIcon}>
-            <Ionicons name="pricetag-outline" size={24} color="#FFD700" />
-          </View>
-          <View style={styles.resultContent}>
-            <Text style={styles.resultName}>{item.name}</Text>
-            <Text style={styles.resultDetails}>{item.posts} posts</Text>
-          </View>
-        </TouchableOpacity>
-      );
-    }
-
-    return null;
-  };
   
   const handleQuickLinkPress = (searchTag) => {
     setSearchQuery(searchTag);
-    setActiveTab('Commissions'); 
   };
   
   const renderQuickLink = ({ item }) => (
@@ -360,7 +361,7 @@ const SearchScreen = ({ navigation }) => {
       <SafeAreaView style={{ flex: 1 }}>
         <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-        {/* HEADER - Updated Profile Icon */}
+        {/* HEADER */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <Animated.Image
@@ -371,7 +372,6 @@ const SearchScreen = ({ navigation }) => {
             <Text style={[styles.logoText, { fontFamily: 'Milonga' }]}>Lumivana</Text>
           </View>
          
-          {/* Updated Profile Icon - Same as HomeScreen */}
           <TouchableOpacity
             style={styles.profileIcon}
             onPress={() => navigation.navigate('Profile')}
@@ -387,7 +387,7 @@ const SearchScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* IMAGE PLACEHOLDER AFTER HEADER */}
+        {/* IMAGE PLACEHOLDER */}
         <View style={styles.imagePlaceholderContainer}>
           <View style={styles.imagePlaceholder}>
             <Ionicons name="image-outline" size={40} color="#999" />
@@ -395,9 +395,9 @@ const SearchScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* FIXED SEARCH AND FILTER SECTION (NOT SCROLLABLE) */}
+        {/* FIXED SEARCH AND FILTER SECTION */}
         <View style={styles.fixedSection}>
-          {/* FILTER TABS - SAME STYLE AS HOME SCREEN */}
+          {/* FILTER TABS */}
           <View style={filterTabStyles.tabContainer}>
             <ScrollView 
               horizontal 
@@ -421,7 +421,7 @@ const SearchScreen = ({ navigation }) => {
             <View style={searchBarStyles.searchBar}>
               <Ionicons name="search-outline" size={20} color="#FFD700" />
               <TextInput
-                placeholder="Search users..."
+                placeholder="Search commissions..."
                 placeholderTextColor="#aaa"
                 style={searchBarStyles.searchInput}
                 value={searchQuery}
@@ -440,35 +440,38 @@ const SearchScreen = ({ navigation }) => {
           contentContainerStyle={styles.scrollableContentContainer}
           showsVerticalScrollIndicator={false}
         >
-          {/* FEATURE: Commission Quick Links / Categories (Only visible when search bar is empty) */}
-          {searchQuery.length === 0 && (
-            <View style={styles.quickLinksSection}>
-              <Text style={styles.sectionTitle}>Browse Commission Types</Text>
+          {/* Commission Quick Links / Categories */}
+          <View style={styles.quickLinksSection}>
+            <Text style={styles.sectionTitle}>
+              {searchQuery ? `Results for "${searchQuery}"` : 'Browse Commission Types'}
+            </Text>
+            
+            {filteredCommissions.length > 0 ? (
               <FlatList
-                data={COMMISSION_QUICK_LINKS}
+                data={filteredCommissions}
                 renderItem={renderQuickLink}
                 keyExtractor={(item) => item.id.toString()}
                 numColumns={2}
                 scrollEnabled={false} 
                 columnWrapperStyle={styles.quickLinkColumnWrapper}
               />
-            </View>
-          )}
-
-          {/* Search Results (Only displayed when actively searching) */}
-          <View style={styles.resultsContainerInner}>
-            {searchQuery.length > 0 && (
-              <>
-                <Text style={styles.sectionTitle}>Search Results for "{searchQuery}"</Text>
-                <FlatList
-                  data={filteredResults}
-                  renderItem={renderSearchItem}
-                  keyExtractor={(item) => item.id.toString()}
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={styles.resultsListContent}
-                  scrollEnabled={false} 
-                />
-              </>
+            ) : (
+              <View style={styles.noResultsContainer}>
+                <Ionicons name="search-outline" size={64} color="#555" />
+                <Text style={styles.noResultsTitle}>No results found</Text>
+                <Text style={styles.noResultsText}>
+                  Try searching with different keywords or browse all categories
+                </Text>
+                <TouchableOpacity 
+                  style={styles.clearButton}
+                  onPress={() => {
+                    setSearchQuery('');
+                    setActiveTab('All');
+                  }}
+                >
+                  <Text style={styles.clearButtonText}>Clear Search</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </View>
         </ScrollView>
@@ -496,7 +499,6 @@ const SearchScreen = ({ navigation }) => {
             <Text style={[styles.footerText, styles.activeFooterText]}>Search</Text>
           </TouchableOpacity>
 
-          {/* Plus Square Icon in Center */}
           <TouchableOpacity 
             style={styles.plusSquareButton}
             onPress={() => navigation.navigate('Request')}
@@ -562,7 +564,6 @@ const styles = StyleSheet.create({
     borderColor: '#FFD700',
   },
   
-  // Image Placeholder Styles
   imagePlaceholderContainer: {
     paddingHorizontal: 24,
     paddingVertical: 16,
@@ -584,12 +585,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   
-  // FIXED SECTION (NOT SCROLLABLE)
-  fixedSection: {
-    // No padding here - individual components handle their own padding
-  },
+  fixedSection: {},
   
-  // SCROLLABLE CONTENT
   scrollableContent: {
     flex: 1,
   },
@@ -598,7 +595,6 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
 
-  // Quick Links / Categories Styles
   quickLinksSection: {
     marginBottom: 20,
   },
@@ -621,9 +617,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  quickLinkTextContent: {
-    //
-  },
+  quickLinkTextContent: {},
   quickLinkTitle: {
     color: '#fff',
     fontSize: 14,
@@ -635,81 +629,39 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   
-  // Results container
-  resultsContainerInner: {
-    marginBottom: 10,
-  },
-  resultsListContent: {
-    paddingBottom: 10,
-  },
-  
-  // Result Items (Styles remain the same)
-  resultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(30,30,30,0.85)',
+  // No Results Styles
+  noResultsContainer: {
+    backgroundColor: 'rgba(30,30,30,0.5)',
     borderRadius: 12,
-    padding: 16,
+    padding: 32,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  noResultsTitle: {
+    color: '#ddd',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 16,
     marginBottom: 8,
   },
-  avatar: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#555',
-    borderRadius: 24,
-    marginRight: 12,
-  },
-  postThumbnail: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#555',
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  commissionIcon: {
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#555',
-    borderRadius: 24,
-    marginRight: 12,
-  },
-  tagIcon: {
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#555',
-    borderRadius: 24,
-    marginRight: 12,
-  },
-  resultContent: {
-    flex: 1,
-  },
-  resultName: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  resultDetails: {
+  noResultsText: {
     color: '#aaa',
     fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
   },
-  followBtn: {
+  clearButton: {
     backgroundColor: '#f6c33b',
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
   },
-  followText: {
+  clearButtonText: {
     color: '#000',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
   },
   
-  // Suggestions Styles
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -717,7 +669,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   
-  // Footer (Styles remain the same)
   footer: { 
     flexDirection: 'row', 
     justifyContent: 'space-around', 
@@ -761,7 +712,7 @@ const styles = StyleSheet.create({
   },
 });
 
-// --- Filter Tab Styles - SAME AS HOME SCREEN ---
+// --- Filter Tab Styles ---
 const filterTabStyles = StyleSheet.create({
   tabContainer: {
     flexDirection: "row",
