@@ -22,6 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const rotateValue = new Animated.Value(0);
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+<<<<<<< HEAD
 // --- Mock Data for Search Results ---
 const mockCommissionsData = [
   {
@@ -204,6 +205,24 @@ const CommissionItem = ({ date, title, description, status, category, onPress })
 
 // --- Filter Modal Component - Same as CommissionsScreen ---
 const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory }) => {
+=======
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+// --- Icon Mapping for Filter Categories ---
+const FILTER_CATEGORY_MAP = [
+  { name: 'Creative' },
+  { name: 'Writing' },
+  { name: 'Customize' },
+  { name: 'Food' },
+  { name: 'Tools' },
+  { name: 'Accessories' },
+  { name: 'Gears' },
+  { name: 'School Supplies' },
+];
+
+// --- Component for the Filter Modal ---
+const FilterModal = ({ isVisible, onClose, selectedCategory, onCategorySelect }) => {
+>>>>>>> 98d2e2dfb8e6ef5e765abf04ca8e40787e9bae8a
   return (
     <Modal
       animationType="slide"
@@ -256,6 +275,141 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory
 };
 
 // --- SearchScreen Component ---
+<<<<<<< HEAD
+=======
+
+const COMMISSION_QUICK_LINKS = [
+  { 
+    id: 1, 
+    title: 'Poster/Banner Design', 
+    description: 'Eye-catching posters for school events, org activities, or academic presentations.', 
+    icon: 'image-outline',
+    searchTag: 'poster design',
+    category: 'Creative'
+  },
+  { 
+    id: 2, 
+    title: 'Caricatures', 
+    description: 'Fun, exaggerated portraits for birthdays, events, or gifts.', 
+    icon: 'happy-outline',
+    searchTag: 'caricature portrait',
+    category: 'Creative'
+  },
+  { 
+    id: 3, 
+    title: 'Invitation designs', 
+    description: 'Digital invites for birthdays, parties, or school events.', 
+    icon: 'mail-outline',
+    searchTag: 'digital invitation',
+    category: 'Creative'
+  },
+  { 
+    id: 4, 
+    title: 'Cover art', 
+    description: 'For Wattpad stories, school publications, or music projects.', 
+    icon: 'book-outline',
+    searchTag: 'book cover art',
+    category: 'Writing'
+  },
+  { 
+    id: 5, 
+    title: 'Custom Illustrations', 
+    description: 'Original artwork for personal or commercial use.', 
+    icon: 'color-palette-outline',
+    searchTag: 'custom illustration',
+    category: 'Creative'
+  },
+  { 
+    id: 6, 
+    title: 'Logo/Branding', 
+    description: 'Professional logos and branding packages.', 
+    icon: 'diamond-outline',
+    searchTag: 'brand logo',
+    category: 'Customize'
+  },
+  { 
+    id: 7, 
+    title: 'Food Photography', 
+    description: 'Professional food shots for menus and social media.', 
+    icon: 'camera-outline',
+    searchTag: 'food photography',
+    category: 'Food'
+  },
+  { 
+    id: 8, 
+    title: 'Recipe Writing', 
+    description: 'Detailed recipe creation and food blog content.', 
+    icon: 'restaurant-outline',
+    searchTag: 'recipe writing',
+    category: 'Writing'
+  },
+  { 
+    id: 9, 
+    title: 'Custom Stickers', 
+    description: 'Personalized sticker designs for planners and laptops.', 
+    icon: 'shapes-outline',
+    searchTag: 'custom stickers',
+    category: 'Accessories'
+  },
+  { 
+    id: 10, 
+    title: 'T-Shirt Design', 
+    description: 'Unique designs for clothing and merchandise.', 
+    icon: 'shirt-outline',
+    searchTag: 't-shirt design',
+    category: 'Accessories'
+  },
+  { 
+    id: 11, 
+    title: 'Notebook Covers', 
+    description: 'Custom designs for school notebooks and journals.', 
+    icon: 'journal-outline',
+    searchTag: 'notebook design',
+    category: 'School Supplies'
+  },
+  { 
+    id: 12, 
+    title: 'Repair Services', 
+    description: 'Fix and maintenance for gadgets and electronics.', 
+    icon: 'construct-outline',
+    searchTag: 'repair services',
+    category: 'Tools'
+  },
+  { 
+    id: 13, 
+    title: 'Essay Writing', 
+    description: 'Academic essays and research papers for students.', 
+    icon: 'newspaper-outline',
+    searchTag: 'essay writing',
+    category: 'Writing'
+  },
+  { 
+    id: 14, 
+    title: 'Story Writing', 
+    description: 'Creative fiction, short stories, and narratives.', 
+    icon: 'book-outline',
+    searchTag: 'story writing',
+    category: 'Writing'
+  },
+  { 
+    id: 15, 
+    title: 'Script Writing', 
+    description: 'Scripts for videos, plays, and presentations.', 
+    icon: 'film-outline',
+    searchTag: 'script writing',
+    category: 'Writing'
+  },
+  { 
+    id: 16, 
+    title: 'Copywriting', 
+    description: 'Marketing copy, ads, and promotional content.', 
+    icon: 'megaphone-outline',
+    searchTag: 'copywriting',
+    category: 'Writing'
+  },
+];
+
+>>>>>>> 98d2e2dfb8e6ef5e765abf04ca8e40787e9bae8a
 const SearchScreen = ({ navigation }) => {
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
@@ -278,6 +432,10 @@ const SearchScreen = ({ navigation }) => {
   useEffect(() => {
     const startRotation = () => {
       rotateValue.setValue(0);
+<<<<<<< HEAD
+=======
+      
+>>>>>>> 98d2e2dfb8e6ef5e765abf04ca8e40787e9bae8a
       Animated.timing(rotateValue, {
         toValue: 10,
         duration: 30000,
@@ -296,13 +454,11 @@ const SearchScreen = ({ navigation }) => {
     };
   }, []);
 
-  // Interpolate rotation value
   const rotateInterpolate = rotateValue.interpolate({
     inputRange: [0, 10],
     outputRange: ['0deg', '3600deg'],
   });
 
-  // Animated style for logo
   const animatedLogoStyle = {
     transform: [{ rotate: rotateInterpolate }],
   };
@@ -331,7 +487,6 @@ const SearchScreen = ({ navigation }) => {
     }
   };
 
-  // Refresh data when screen comes into focus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadUserData();
@@ -340,6 +495,7 @@ const SearchScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation]);
 
+<<<<<<< HEAD
   // Filter commissions based on search and category - Same logic as CommissionsScreen
   const filteredCommissions = mockCommissionsData.filter((commission) => {
     const matchesSearch = 
@@ -351,6 +507,33 @@ const SearchScreen = ({ navigation }) => {
     
     return matchesSearch && matchesCategory;
   });
+=======
+  const SEARCH_CATEGORIES = ['All', 'Creative', 'Writing', 'Customize', 'Food', 'Tools', 'Accessories', 'Gears', 'School Supplies'];
+  
+  // Filter commission links based on search query and category
+  const getFilteredCommissions = () => {
+    let filtered = COMMISSION_QUICK_LINKS;
+
+    // Filter by category
+    if (activeTab !== 'All') {
+      filtered = filtered.filter(item => item.category === activeTab);
+    }
+
+    // Filter by search query
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(item => 
+        item.title.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query) ||
+        item.searchTag.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  };
+
+  const filteredCommissions = getFilteredCommissions();
+>>>>>>> 98d2e2dfb8e6ef5e765abf04ca8e40787e9bae8a
 
   // Filter quick links based on selected category
   const filteredQuickLinks = COMMISSION_QUICK_LINKS.filter((link) => {
@@ -373,6 +556,7 @@ const SearchScreen = ({ navigation }) => {
       requestData: productData
     });
   };
+<<<<<<< HEAD
 
   // Handle quick link press
   const handleQuickLinkPress = (item) => {
@@ -391,6 +575,13 @@ const SearchScreen = ({ navigation }) => {
     });
   };
 
+=======
+  
+  const handleQuickLinkPress = (searchTag) => {
+    setSearchQuery(searchTag);
+  };
+  
+>>>>>>> 98d2e2dfb8e6ef5e765abf04ca8e40787e9bae8a
   const renderQuickLink = ({ item }) => (
     <TouchableOpacity 
       style={styles.quickLinkItem} 
@@ -425,12 +616,78 @@ const SearchScreen = ({ navigation }) => {
 
         {/* HEADER */}
         <View style={styles.header}>
+<<<<<<< HEAD
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
               <Animated.Image
                 source={require('../../assets/lumivana.png')}
                 style={[styles.logo, animatedLogoStyle]}
                 resizeMode="contain"
+=======
+          <View style={styles.headerLeft}>
+            <Animated.Image
+              source={require('../../assets/lumivana.png')}
+              style={[styles.logo, animatedLogoStyle]}
+              resizeMode="contain"
+            />
+            <Text style={[styles.logoText, { fontFamily: 'Milonga' }]}>Lumivana</Text>
+          </View>
+         
+          <TouchableOpacity
+            style={styles.profileIcon}
+            onPress={() => navigation.navigate('Profile')}
+          >
+            {userData.profileImage ? (
+              <Image 
+                source={{ uri: userData.profileImage }} 
+                style={styles.profileImage} 
+              />
+            ) : (
+              <Ionicons name="person-circle-outline" size={36} color="#FFD700" />
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* IMAGE PLACEHOLDER */}
+        <View style={styles.imagePlaceholderContainer}>
+          <View style={styles.imagePlaceholder}>
+            <Ionicons name="image-outline" size={40} color="#999" />
+            <Text style={styles.imagePlaceholderText}>Featured Content</Text>
+          </View>
+        </View>
+
+        {/* FIXED SEARCH AND FILTER SECTION */}
+        <View style={styles.fixedSection}>
+          {/* FILTER TABS */}
+          <View style={filterTabStyles.tabContainer}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={filterTabStyles.tabRow}
+            >
+              {SEARCH_CATEGORIES.map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  onPress={() => setActiveTab(category)}
+                  style={[filterTabStyles.tabButton, activeTab === category && filterTabStyles.activeTabButton]}
+                >
+                  <Text style={[filterTabStyles.tabText, activeTab === category && filterTabStyles.activeTabText]}>{category}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {/* Search Bar */}
+          <View style={searchBarStyles.searchBarContainer}>
+            <View style={searchBarStyles.searchBar}>
+              <Ionicons name="search-outline" size={20} color="#FFD700" />
+              <TextInput
+                placeholder="Search commissions..."
+                placeholderTextColor="#aaa"
+                style={searchBarStyles.searchInput}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+>>>>>>> 98d2e2dfb8e6ef5e765abf04ca8e40787e9bae8a
               />
               <Text style={[styles.logoText, { fontFamily: 'Milonga' }]}>Lumivana</Text>
             </View>
@@ -502,18 +759,31 @@ const SearchScreen = ({ navigation }) => {
           contentContainerStyle={styles.scrollableContentContainer}
           showsVerticalScrollIndicator={false}
         >
+<<<<<<< HEAD
           {/* Commission Quick Links (Only visible when search bar is empty) */}
           {searchQuery.length === 0 && (
             <View style={styles.quickLinksSection}>
               <Text style={styles.sectionTitle}>Browse Commission Types</Text>
               <FlatList
                 data={filteredQuickLinks}
+=======
+          {/* Commission Quick Links / Categories */}
+          <View style={styles.quickLinksSection}>
+            <Text style={styles.sectionTitle}>
+              {searchQuery ? `Results for "${searchQuery}"` : 'Browse Commission Types'}
+            </Text>
+            
+            {filteredCommissions.length > 0 ? (
+              <FlatList
+                data={filteredCommissions}
+>>>>>>> 98d2e2dfb8e6ef5e765abf04ca8e40787e9bae8a
                 renderItem={renderQuickLink}
                 keyExtractor={(item) => item.id.toString()}
                 numColumns={2}
                 scrollEnabled={false}
                 columnWrapperStyle={styles.quickLinkColumnWrapper}
               />
+<<<<<<< HEAD
             </View>
           )}
 
@@ -555,6 +825,27 @@ const SearchScreen = ({ navigation }) => {
               </View>
             </View>
           )}
+=======
+            ) : (
+              <View style={styles.noResultsContainer}>
+                <Ionicons name="search-outline" size={64} color="#555" />
+                <Text style={styles.noResultsTitle}>No results found</Text>
+                <Text style={styles.noResultsText}>
+                  Try searching with different keywords or browse all categories
+                </Text>
+                <TouchableOpacity 
+                  style={styles.clearButton}
+                  onPress={() => {
+                    setSearchQuery('');
+                    setActiveTab('All');
+                  }}
+                >
+                  <Text style={styles.clearButtonText}>Clear Search</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+>>>>>>> 98d2e2dfb8e6ef5e765abf04ca8e40787e9bae8a
         </ScrollView>
 
         {/* FOOTER */}
@@ -658,7 +949,10 @@ const styles = StyleSheet.create({
     borderColor: '#FFD700',
   },
   
+<<<<<<< HEAD
   // NEW: Image Placeholder Styles - Now positioned above search bar
+=======
+>>>>>>> 98d2e2dfb8e6ef5e765abf04ca8e40787e9bae8a
   imagePlaceholderContainer: {
     paddingHorizontal: 16,
     marginTop: 10,
@@ -681,6 +975,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 8,
   },
+<<<<<<< HEAD
   imagePlaceholderSubtext: {
     color: '#aaa',
     fontSize: 12,
@@ -743,6 +1038,11 @@ const styles = StyleSheet.create({
   },
 
   // SCROLLABLE CONTENT
+=======
+  
+  fixedSection: {},
+  
+>>>>>>> 98d2e2dfb8e6ef5e765abf04ca8e40787e9bae8a
   scrollableContent: {
     flex: 1,
   },
@@ -751,7 +1051,6 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
 
-  // Quick Links / Categories Styles
   quickLinksSection: {
     marginBottom: 20,
   },
@@ -774,9 +1073,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+<<<<<<< HEAD
   quickLinkTextContent: {
     // 
   },
+=======
+  quickLinkTextContent: {},
+>>>>>>> 98d2e2dfb8e6ef5e765abf04ca8e40787e9bae8a
   quickLinkTitle: {
     color: '#fff',
     fontSize: 14,
@@ -788,6 +1091,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 6,
   },
+<<<<<<< HEAD
   quickLinkCategory: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -895,14 +1199,54 @@ const styles = StyleSheet.create({
   },
 
   // Section Title
+=======
+  
+  // No Results Styles
+  noResultsContainer: {
+    backgroundColor: 'rgba(30,30,30,0.5)',
+    borderRadius: 12,
+    padding: 32,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  noResultsTitle: {
+    color: '#ddd',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  noResultsText: {
+    color: '#aaa',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  clearButton: {
+    backgroundColor: '#f6c33b',
+    borderRadius: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  clearButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  
+>>>>>>> 98d2e2dfb8e6ef5e765abf04ca8e40787e9bae8a
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 12,
   },
+<<<<<<< HEAD
 
   // Footer
+=======
+  
+>>>>>>> 98d2e2dfb8e6ef5e765abf04ca8e40787e9bae8a
   footer: { 
     flexDirection: 'row', 
     justifyContent: 'space-around', 
@@ -946,7 +1290,77 @@ const styles = StyleSheet.create({
   },
 });
 
+<<<<<<< HEAD
 // --- Modal Styles (same as CommissionsScreen) ---
+=======
+// --- Filter Tab Styles ---
+const filterTabStyles = StyleSheet.create({
+  tabContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    paddingHorizontal: 16,
+    backgroundColor: "#1A1A1A",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderColor: "#333",
+    marginTop: 10,
+  },
+  tabRow: {
+    flexDirection: "row",
+  },
+  tabButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginRight: 10,
+  },
+  tabText: { 
+    color: "#999", 
+    fontSize: 13 
+  },
+  activeTabButton: { 
+    borderBottomWidth: 2, 
+    borderColor: "#FFD700" 
+  },
+  activeTabText: { 
+    color: "#FFD700", 
+    fontWeight: "bold" 
+  },
+});
+
+// --- Search Bar Styles ---
+const searchBarStyles = StyleSheet.create({
+  searchBarContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 20,
+    paddingHorizontal: 24,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1C1C1C",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 38,
+  },
+  searchInput: { 
+    flex: 1, 
+    color: "#fff", 
+    marginLeft: 8, 
+    fontSize: 14 
+  },
+  filterButton: {
+    marginLeft: 10,
+    backgroundColor: "#1C1C1C",
+    borderRadius: 10,
+    padding: 10,
+  },
+});
+
+// --- Modal Specific Styles ---
+>>>>>>> 98d2e2dfb8e6ef5e765abf04ca8e40787e9bae8a
 const modalStyles = StyleSheet.create({
   centeredView: {
     flex: 1,
