@@ -1,8 +1,26 @@
 import React, { useState } from 'react';
-import {View,Text,TextInput,TouchableOpacity,StyleSheet,SafeAreaView,StatusBar,KeyboardAvoidingView,Platform,ScrollView,Alert,ActivityIndicator,Image,} from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  Image,
+  Modal,
+  Dimensions,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const SignUpScreen = ({ navigation }) => {
   const [fullName, setFullName] = useState('');
@@ -12,7 +30,9 @@ const SignUpScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [photo, setPhoto] = useState(null); 
+  const [corPhotos, setCorPhotos] = useState([]);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(null);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailInvalid = email && !emailRegex.test(email);
@@ -32,31 +52,67 @@ const SignUpScreen = ({ navigation }) => {
       Alert.alert('Error', 'Please enter a password');
       return false;
     }
-    if (!photo) { 
-      Alert.alert('Error', 'Please upload your COR photo');
+    if (corPhotos.length === 0) {
+      Alert.alert('Error', 'Please upload at least one COR photo');
       return false;
     }
     return true;
   };
 
-  
-  const pickImage = async () => {
+  // Pick COR photo from gallery
+  const pickCorPhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission required', 'We need access to your photos to upload your COR.');
+      Alert.alert('Permission required', 'Please grant access to your gallery.');
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [4, 4],
-      quality: 1,
+      aspect: [1, 1],
+      quality: 0.8,
     });
 
     if (!result.canceled) {
-      setPhoto(result.assets[0].uri);
+      setCorPhotos((prev) => [...prev, result.assets[0].uri]);
     }
+  };
+
+  // Delete COR photo
+  const deleteCorPhoto = (index) => {
+    Alert.alert(
+      'Delete COR Photo',
+      'Are you sure you want to remove this COR photo?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            setCorPhotos((prev) => prev.filter((_, i) => i !== index));
+            
+            // Close modal if the deleted image was currently selected
+            if (selectedImageIndex === index) {
+              setShowImageModal(false);
+              setSelectedImageIndex(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // View COR photo in full screen
+  const viewCorPhoto = (index) => {
+    setSelectedImageIndex(index);
+    setShowImageModal(true);
+  };
+
+  // Close image modal
+  const closeImageModal = () => {
+    setShowImageModal(false);
+    setSelectedImageIndex(null);
   };
 
   const handleSignUp = async () => {
@@ -187,20 +243,45 @@ const SignUpScreen = ({ navigation }) => {
                   <Text style={styles.errorText}>Passwords do not match</Text>
                 )}
 
-            
-                <Text style={styles.label}>Photo of COR:</Text>
-                <TouchableOpacity style={styles.imageUploadBox} onPress={pickImage} disabled={isLoading}>
-                  {photo ? (
-                    <Image source={{ uri: photo }} style={styles.imagePreview} />
-                  ) : (
-                    <View style={styles.placeholderBox}>
-                      <Ionicons name="image-outline" size={40} color="#aaa" />
-                      <Text style={styles.placeholderText}>Attach Photo</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
+                {/* COR Photos Section - Same as EditProfileScreen's Add Images */}
+                <View style={styles.addImagesSection}>
+                  <Text style={styles.addImagesTitle}>Photo of COR:</Text>
+                 
+                  
+                  <View style={styles.imageGrid}>
+                    {corPhotos.length === 0 ? (
+                      <Text style={styles.noImagesText}>
+                        No COR photos yet. Add one below!
+                      </Text>
+                    ) : (
+                      corPhotos.map((uri, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          style={styles.imageItem}
+                          onPress={() => viewCorPhoto(index)}
+                          onLongPress={() => deleteCorPhoto(index)}
+                        >
+                          <Image source={{ uri }} style={styles.gridImage} resizeMode="cover" />
+                          <View style={styles.deleteOverlay}>
+                            <Ionicons name="trash-outline" size={18} color="#fff" />
+                          </View>
+                        </TouchableOpacity>
+                      ))
+                    )}
+                  </View>
 
-               
+                  <TouchableOpacity style={styles.addImageButton} onPress={pickCorPhoto}>
+                    <Ionicons name="add-circle-outline" size={28} color="#FFD700" />
+                  </TouchableOpacity>
+
+                  {corPhotos.length > 0 && (
+                    <Text style={styles.deleteHintText}>
+                      Long press an image to delete it
+                    </Text>
+                  )}
+                </View>
+
+                {/* Create Account Button */}
                 <TouchableOpacity
                   style={[styles.createAccountButton, isLoading && styles.buttonDisabled]}
                   onPress={handleSignUp}
@@ -217,6 +298,31 @@ const SignUpScreen = ({ navigation }) => {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
+
+      {/* COR Photo Full Screen Modal */}
+      <Modal
+        visible={showImageModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeImageModal}
+      >
+        <View style={styles.fullScreenModalOverlay}>
+          <TouchableOpacity 
+            style={styles.fullScreenCloseButton}
+            onPress={closeImageModal}
+          >
+            <Ionicons name="close" size={30} color="#fff" />
+          </TouchableOpacity>
+          
+          {selectedImageIndex !== null && corPhotos[selectedImageIndex] && (
+            <Image 
+              source={{ uri: corPhotos[selectedImageIndex] }} 
+              style={styles.fullScreenImage} 
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
     </LinearGradient>
   );
 };
@@ -245,6 +351,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 16,
     color: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
 
   passwordContainer: {
@@ -255,10 +362,73 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
     paddingHorizontal: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   inputPassword: { flex: 1, paddingVertical: 14, fontSize: 16, color: '#fff' },
 
   errorText: { color: '#ff6b6b', fontSize: 14, marginBottom: 10 },
+
+  // COR Photos Section - Same as EditProfileScreen's Add Images
+  addImagesSection: {
+    marginBottom: 20,
+  },
+  addImagesTitle: { 
+    fontSize: 14, 
+    color: '#fff',  
+    marginBottom: 8, 
+    textAlign: 'left'
+  },
+  imageGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  imageItem: { 
+    width: '48%', 
+    aspectRatio: 1, 
+    marginBottom: 10,
+    position: 'relative',
+  },
+  gridImage: { 
+    width: '100%', 
+    height: '100%', 
+    borderRadius: 8, 
+    borderWidth: 1, 
+    borderColor: 'rgba(255, 215, 0, 0.3)' 
+  },
+  noImagesText: { 
+    color: '#FFD700', 
+    textAlign: 'center', 
+    opacity: 0.7,
+    width: '100%',
+    paddingVertical: 20,
+  },
+  // Add Image Button - Same as EditProfileScreen
+  addImageButton: {
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+  },
+  deleteOverlay: { 
+    position: 'absolute', 
+    top: 6, 
+    right: 6, 
+    backgroundColor: 'rgba(0,0,0,0.6)', 
+    borderRadius: 12, 
+    padding: 3 
+  },
+  deleteHintText: { 
+    color: '#FFD700', 
+    fontSize: 12, 
+    textAlign: 'center', 
+    marginTop: 8, 
+    opacity: 0.6 
+  },
 
   createAccountButton: {
     backgroundColor: '#FFD700',
@@ -270,30 +440,26 @@ const styles = StyleSheet.create({
   buttonDisabled: { backgroundColor: 'rgba(255, 215, 0, 0.5)' },
   createAccountButtonText: { color: '#000', fontSize: 16, fontWeight: '600' },
 
-  // ✅ New styles for image upload
-  imageUploadBox: {
-    borderWidth: 1,
-    borderColor: '#FFD700',
-    borderRadius: 12,
-    height: 150,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-  placeholderBox: {
+  // Full Screen Image Modal Styles
+  fullScreenModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  placeholderText: {
-    color: '#aaa',
-    fontSize: 14,
-    marginTop: 8,
+  fullScreenCloseButton: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    zIndex: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    padding: 5,
   },
-  imagePreview: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+  fullScreenImage: {
+    width: screenWidth * 0.9,
+    height: screenWidth * 0.9,
+    borderRadius: 10,
   },
 });
 

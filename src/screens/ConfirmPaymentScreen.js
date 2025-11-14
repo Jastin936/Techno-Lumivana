@@ -21,7 +21,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 const { width, height } = Dimensions.get('window');
 
-const RequestCommissionScreen = ({ navigation, route }) => {
+const ConfirmPaymentScreen = ({ navigation, route }) => {
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
   });
@@ -30,12 +30,16 @@ const RequestCommissionScreen = ({ navigation, route }) => {
   const [description, setDescription] = useState('');
   const [dateRequested, setDateRequested] = useState('');
   const [category, setCategory] = useState('');
+  const [agreedPrice, setAgreedPrice] = useState('');
   const [contactInfo, setContactInfo] = useState('');
   const [referencePhotos, setReferencePhotos] = useState([]);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // Get requestData from route params if available
+  const requestData = route.params?.requestData || {};
 
   if (!fontsLoaded) return null;
 
@@ -155,6 +159,20 @@ const RequestCommissionScreen = ({ navigation, route }) => {
     return dateString;
   };
 
+  // Format price input
+  const handlePriceChange = (text) => {
+    // Remove any non-numeric characters except decimal point
+    const cleanedText = text.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const parts = cleanedText.split('.');
+    if (parts.length > 2) {
+      return; // Invalid input, don't update
+    }
+    
+    setAgreedPrice(cleanedText);
+  };
+
   const handleConfirm = () => {
     // Validate required fields
     if (!commissionName.trim()) {
@@ -172,36 +190,57 @@ const RequestCommissionScreen = ({ navigation, route }) => {
       return;
     }
 
+    if (!category.trim()) {
+      Alert.alert('Missing Information', 'Please enter a category.');
+      return;
+    }
+
+    if (!agreedPrice.trim()) {
+      Alert.alert('Missing Information', 'Please enter the agreed price.');
+      return;
+    }
+
     if (!contactInfo.trim()) {
       Alert.alert('Missing Information', 'Please enter your contact information.');
       return;
     }
 
-    // Create commission data object
-    const newCommission = {
-      id: Date.now().toString(),
+    // Validate price format
+    const priceValue = parseFloat(agreedPrice);
+    if (isNaN(priceValue) || priceValue <= 0) {
+      Alert.alert('Invalid Price', 'Please enter a valid price amount.');
+      return;
+    }
+
+    // Create commission data object with "Complete" status
+    const completedCommission = {
+      id: requestData.id || Date.now().toString(), // Use existing ID if available
       title: commissionName,
       description: description,
       date: dateRequested,
-      category: category || 'Custom Commission',
+      category: category,
+      agreedPrice: agreedPrice,
       contact: contactInfo,
       referencePhotos: referencePhotos,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
+      status: 'Complete', // Set status to Complete (capitalized to match other statuses)
+      completedAt: new Date().toISOString(),
+      artist: requestData.artist || 'Unknown Artist',
+      email: requestData.email || contactInfo,
+      // Include any other data from the original request
+      ...requestData
     };
 
     // Show success alert
     Alert.alert(
-      'Commission Request Sent!',
-      'Your commission request has been submitted successfully. You will be notified when an artist accepts your request.',
+      'Payment Confirmed!',
+      'Your commission has been marked as complete. Thank you for your business!',
       [
         {
           text: 'OK',
           onPress: () => {
-            // Navigate to HomeScreen with Requests tab active and pass the new commission
-            navigation.navigate('Home', { 
-              activeTab: 'Requests',
-              newCommission: newCommission 
+            // Navigate to CommissionsScreen and pass the completed commission data
+            navigation.navigate('Commissions', { 
+              completedCommission: completedCommission
             });
           }
         }
@@ -211,8 +250,8 @@ const RequestCommissionScreen = ({ navigation, route }) => {
 
   const handleDecline = () => {
     Alert.alert(
-      'Cancel Commission Request',
-      'Are you sure you want to cancel this commission request? All entered information will be lost.',
+      'Cancel Payment',
+      'Are you sure you want to cancel this payment? All entered information will be lost.',
       [
         {
           text: 'No, Keep Editing',
@@ -228,6 +267,23 @@ const RequestCommissionScreen = ({ navigation, route }) => {
       ]
     );
   };
+
+  // Pre-fill form with requestData if available
+  React.useEffect(() => {
+    if (requestData) {
+      setCommissionName(requestData.title || '');
+      setDescription(requestData.description || '');
+      setCategory(requestData.category || requestData.type || '');
+      setAgreedPrice(requestData.agreedPrice || '');
+      setContactInfo(requestData.email || requestData.contact || '');
+      setReferencePhotos(requestData.referencePhotos || []);
+      
+      // Pre-fill date if available in requestData
+      if (requestData.date) {
+        setDateRequested(requestData.date);
+      }
+    }
+  }, [requestData]);
 
   return (
     <LinearGradient
@@ -252,7 +308,7 @@ const RequestCommissionScreen = ({ navigation, route }) => {
           </TouchableOpacity>
 
           <Text style={[styles.screenTitle, { fontFamily: 'Milonga' }]}>
-            Request Commission
+            Confirm Payment
           </Text>
 
           <View style={styles.placeholder} />
@@ -317,6 +373,22 @@ const RequestCommissionScreen = ({ navigation, route }) => {
               />
             </View>
 
+            {/* Agreed Price */}
+            <View style={styles.detailSection}>
+              <Text style={styles.detailLabel}>Agreed Price **\***</Text>
+              <View style={styles.priceInputContainer}>
+                <Text style={styles.currencySymbol}>$</Text>
+                <TextInput
+                  style={styles.priceTextInput}
+                  value={agreedPrice}
+                  onChangeText={handlePriceChange}
+                  placeholder="0.00"
+                  placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                  keyboardType="decimal-pad"
+                />
+              </View>
+            </View>
+
             {/* Reference Photos */}
             <View style={styles.detailSection}>
               <Text style={styles.detailLabel}>Reference Photos ({referencePhotos.length})</Text>
@@ -374,14 +446,14 @@ const RequestCommissionScreen = ({ navigation, route }) => {
                   style={[styles.buttonInput, styles.primaryButton]}
                   onPress={handleConfirm}
                 >
-                  <Text style={styles.primaryButtonText}>Confirm</Text>
+                  <Text style={styles.primaryButtonText}>Confirm Payment</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity 
                   style={[styles.buttonInput, styles.secondaryButton]}
                   onPress={handleDecline}
                 >
-                  <Text style={styles.secondaryButtonText}>Decline</Text>
+                  <Text style={styles.secondaryButtonText}>Cancel</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -489,6 +561,31 @@ const styles = StyleSheet.create({
     borderColor: '#FFD700',
     borderRadius: 8,
     padding: 12,
+    textAlignVertical: 'top',
+  },
+  // Price Input Styles
+  priceInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFD700',
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+  },
+  currencySymbol: {
+    fontSize: 16,
+    color: '#FFD700',
+    fontWeight: '600',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRightWidth: 1,
+    borderRightColor: '#FFD700',
+  },
+  priceTextInput: {
+    fontSize: 16,
+    color: '#fff',
+    padding: 12,
+    flex: 1,
     textAlignVertical: 'top',
   },
   dateInputContainer: {
@@ -625,4 +722,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RequestCommissionScreen;
+export default ConfirmPaymentScreen;

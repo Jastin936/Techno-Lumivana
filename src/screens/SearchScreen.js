@@ -20,24 +20,190 @@ import { useFonts } from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const rotateValue = new Animated.Value(0);
+const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-// --- Icon Mapping for Filter Categories ---
-const FILTER_CATEGORY_MAP = [
-  { name: 'Creative', icon: 'color-palette-outline' },
-  { name: 'Writing', icon: 'document-text-outline' },
-  { name: 'Customize', icon: 'brush-outline' },
-  { name: 'Food', icon: 'fast-food-outline' },
-  { name: 'Tools', icon: 'hammer-outline' },
-  { name: 'Accessories', icon: 'bag-outline' },
-  { name: 'Gears', icon: 'build-outline' },
-  { name: 'School Supplies', icon: 'book-outline' },
+// --- Mock Data for Search Results ---
+const mockCommissionsData = [
+  {
+    id: '1',
+    date: 'August 8, 2025',
+    title: 'Gold Earrings',
+    description: 'A pair of shiny gold earrings with a few diamonds.',
+    status: 'On Going',
+    category: 'Crafting',
+    artist: 'Jewelry Master',
+    email: 'jewelry@example.com',
+    referencePhotos: [],
+  },
+  {
+    id: '2',
+    date: 'August 14, 2025',
+    title: 'Green Wallet',
+    description: 'A sturdy green leather wallet with a few cards.',
+    status: 'On Going',
+    category: 'Crafting',
+    artist: 'Leather Craftsman',
+    email: 'leather@example.com',
+    referencePhotos: [],
+  },
+  {
+    id: '3',
+    date: 'August 5, 2025',
+    title: 'Red Bracelet',
+    description: 'Red bracelet with a gold flower ornament',
+    status: 'On Going',
+    category: 'Crafting',
+    artist: 'Accessory Artist',
+    email: 'accessories@example.com',
+    referencePhotos: [],
+  },
+  {
+    id: '4',
+    date: 'July 29, 2025',
+    title: 'Logo Design',
+    description: 'A modern logo for a tech startup',
+    status: 'Canceled',
+    category: 'Graphic Design',
+    artist: 'Design Pro',
+    email: 'design@example.com',
+    referencePhotos: [],
+  },
+  {
+    id: '5',
+    date: 'July 28, 2025',
+    title: 'Portrait Illustration',
+    description: 'Digital portrait illustration in watercolor style',
+    status: 'On Going',
+    category: 'Illustration',
+    artist: 'Digital Artist',
+    email: 'illustration@example.com',
+    referencePhotos: [],
+  },
+  {
+    id: '6',
+    date: 'July 25, 2025',
+    title: 'Product Photography',
+    description: 'Professional product photos for e-commerce',
+    status: 'On Going',
+    category: 'Photography',
+    artist: 'Photo Expert',
+    email: 'photo@example.com',
+    referencePhotos: [],
+  },
 ];
 
-// --- Component for the Filter Modal ---
+// Filter categories - Same as CommissionsScreen
+const FILTER_CATEGORY_MAP = [
+  { name: 'All', icon: 'apps-outline' },
+  { name: 'Graphic Design', icon: 'color-palette-outline' },
+  { name: 'Illustration', icon: 'brush-outline' },
+  { name: 'Crafting', icon: 'hammer-outline' },
+  { name: 'Writing', icon: 'document-text-outline' },
+  { name: 'Photography', icon: 'camera-outline' },
+  { name: 'Tutoring', icon: 'school-outline' },
+];
 
-const FilterModal = ({ isVisible, onClose, selectedCategory, onCategorySelect }) => {
+const COMMISSION_QUICK_LINKS = [
+  { 
+    id: 1, 
+    title: 'Poster/Banner Design', 
+    description: 'Eye-catching posters for school events, org activities, or academic presentations.', 
+    icon: 'image-outline',
+    searchTag: 'poster design',
+    category: 'Graphic Design',
+    artist: 'Design Specialist',
+    email: 'poster@example.com',
+  },
+  { 
+    id: 2, 
+    title: 'Caricatures', 
+    description: 'Fun, exaggerated portraits for birthdays, events, or gifts.', 
+    icon: 'happy-outline',
+    searchTag: 'caricature portrait',
+    category: 'Illustration',
+    artist: 'Portrait Artist',
+    email: 'caricature@example.com',
+  },
+  { 
+    id: 3, 
+    title: 'Invitation designs', 
+    description: 'Digital invites for birthdays, parties, or school events.', 
+    icon: 'mail-outline',
+    searchTag: 'digital invitation',
+    category: 'Graphic Design',
+    artist: 'Invitation Designer',
+    email: 'invitation@example.com',
+  },
+  { 
+    id: 4, 
+    title: 'Cover art', 
+    description: 'For Wattpad stories, school publications, or music projects.', 
+    icon: 'book-outline',
+    searchTag: 'book cover art',
+    category: 'Illustration',
+    artist: 'Cover Artist',
+    email: 'cover@example.com',
+  },
+  { 
+    id: 5, 
+    title: 'Custom Illustrations', 
+    description: 'Original artwork for personal or commercial use.', 
+    icon: 'color-palette-outline',
+    searchTag: 'custom illustration',
+    category: 'Illustration',
+    artist: 'Illustration Expert',
+    email: 'illustration@example.com',
+  },
+  { 
+    id: 6, 
+    title: 'Logo/Branding', 
+    description: 'Professional logos and branding packages.', 
+    icon: 'diamond-outline',
+    searchTag: 'brand logo',
+    category: 'Graphic Design',
+    artist: 'Branding Specialist',
+    email: 'logo@example.com',
+  },
+];
+
+// --- Helper Component for Commission Item ---
+const CommissionItem = ({ date, title, description, status, category, onPress }) => {
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'On Going':
+        return '#4CAF50'; // Green
+      case 'Canceled':
+        return '#F44336'; // Red
+      default:
+        return '#aaa';
+    }
+  };
+
+  return (
+    <TouchableOpacity style={styles.commissionItemCard} onPress={onPress}>
+      <View style={styles.thumbnailPlaceholder}>
+        <Ionicons name="image-outline" size={30} color="#555" />
+      </View>
+      <View style={styles.detailsContainer}>
+        <View style={styles.headerRow}>
+          <Text style={styles.dateText}>{date}</Text>
+          <Text style={[styles.statusTag, { backgroundColor: getStatusColor(status) }]}>
+            {status}
+          </Text>
+        </View>
+        <Text style={styles.titleText}>{title}</Text>
+        <Text style={styles.descriptionText}>{description}</Text>
+        <View style={styles.categoryRow}>
+          <Ionicons name={FILTER_CATEGORY_MAP.find(cat => cat.name === category)?.icon || 'apps-outline'} size={14} color="#FFD700" />
+          <Text style={styles.categoryText}>{category}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+// --- Filter Modal Component - Same as CommissionsScreen ---
+const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory }) => {
   return (
     <Modal
       animationType="slide"
@@ -61,11 +227,10 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, onCategorySelect })
                 key={item.name}
                 style={modalStyles.categoryItem}
                 onPress={() => {
-                  onCategorySelect(item.name);
+                  setSelectedCategory(item.name);
                   onClose();
                 }}
               >
-                {/* ICON ADDED HERE */}
                 <View style={modalStyles.categoryTextContainer}>
                   <Ionicons 
                     name={item.icon} 
@@ -75,7 +240,6 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, onCategorySelect })
                   />
                   <Text style={modalStyles.categoryText}>{item.name}</Text>
                 </View>
-                {/* END ICON ADDED */}
 
                 <View style={modalStyles.checkbox(selectedCategory === item.name)}>
                   {selectedCategory === item.name && (
@@ -92,60 +256,13 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, onCategorySelect })
 };
 
 // --- SearchScreen Component ---
-
-const COMMISSION_QUICK_LINKS = [
-  { 
-    id: 1, 
-    title: 'Poster/Banner Design', 
-    description: 'Eye-catching posters for school events, org activities, or academic presentations.', 
-    icon: 'image-outline',
-    searchTag: 'poster design' 
-  },
-  { 
-    id: 2, 
-    title: 'Caricatures', 
-    description: 'Fun, exaggerated portraits for birthdays, events, or gifts.', 
-    icon: 'happy-outline',
-    searchTag: 'caricature portrait' 
-  },
-  { 
-    id: 3, 
-    title: 'Invitation designs', 
-    description: 'Digital invites for birthdays, parties, or school events.', 
-    icon: 'mail-outline',
-    searchTag: 'digital invitation'
-  },
-  { 
-    id: 4, 
-    title: 'Cover art', 
-    description: 'For Wattpad stories, school publications, or music projects.', 
-    icon: 'book-outline',
-    searchTag: 'book cover art'
-  },
-  { 
-    id: 5, 
-    title: 'Custom Illustrations', 
-    description: 'Original artwork for personal or commercial use.', 
-    icon: 'color-palette-outline',
-    searchTag: 'custom illustration'
-  },
-  { 
-    id: 6, 
-    title: 'Logo/Branding', 
-    description: 'Professional logos and branding packages.', 
-    icon: 'diamond-outline',
-    searchTag: 'brand logo'
-  },
-];
-
 const SearchScreen = ({ navigation }) => {
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
   });
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('All');
-  const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const [filterVisible, setFilterVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [userData, setUserData] = useState({
     name: '',
@@ -157,29 +274,23 @@ const SearchScreen = ({ navigation }) => {
     loadUserData();
   }, []);
 
-  // Continuous rotation loop (30s rotate, 30s rest)
+  // Continuous rotation loop
   useEffect(() => {
     const startRotation = () => {
-      // Reset rotation value
       rotateValue.setValue(0);
-      
-      // Rotate for 30 seconds
       Animated.timing(rotateValue, {
         toValue: 10,
         duration: 30000,
         useNativeDriver: true,
       }).start(() => {
-        // After rotation completes, wait 30 seconds then restart
         setTimeout(() => {
           startRotation();
         }, 30000);
       });
     };
 
-    // Start the loop
     startRotation();
     
-    // Cleanup function
     return () => {
       rotateValue.stopAnimation();
     };
@@ -187,8 +298,8 @@ const SearchScreen = ({ navigation }) => {
 
   // Interpolate rotation value
   const rotateInterpolate = rotateValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
+    inputRange: [0, 10],
+    outputRange: ['0deg', '3600deg'],
   });
 
   // Animated style for logo
@@ -208,7 +319,6 @@ const SearchScreen = ({ navigation }) => {
         }));
       }
 
-      // Also load profile image from AsyncStorage
       const savedProfileImage = await AsyncStorage.getItem('profileImage');
       if (savedProfileImage) {
         setUserData(prevData => ({
@@ -230,209 +340,161 @@ const SearchScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation]);
 
-  // Sample data and filtering logic remains the same
-  const SEARCH_CATEGORIES = ['All', 'Creative', 'Writing', 'Customize', 'Food', 'Tools', 'Accessories', 'Gears', 'School Supplies'];
-  
-  const SEARCH_RESULTS = [
-    { id: 1, type: 'user', name: 'KendrickPage', role: 'Artist', followers: 124 },
-    { id: 2, type: 'user', name: 'Corbert', role: 'Writer', followers: 95 },
-    { id: 3, type: 'post', title: 'Sunset Illustration', author: 'Grace', likes: 42 },
-    { id: 4, type: 'commission', title: 'Logo Design', budget: '$200', author: 'Marie' },
-    { id: 5, type: 'user', name: 'Enjoe', role: 'Programmer', followers: 67 },
-    { id: 6, type: 'tag', name: '#digitalart', posts: 1243 },
-    { id: 7, type: 'post', title: 'Character Concept', author: 'KendrickPage', likes: 89 },
-    { id: 8, type: 'commission', title: 'Website Development', budget: '$500', author: 'Enjoe' },
-  ];
-
-  const filteredResults = SEARCH_RESULTS.filter(item => {
-    if (activeTab === 'All') {
-      return item.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-             item.title?.toLowerCase().includes(searchQuery.toLowerCase());
-    }
+  // Filter commissions based on search and category - Same logic as CommissionsScreen
+  const filteredCommissions = mockCommissionsData.filter((commission) => {
+    const matchesSearch = 
+      commission.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      commission.description.toLowerCase().includes(searchQuery.toLowerCase());
     
-    if (activeTab === 'Users') {
-      return item.type === 'user' && item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    }
+    const matchesCategory = 
+      selectedCategory === 'All' || commission.category === selectedCategory;
     
-    if (activeTab === 'Posts') {
-      return item.type === 'post' && item.title.toLowerCase().includes(searchQuery.toLowerCase());
-    }
-    
-    if (activeTab === 'Commissions') {
-      return item.type === 'commission' && item.title.toLowerCase().includes(searchQuery.toLowerCase());
-    }
-    
-    if (activeTab === 'Tags') {
-      return item.type === 'tag' && item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    }
-    
-    return false;
+    return matchesSearch && matchesCategory;
   });
 
-  const handleCategorySelect = (category) => {
-    setSelectedCategory(category);
-    setActiveTab(category);
+  // Filter quick links based on selected category
+  const filteredQuickLinks = COMMISSION_QUICK_LINKS.filter((link) => {
+    return selectedCategory === 'All' || link.category === selectedCategory;
+  });
+
+  // Handle commission item click
+  const handleCommissionItemPress = (commission) => {
+    const productData = {
+      title: commission.title,
+      type: commission.category,
+      artist: commission.artist,
+      description: commission.description,
+      email: commission.email,
+      referencePhotos: commission.referencePhotos,
+      category: commission.category
+    };
+    
+    navigation.navigate('ProductInfo', {
+      requestData: productData
+    });
   };
 
-  const renderSearchItem = ({ item }) => {
-    if (item.type === 'user') {
-      return (
-        <TouchableOpacity style={styles.resultItem}>
-          <View style={styles.avatar} />
-          <View style={styles.resultContent}>
-            <Text style={styles.resultName}>{item.name}</Text>
-            <Text style={styles.resultDetails}>{item.role} · {item.followers} followers</Text>
-          </View>
-          <TouchableOpacity style={styles.followBtn}>
-            <Text style={styles.followText}>Follow</Text>
-          </TouchableOpacity>
-        </TouchableOpacity>
-      );
-    }
+  // Handle quick link press
+  const handleQuickLinkPress = (item) => {
+    const productData = {
+      title: item.title,
+      type: item.category,
+      artist: item.artist,
+      description: item.description,
+      email: item.email,
+      referencePhotos: [],
+      category: item.category
+    };
 
-    if (item.type === 'post') {
-      return (
-        <TouchableOpacity style={styles.resultItem}>
-          <View style={styles.postThumbnail} />
-          <View style={styles.resultContent}>
-            <Text style={styles.resultName}>{item.title}</Text>
-            <Text style={styles.resultDetails}>by {item.author} · {item.likes} likes</Text>
-          </View>
-        </TouchableOpacity>
-      );
-    }
-
-    if (item.type === 'commission') {
-      return (
-        <TouchableOpacity style={styles.resultItem}>
-          <View style={styles.commissionIcon}>
-            <Ionicons name="briefcase-outline" size={24} color="#FFD700" />
-          </View>
-          <View style={styles.resultContent}>
-            <Text style={styles.resultName}>{item.title}</Text>
-            <Text style={styles.resultDetails}>by {item.author} · Budget: {item.budget}</Text>
-          </View>
-        </TouchableOpacity>
-      );
-    }
-
-    if (item.type === 'tag') {
-      return (
-        <TouchableOpacity style={styles.resultItem}>
-          <View style={styles.tagIcon}>
-            <Ionicons name="pricetag-outline" size={24} color="#FFD700" />
-          </View>
-          <View style={styles.resultContent}>
-            <Text style={styles.resultName}>{item.name}</Text>
-            <Text style={styles.resultDetails}>{item.posts} posts</Text>
-          </View>
-        </TouchableOpacity>
-      );
-    }
-
-    return null;
+    navigation.navigate('ProductInfo', {
+      requestData: productData
+    });
   };
-  
-  const handleQuickLinkPress = (searchTag) => {
-    setSearchQuery(searchTag);
-    setActiveTab('Commissions'); 
-  };
-  
+
   const renderQuickLink = ({ item }) => (
     <TouchableOpacity 
       style={styles.quickLinkItem} 
-      onPress={() => handleQuickLinkPress(item.searchTag)} 
+      onPress={() => handleQuickLinkPress(item)} 
     >
       <View style={styles.quickLinkImageContainer}>
-        <Ionicons name={item.icon} size={40} color="#999" />
+        <Ionicons name={item.icon} size={40} color="#FFD700" />
       </View>
       <View style={styles.quickLinkTextContent}>
         <Text style={styles.quickLinkTitle}>{item.title}</Text>
         <Text style={styles.quickLinkDescription}>{item.description}</Text>
+        <View style={styles.quickLinkCategory}>
+          <Ionicons name={FILTER_CATEGORY_MAP.find(cat => cat.name === item.category)?.icon || 'apps-outline'} size={12} color="#FFD700" />
+          <Text style={styles.quickLinkCategoryText}>{item.category}</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: '#fff' }}>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <LinearGradient colors={["#0E0E0E", "#1A1A1A"]} style={styles.container}>
       <SafeAreaView style={{ flex: 1 }}>
         <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-        {/* HEADER - Updated Profile Icon */}
+        {/* HEADER */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Animated.Image
-              source={require('../../assets/lumivana.png')}
-              style={[styles.logo, animatedLogoStyle]}
-              resizeMode="contain"
-            />
-            <Text style={[styles.logoText, { fontFamily: 'Milonga' }]}>Lumivana</Text>
-          </View>
-         
-          {/* Updated Profile Icon - Same as HomeScreen */}
-          <TouchableOpacity
-            style={styles.profileIcon}
-            onPress={() => navigation.navigate('Profile')}
-          >
-            {userData.profileImage ? (
-              <Image 
-                source={{ uri: userData.profileImage }} 
-                style={styles.profileImage} 
+          <View style={styles.headerTop}>
+            <View style={styles.headerLeft}>
+              <Animated.Image
+                source={require('../../assets/lumivana.png')}
+                style={[styles.logo, animatedLogoStyle]}
+                resizeMode="contain"
               />
-            ) : (
-              <Ionicons name="person-circle-outline" size={36} color="#FFD700" />
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* IMAGE PLACEHOLDER AFTER HEADER */}
-        <View style={styles.imagePlaceholderContainer}>
-          <View style={styles.imagePlaceholder}>
-            <Ionicons name="image-outline" size={40} color="#999" />
-            <Text style={styles.imagePlaceholderText}>Featured Content</Text>
-          </View>
-        </View>
-
-        {/* FIXED SEARCH AND FILTER SECTION (NOT SCROLLABLE) */}
-        <View style={styles.fixedSection}>
-          {/* FILTER TABS - SAME STYLE AS HOME SCREEN */}
-          <View style={filterTabStyles.tabContainer}>
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={filterTabStyles.tabRow}
-            >
-              {SEARCH_CATEGORIES.map((category) => (
-                <TouchableOpacity
-                  key={category}
-                  onPress={() => setActiveTab(category)}
-                  style={[filterTabStyles.tabButton, activeTab === category && filterTabStyles.activeTabButton]}
-                >
-                  <Text style={[filterTabStyles.tabText, activeTab === category && filterTabStyles.activeTabText]}>{category}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          {/* Search Bar */}
-          <View style={searchBarStyles.searchBarContainer}>
-            <View style={searchBarStyles.searchBar}>
-              <Ionicons name="search-outline" size={20} color="#FFD700" />
-              <TextInput
-                placeholder="Search users..."
-                placeholderTextColor="#aaa"
-                style={searchBarStyles.searchInput}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
+              <Text style={[styles.logoText, { fontFamily: 'Milonga' }]}>Lumivana</Text>
             </View>
-            <TouchableOpacity style={searchBarStyles.filterButton} onPress={() => setIsFilterModalVisible(true)}>
-              <Ionicons name="filter-outline" size={22} color="#FFD700" />
+
+            <TouchableOpacity
+              style={styles.profileIcon}
+              onPress={() => navigation.navigate('Profile')}
+            >
+              {userData.profileImage ? (
+                <Image 
+                  source={{ uri: userData.profileImage }} 
+                  style={styles.profileImage} 
+                />
+              ) : (
+                <Ionicons name="person-circle-outline" size={36} color="#FFD700" />
+              )}
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* IMAGE PLACEHOLDER - MOVED ABOVE SEARCH BAR */}
+        {searchQuery.length === 0 && (
+          <View style={styles.imagePlaceholderContainer}>
+            <View style={styles.imagePlaceholder}>
+              <Ionicons name="images-outline" size={50} color="#666" />
+              <Text style={styles.imagePlaceholderText}>Featured Commissions</Text>
+              <Text style={styles.imagePlaceholderSubtext}>
+                Discover amazing artwork and creative services
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* 🔍 SEARCH BAR AND FILTER - Now below image placeholder */}
+        <View style={styles.searchBarContainer}>
+          <View style={styles.searchBar}>
+            <Ionicons name="search-outline" size={20} color="#FFD700" />
+            <TextInput
+              placeholder="Search commissions..."
+              placeholderTextColor="#aaa"
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          <TouchableOpacity style={styles.filterButton} onPress={() => setFilterVisible(true)}>
+            <Ionicons name="filter-outline" size={22} color="#FFD700" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Active Filter Indicator */}
+        {selectedCategory !== 'All' && (
+          <View style={styles.activeFilterContainer}>
+            <Text style={styles.activeFilterText}>
+              Filtering by: <Text style={styles.activeFilterCategory}>{selectedCategory}</Text>
+            </Text>
+            <TouchableOpacity 
+              style={styles.clearFilterButton}
+              onPress={() => setSelectedCategory('All')}
+            >
+              <Ionicons name="close-circle" size={16} color="#FFD700" />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* SCROLLABLE CONTENT AREA */}
         <ScrollView 
@@ -440,46 +502,60 @@ const SearchScreen = ({ navigation }) => {
           contentContainerStyle={styles.scrollableContentContainer}
           showsVerticalScrollIndicator={false}
         >
-          {/* FEATURE: Commission Quick Links / Categories (Only visible when search bar is empty) */}
+          {/* Commission Quick Links (Only visible when search bar is empty) */}
           {searchQuery.length === 0 && (
             <View style={styles.quickLinksSection}>
               <Text style={styles.sectionTitle}>Browse Commission Types</Text>
               <FlatList
-                data={COMMISSION_QUICK_LINKS}
+                data={filteredQuickLinks}
                 renderItem={renderQuickLink}
                 keyExtractor={(item) => item.id.toString()}
                 numColumns={2}
-                scrollEnabled={false} 
+                scrollEnabled={false}
                 columnWrapperStyle={styles.quickLinkColumnWrapper}
               />
             </View>
           )}
 
-          {/* Search Results (Only displayed when actively searching) */}
-          <View style={styles.resultsContainerInner}>
-            {searchQuery.length > 0 && (
-              <>
-                <Text style={styles.sectionTitle}>Search Results for "{searchQuery}"</Text>
-                <FlatList
-                  data={filteredResults}
-                  renderItem={renderSearchItem}
-                  keyExtractor={(item) => item.id.toString()}
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={styles.resultsListContent}
-                  scrollEnabled={false} 
-                />
-              </>
-            )}
-          </View>
+          {/* Search Results (Displayed when searching or when category filter is active) */}
+          {(searchQuery.length > 0 || selectedCategory !== 'All') && (
+            <View style={styles.resultsContainer}>
+              <Text style={styles.sectionTitle}>
+                {searchQuery.length > 0 
+                  ? `Search Results for "${searchQuery}"`
+                  : `All ${selectedCategory} Commissions`
+                }
+              </Text>
+              <View style={styles.commissionsList}>
+                {filteredCommissions.map((item) => (
+                  <CommissionItem
+                    key={item.id}
+                    date={item.date}
+                    title={item.title}
+                    description={item.description}
+                    status={item.status}
+                    category={item.category}
+                    onPress={() => handleCommissionItemPress(item)}
+                  />
+                ))}
+                {filteredCommissions.length === 0 && (
+                  <View style={styles.noResultsContainer}>
+                    <Ionicons name="search-outline" size={50} color="#666" />
+                    <Text style={styles.noResultsText}>
+                      {searchQuery.length > 0 
+                        ? `No results found for "${searchQuery}"`
+                        : `No ${selectedCategory} commissions found`
+                      }
+                    </Text>
+                    <Text style={styles.noResultsSubText}>
+                      Try adjusting your search or filters
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
         </ScrollView>
-
-        {/* Filter Modal Integration */}
-        <FilterModal 
-          isVisible={isFilterModalVisible} 
-          onClose={() => setIsFilterModalVisible(false)}
-          selectedCategory={selectedCategory}
-          onCategorySelect={handleCategorySelect}
-        />
 
         {/* FOOTER */}
         <View style={styles.footer}>
@@ -496,7 +572,6 @@ const SearchScreen = ({ navigation }) => {
             <Text style={[styles.footerText, styles.activeFooterText]}>Search</Text>
           </TouchableOpacity>
 
-          {/* Plus Square Icon in Center */}
           <TouchableOpacity 
             style={styles.plusSquareButton}
             onPress={() => navigation.navigate('Request')}
@@ -522,6 +597,14 @@ const SearchScreen = ({ navigation }) => {
             <Text style={styles.footerText}>FAQs</Text>
           </TouchableOpacity>
         </View>
+
+        {/* 🧩 FILTER MODAL */}
+        <FilterModal 
+          isVisible={filterVisible} 
+          onClose={() => setFilterVisible(false)}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+        />
       </SafeAreaView>
     </LinearGradient>
   );
@@ -532,20 +615,33 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1,
   },
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingTop: 50, 
-    paddingHorizontal: 24, 
-    paddingBottom: 16, 
+  header: {
+    paddingTop: 50,
+    paddingHorizontal: 24,
     borderBottomLeftRadius: 20, 
-    borderBottomRightRadius: 20, 
-    backgroundColor: 'rgba(0,0,0,0.2)' 
+    borderBottomRightRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },  
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
-  headerLeft: { flexDirection: 'row', alignItems: 'center' },
-  logo: { width: 40, height: 40, marginRight: 8 },
-  logoText: { fontSize: 28, color: '#fff' },
+  headerLeft: { 
+    flexDirection: 'row', 
+    alignItems: 'center' 
+  },
+  logo: { 
+    width: 40, 
+    height: 40, 
+    marginRight: 8 
+  },
+  logoText: { 
+    fontSize: 28, 
+    color: '#fff',
+    fontFamily: 'Milonga',
+  },
   profileIcon: {
     width: 36,
     height: 36,
@@ -562,39 +658,96 @@ const styles = StyleSheet.create({
     borderColor: '#FFD700',
   },
   
-  // Image Placeholder Styles
+  // NEW: Image Placeholder Styles - Now positioned above search bar
   imagePlaceholderContainer: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    paddingHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 15,
   },
   imagePlaceholder: {
-    height: 120,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    width: '100%',
+    height: 150,
+    backgroundColor: 'rgba(30,30,30,0.85)',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(255, 215, 0, 0.2)',
     borderStyle: 'dashed',
   },
   imagePlaceholderText: {
-    color: '#999',
+    color: '#fff',
     fontSize: 16,
+    fontWeight: 'bold',
     marginTop: 8,
-    fontWeight: '500',
   },
-  
-  // FIXED SECTION (NOT SCROLLABLE)
-  fixedSection: {
-    // No padding here - individual components handle their own padding
+  imagePlaceholderSubtext: {
+    color: '#aaa',
+    fontSize: 12,
+    marginTop: 4,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
-  
+
+  // 🔍 SEARCH BAR STYLES - Same as CommissionsScreen
+  searchBarContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    marginBottom: 5,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1C1C1C",
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 38,
+  },
+  searchInput: { 
+    flex: 1, 
+    color: "#fff", 
+    marginLeft: 8, 
+    fontSize: 14 
+  },
+  filterButton: {
+    marginLeft: 10,
+    backgroundColor: "#1C1C1C",
+    borderRadius: 10,
+    padding: 10,
+  },
+
+  // Active Filter Indicator
+  activeFilterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    marginHorizontal: 16,
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  activeFilterText: {
+    color: '#fff',
+    fontSize: 14,
+    marginRight: 8,
+  },
+  activeFilterCategory: {
+    color: '#FFD700',
+    fontWeight: 'bold',
+  },
+  clearFilterButton: {
+    padding: 4,
+  },
+
   // SCROLLABLE CONTENT
   scrollableContent: {
     flex: 1,
   },
   scrollableContentContainer: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingBottom: 16,
   },
 
@@ -603,18 +756,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   quickLinkItem: {
-    width: '48%', 
+    width: '48%',
     backgroundColor: 'rgba(30,30,30,0.85)',
     borderRadius: 12,
     padding: 12,
+    marginBottom: 16,
   },
   quickLinkColumnWrapper: {
-    justifyContent: 'space-between', 
-    marginBottom: 16, 
+    justifyContent: 'space-between',
   },
   quickLinkImageContainer: {
     width: '100%',
-    height: 80, 
+    height: 80,
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 8,
     marginBottom: 8,
@@ -622,7 +775,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   quickLinkTextContent: {
-    //
+    // 
   },
   quickLinkTitle: {
     color: '#fff',
@@ -633,91 +786,123 @@ const styles = StyleSheet.create({
   quickLinkDescription: {
     color: '#aaa',
     fontSize: 12,
+    marginBottom: 6,
   },
-  
-  // Results container
-  resultsContainerInner: {
-    marginBottom: 10,
-  },
-  resultsListContent: {
-    paddingBottom: 10,
-  },
-  
-  // Result Items (Styles remain the same)
-  resultItem: {
+  quickLinkCategory: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(30,30,30,0.85)',
+  },
+  quickLinkCategoryText: {
+    color: '#FFD700',
+    fontSize: 11,
+    marginLeft: 4,
+  },
+
+  // Results container
+  resultsContainer: {
+    marginBottom: 10,
+  },
+
+  // Commission List Styles - Same as CommissionsScreen
+  commissionsList: {
+    // List container
+  },
+  commissionItemCard: {
+    flexDirection: 'row',
+    backgroundColor: '#1C1C1C',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 8,
+    padding: 12,
+    marginBottom: 10,
+    alignItems: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  avatar: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#555',
-    borderRadius: 24,
-    marginRight: 12,
-  },
-  postThumbnail: {
-    width: 48,
-    height: 48,
-    backgroundColor: '#555',
+  thumbnailPlaceholder: {
+    width: 90,
+    height: 90,
+    backgroundColor: '#333',
     borderRadius: 8,
     marginRight: 12,
-  },
-  commissionIcon: {
-    width: 48,
-    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#555',
-    borderRadius: 24,
-    marginRight: 12,
   },
-  tagIcon: {
-    width: 48,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#555',
-    borderRadius: 24,
-    marginRight: 12,
-  },
-  resultContent: {
+  detailsContainer: {
     flex: 1,
   },
-  resultName: {
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+  },
+  dateText: {
+    fontSize: 12,
+    color: '#aaa',
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  statusTag: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#fff',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    overflow: 'hidden',
+    textTransform: 'uppercase',
+  },
+  titleText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 2,
+  },
+  descriptionText: {
+    fontSize: 12,
+    color: '#aaa',
+    marginBottom: 4,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  categoryText: {
+    fontSize: 12,
+    color: '#FFD700',
+    marginLeft: 4,
+  },
+
+  // No Results Styles - SAME AS HOME SCREEN
+  noResultsContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  noResultsText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginTop: 16,
+    textAlign: 'center',
   },
-  resultDetails: {
+  noResultsSubText: {
     color: '#aaa',
     fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 20,
   },
-  followBtn: {
-    backgroundColor: '#f6c33b',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  followText: {
-    color: '#000',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  
-  // Suggestions Styles
+
+  // Section Title
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#fff',
     marginBottom: 12,
   },
-  
-  // Footer (Styles remain the same)
+
+  // Footer
   footer: { 
     flexDirection: 'row', 
     justifyContent: 'space-around', 
@@ -733,7 +918,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   footerText: { 
-    color: '#fff', 
+    color: '#aaa', 
     fontSize: 12, 
     marginTop: 2, 
     textAlign: 'center' 
@@ -761,77 +946,11 @@ const styles = StyleSheet.create({
   },
 });
 
-// --- Filter Tab Styles - SAME AS HOME SCREEN ---
-const filterTabStyles = StyleSheet.create({
-  tabContainer: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    paddingHorizontal: 16,
-    backgroundColor: "#1A1A1A",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderColor: "#333",
-    marginTop: 10,
-  },
-  tabRow: {
-    flexDirection: "row",
-  },
-  tabButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    marginRight: 10,
-  },
-  tabText: { 
-    color: "#999", 
-    fontSize: 13 
-  },
-  activeTabButton: { 
-    borderBottomWidth: 2, 
-    borderColor: "#FFD700" 
-  },
-  activeTabText: { 
-    color: "#FFD700", 
-    fontWeight: "bold" 
-  },
-});
-
-// --- Search Bar Styles ---
-const searchBarStyles = StyleSheet.create({
-  searchBarContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-    marginBottom: 20,
-    paddingHorizontal: 24,
-  },
-  searchBar: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#1C1C1C",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    height: 38,
-  },
-  searchInput: { 
-    flex: 1, 
-    color: "#fff", 
-    marginLeft: 8, 
-    fontSize: 14 
-  },
-  filterButton: {
-    marginLeft: 10,
-    backgroundColor: "#1C1C1C",
-    borderRadius: 10,
-    padding: 10,
-  },
-});
-
-// --- Modal Specific Styles ---
+// --- Modal Styles (same as CommissionsScreen) ---
 const modalStyles = StyleSheet.create({
   centeredView: {
     flex: 1,
-    justifyContent: 'flex-end', 
+    justifyContent: 'flex-end',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
@@ -853,14 +972,14 @@ const modalStyles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#FFD700',
-    flex: 1, 
+    flex: 1,
     textAlign: 'center',
   },
   closeButton: {
     padding: 5,
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 20,
-    position: 'absolute', 
+    position: 'absolute',
     right: 20,
     top: 0,
   },
@@ -871,7 +990,7 @@ const modalStyles = StyleSheet.create({
     marginBottom: 10,
   },
   categoryList: {
-    flex: 1, 
+    flex: 1,
   },
   categoryItem: {
     flexDirection: 'row',
@@ -897,8 +1016,8 @@ const modalStyles = StyleSheet.create({
     height: 24,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: isChecked ? '#FFD700' : '#FFF', 
-    backgroundColor: isChecked ? '#FFD700' : 'transparent', 
+    borderColor: isChecked ? '#FFD700' : '#FFF',
+    backgroundColor: isChecked ? '#FFD700' : 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
   }),

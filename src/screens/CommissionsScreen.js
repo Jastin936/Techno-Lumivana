@@ -30,6 +30,9 @@ const mockCommissionsData = [
     description: 'A pair of shiny gold earrings with a few diamonds.',
     status: 'On Going',
     category: 'Crafting',
+    artist: 'Kreideprinz',
+    email: 'erinko@gmail.com',
+    referencePhotos: [],
   },
   {
     id: '2',
@@ -38,6 +41,9 @@ const mockCommissionsData = [
     description: 'A sturdy green leather wallet with a few cards.',
     status: 'On Going',
     category: 'Crafting',
+    artist: 'Chiori',
+    email: 'chiori@crafts.com',
+    referencePhotos: [],
   },
   {
     id: '3',
@@ -46,6 +52,9 @@ const mockCommissionsData = [
     description: 'Red bracelet with a gold flower ornament',
     status: 'On Going',
     category: 'Crafting',
+    artist: 'Aelric',
+    email: 'aelric@design.com',
+    referencePhotos: [],
   },
   {
     id: '4',
@@ -54,22 +63,31 @@ const mockCommissionsData = [
     description: 'A modern logo for a tech startup',
     status: 'Canceled',
     category: 'Graphic Design',
+    artist: 'DesignPro',
+    email: 'contact@designpro.com',
+    referencePhotos: [],
   },
   {
     id: '5',
     date: 'July 28, 2025',
     title: 'Portrait Illustration',
     description: 'Digital portrait illustration in watercolor style',
-    status: 'On Going',
+    status: 'Complete',
     category: 'Illustration',
+    artist: 'ArtMaster',
+    email: 'art@master.com',
+    referencePhotos: [],
   },
   {
     id: '6',
     date: 'July 25, 2025',
     title: 'Product Photography',
     description: 'Professional product photos for e-commerce',
-    status: 'On Going',
+    status: 'Complete',
     category: 'Photography',
+    artist: 'PhotoExpert',
+    email: 'photo@expert.com',
+    referencePhotos: [],
   },
 ];
 
@@ -85,23 +103,42 @@ const FILTER_CATEGORY_MAP = [
 ];
 
 // --- Helper Component for List Item ---
-const CommissionItem = ({ date, title, description, status, category }) => {
+const CommissionItem = ({ 
+  date, 
+  title, 
+  description, 
+  status, 
+  category, 
+  referencePhotos, 
+  artist, 
+  email, 
+  onPress 
+}) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'On Going':
         return '#4CAF50'; // Green
       case 'Canceled':
         return '#F44336'; // Red
+      case 'Complete':
+        return '#2196F3'; // Blue for Complete
       default:
         return '#aaa';
     }
   };
 
   return (
-    <TouchableOpacity style={styles.commissionItemCard}>
+    <TouchableOpacity style={styles.commissionItemCard} onPress={onPress}>
       <View style={styles.thumbnailPlaceholder}>
-        {/* Placeholder for Image/Thumbnail */}
-        <Ionicons name="image-outline" size={30} color="#555" />
+        {referencePhotos && referencePhotos.length > 0 ? (
+          <Image 
+            source={{ uri: referencePhotos[0] }} 
+            style={styles.thumbnailImage} 
+            resizeMode="cover"
+          />
+        ) : (
+          <Ionicons name="image-outline" size={30} color="#555" />
+        )}
       </View>
       <View style={styles.detailsContainer}>
         <View style={styles.headerRow}>
@@ -174,11 +211,12 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory
   );
 };
 
-const CommissionsScreen = ({ navigation }) => {
+const CommissionsScreen = ({ navigation, route }) => {
   const [activeCategory, setActiveCategory] = useState('all'); 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterVisible, setFilterVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [commissions, setCommissions] = useState(mockCommissionsData);
 
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
@@ -188,6 +226,164 @@ const CommissionsScreen = ({ navigation }) => {
     name: 'Lumivana Vivistera',
     profileImage: null
   });
+
+  // Handle ALL commission updates in one useEffect
+  useEffect(() => {
+    console.log('Route params updated:', route.params);
+    
+    // Handle new commission from AgreementFormScreen
+    if (route.params?.newCommission) {
+      const newCommission = {
+        ...route.params.newCommission,
+        id: route.params.newCommission.id || `commission-${Date.now()}`,
+        date: route.params.newCommission.date || new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }),
+        status: route.params.newCommission.status || 'On Going',
+        category: route.params.newCommission.category || 'Custom Commission',
+        artist: route.params.newCommission.artist || 'Pending Artist',
+        email: route.params.newCommission.email || route.params.newCommission.contact || 'No email provided',
+        referencePhotos: route.params.newCommission.referencePhotos || []
+      };
+      
+      console.log('Adding new commission:', newCommission);
+      setCommissions(prevCommissions => [newCommission, ...prevCommissions]);
+      navigation.setParams({ newCommission: null });
+    }
+
+    // Handle completed commission from ConfirmPaymentScreen
+    if (route.params?.completedCommission) {
+      const completedCommission = route.params.completedCommission;
+      console.log('Processing completed commission:', completedCommission);
+      
+      setCommissions(prevCommissions => {
+        let commissionUpdated = false;
+        const updatedCommissions = prevCommissions.map(commission => {
+          // Match by ID first, then by title and artist
+          if (commission.id === completedCommission.id) {
+            console.log('Matched commission by ID for completion:', commission.title);
+            commissionUpdated = true;
+            return { 
+              ...commission, 
+              status: 'Complete',
+              completedAt: completedCommission.completedAt,
+              agreedPrice: completedCommission.agreedPrice
+            };
+          }
+          
+          // Fallback matching by title and artist
+          if (commission.title === completedCommission.title && 
+              commission.artist === completedCommission.artist) {
+            console.log('Matched commission by title/artist for completion:', commission.title);
+            commissionUpdated = true;
+            return { 
+              ...commission, 
+              status: 'Complete',
+              completedAt: completedCommission.completedAt,
+              agreedPrice: completedCommission.agreedPrice
+            };
+          }
+          
+          return commission;
+        });
+
+        // If no existing commission was found, add as new
+        if (!commissionUpdated) {
+          console.log('No existing commission found, adding as new completed commission');
+          const newCompletedCommission = {
+            ...completedCommission,
+            status: 'Complete',
+            date: completedCommission.date || new Date().toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })
+          };
+          return [newCompletedCommission, ...prevCommissions];
+        }
+        
+        console.log('Commissions after completion update:', updatedCommissions);
+        return updatedCommissions;
+      });
+      
+      navigation.setParams({ completedCommission: null });
+    }
+
+    // Handle cancelled commission
+    if (route.params?.cancelledCommission) {
+      const cancelledCommission = route.params.cancelledCommission;
+      console.log('Processing cancelled commission:', cancelledCommission);
+      
+      setCommissions(prevCommissions => {
+        const updatedCommissions = prevCommissions.map(commission => {
+          if (commission.id === cancelledCommission.id) {
+            console.log('Matched commission for cancellation:', commission.title);
+            return { 
+              ...commission, 
+              status: 'Canceled',
+              cancellationReason: cancelledCommission.cancellationReason,
+              cancelledAt: cancelledCommission.cancelledAt
+            };
+          }
+          
+          if (commission.title === cancelledCommission.title && 
+              commission.artist === cancelledCommission.artist) {
+            console.log('Matched commission by title/artist for cancellation:', commission.title);
+            return { 
+              ...commission, 
+              status: 'Canceled',
+              cancellationReason: cancelledCommission.cancellationReason,
+              cancelledAt: cancelledCommission.cancelledAt
+            };
+          }
+          
+          return commission;
+        });
+        
+        console.log('Commissions after cancellation update:', updatedCommissions);
+        return updatedCommissions;
+      });
+      
+      navigation.setParams({ cancelledCommission: null });
+    }
+
+    // Handle general commission updates
+    if (route.params?.updatedCommission) {
+      const updatedCommission = route.params.updatedCommission;
+      console.log('Processing updated commission:', updatedCommission);
+      
+      setCommissions(prevCommissions => 
+        prevCommissions.map(commission => {
+          if (commission.id === updatedCommission.id) {
+            return { ...commission, ...updatedCommission };
+          }
+          if (commission.title === updatedCommission.title && 
+              commission.artist === updatedCommission.artist) {
+            return { ...commission, ...updatedCommission };
+          }
+          return commission;
+        })
+      );
+      
+      navigation.setParams({ updatedCommission: null });
+    }
+  }, [route.params, navigation]);
+
+  // Set up focus listener to refresh data when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      console.log('CommissionsScreen focused, checking for updates...');
+      // Force re-check of route params when screen comes into focus
+      if (route.params) {
+        navigation.setParams({ ...route.params });
+      }
+      loadUserData();
+    });
+
+    return unsubscribe;
+  }, [navigation, route.params]);
 
   // Continuous rotation loop
   useEffect(() => {
@@ -252,17 +448,31 @@ const CommissionsScreen = ({ navigation }) => {
     loadUserData();
   }, []);
 
-  // Set up focus listener to refresh data when screen comes into focus
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadUserData();
-    });
+  // Handle commission item press - navigate to AcceptedCommissionInfoScreen
+  const handleCommissionPress = (commission) => {
+    const commissionData = {
+      ...commission,
+      title: commission.title,
+      description: commission.description,
+      category: commission.category,
+      artist: commission.artist,
+      email: commission.email,
+      referencePhotos: commission.referencePhotos || [],
+      status: commission.status,
+      date: commission.date,
+      cancellationReason: commission.cancellationReason,
+      cancelledAt: commission.cancelledAt,
+      completedAt: commission.completedAt,
+      agreedPrice: commission.agreedPrice
+    };
 
-    return unsubscribe;
-  }, [navigation]);
+    navigation.navigate('AcceptedCommissionInfo', {
+      requestData: commissionData,
+    });
+  };
 
   // Filter commissions based on search and category
-  const filteredCommissions = mockCommissionsData.filter((commission) => {
+  const filteredCommissions = commissions.filter((commission) => {
     const matchesSearch = 
       commission.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       commission.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -318,7 +528,7 @@ const CommissionsScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* 🔍 SEARCH BAR AND FILTER - Copied from HomeScreen */}
+        {/* 🔍 SEARCH BAR AND FILTER */}
         <View style={styles.searchBarContainer}>
           <View style={styles.searchBar}>
             <Ionicons name="search-outline" size={20} color="#FFD700" />
@@ -335,19 +545,53 @@ const CommissionsScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
+        {/* Active Filter Indicator */}
+        {selectedCategory !== 'All' && (
+          <View style={styles.activeFilterContainer}>
+            <Text style={styles.activeFilterText}>
+              Filtering by: <Text style={styles.activeFilterCategory}>{selectedCategory}</Text>
+            </Text>
+            <TouchableOpacity 
+              style={styles.clearFilterButton}
+              onPress={() => setSelectedCategory('All')}
+            >
+              <Ionicons name="close-circle" size={16} color="#FFD700" />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Main Content: Commission List */}
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.commissionsList}>
-            {filteredCommissions.map((item) => (
-              <CommissionItem
-                key={item.id}
-                date={item.date}
-                title={item.title}
-                description={item.description}
-                status={item.status}
-                category={item.category}
-              />
-            ))}
+            {filteredCommissions.length === 0 ? (
+              <View style={styles.noResultsContainer}>
+                <Ionicons name="search-outline" size={50} color="#666" />
+                <Text style={styles.noResultsText}>
+                  {searchQuery.length > 0 
+                    ? `No results found for "${searchQuery}"`
+                    : `No ${selectedCategory} commissions found`
+                  }
+                </Text>
+                <Text style={styles.noResultsSubText}>
+                  Try adjusting your search or filters
+                </Text>
+              </View>
+            ) : (
+              filteredCommissions.map((item) => (
+                <CommissionItem
+                  key={item.id || `commission-${item.title}-${item.artist}`}
+                  date={item.date}
+                  title={item.title}
+                  description={item.description}
+                  status={item.status}
+                  category={item.category}
+                  referencePhotos={item.referencePhotos}
+                  artist={item.artist}
+                  email={item.email}
+                  onPress={() => handleCommissionPress(item)}
+                />
+              ))
+            )}
           </View>
         </ScrollView>
 
@@ -530,7 +774,7 @@ const styles = StyleSheet.create({
     borderColor: '#FFD700',
   },
   
-  // 🔍 SEARCH BAR STYLES - Copied from HomeScreen
+  // 🔍 SEARCH BAR STYLES
   searchBarContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -558,6 +802,30 @@ const styles = StyleSheet.create({
     backgroundColor: "#1C1C1C",
     borderRadius: 10,
     padding: 10,
+  },
+
+  // Active Filter Indicator
+  activeFilterContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    marginHorizontal: 16,
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  activeFilterText: {
+    color: '#fff',
+    fontSize: 14,
+    marginRight: 8,
+  },
+  activeFilterCategory: {
+    color: '#FFD700',
+    fontWeight: 'bold',
+  },
+  clearFilterButton: {
+    padding: 4,
   },
 
   // --- Main Content & List Styles ---
@@ -590,6 +858,11 @@ const styles = StyleSheet.create({
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  thumbnailImage: {
+    width: '100%',
+    height: '100%',
   },
   detailsContainer: {
     flex: 1,
@@ -636,6 +909,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#FFD700',
     marginLeft: 4,
+  },
+  
+  // No Results Styles
+  noResultsContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  noResultsText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  noResultsSubText: {
+    color: '#aaa',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 20,
   },
   
   // --- Footer Styles ---

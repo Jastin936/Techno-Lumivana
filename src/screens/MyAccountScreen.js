@@ -353,6 +353,14 @@ const MyAccountScreen = ({ navigation, route }) => {
     // No navigation - just display the icon
   };
 
+  // Format contact information for display
+  const formatContactInfo = () => {
+    if (!userData.email || userData.email.trim() === '') {
+     return 'No contact information added yet';
+    }
+    return userData.email;
+  };
+
   // Format skills for display
   const formatSkills = () => {
     if (!userData.skills || userData.skills.length === 0) {
@@ -417,7 +425,7 @@ const MyAccountScreen = ({ navigation, route }) => {
             {/* Contact Information */}
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Contact Information</Text>
-              <Text style={styles.infoValue}>{userData.email}</Text>
+              <Text style={styles.infoValue}>{formatContactInfo()}</Text>
             </View>
             
             {/* Skills */}

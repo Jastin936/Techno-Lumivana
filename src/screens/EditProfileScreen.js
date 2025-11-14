@@ -31,15 +31,11 @@ const EditProfileScreen = ({ navigation, route }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    password: '',
-    confirmPassword: '',
     skills: '',
   });
 
   const [portfolioImages, setPortfolioImages] = useState([]);
   const [profileImage, setProfileImage] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showImagePickerModal, setShowImagePickerModal] = useState(false);
   const [showProfileImageModal, setShowProfileImageModal] = useState(false);
 
@@ -64,9 +60,6 @@ const EditProfileScreen = ({ navigation, route }) => {
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailInvalid = formData.email && !emailRegex.test(formData.email);
-  const isPasswordInvalid = formData.password && formData.password.length < 6;
-  const isConfirmPasswordInvalid =
-    formData.password && formData.password !== formData.confirmPassword;
 
   // Load portfolio images
   const loadPortfolioImages = async () => {
@@ -268,24 +261,6 @@ const EditProfileScreen = ({ navigation, route }) => {
       Alert.alert('Error', 'Please enter your skills');
       return;
     }
-    if (!formData.password) {
-      Alert.alert('Error', 'Please enter your password');
-      return;
-    }
-    if (!formData.confirmPassword) {
-      Alert.alert('Error', 'Please confirm your password');
-      return;
-    }
-
-    // Check password validation
-    if (isPasswordInvalid) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
-      return;
-    }
-    if (isConfirmPasswordInvalid) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
 
     Alert.alert(
       'Update Profile',
@@ -405,105 +380,44 @@ const EditProfileScreen = ({ navigation, route }) => {
               </View>
 
               <View style={styles.form}>
-                {/* Student Information Card Style */}
-                <View style={styles.card}>
-                  <Text style={styles.cardTitle}>Student Information</Text>
+                {/* Name */}
+                <Text style={styles.infoLabel}>Name:</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your name"
+                  placeholderTextColor="#aaa"
+                  value={formData.name}
+                  onChangeText={text => handleInputChange('name', text)}
+                />
 
-                  {/* Name */}
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Name:</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Enter your name"
-                      placeholderTextColor="#aaa"
-                      value={formData.name}
-                      onChangeText={text => handleInputChange('name', text)}
-                    />
-                  </View>
+                {/* Email */}
+                <Text style={styles.infoLabel}>Email:</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your email"
+                  placeholderTextColor="#aaa"
+                  value={formData.email}
+                  onChangeText={text => handleInputChange('email', text)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+                {isEmailInvalid && (
+                  <Text style={styles.errorText}>Please enter a valid email address</Text>
+                )}
 
-                  {/* Email */}
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Email:</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Enter your email"
-                      placeholderTextColor="#aaa"
-                      value={formData.email}
-                      onChangeText={text => handleInputChange('email', text)}
-                      keyboardType="email-address"
-                      autoCapitalize="none"
-                    />
-                    {isEmailInvalid && (
-                      <Text style={styles.errorText}>Please enter a valid email address</Text>
-                    )}
-                  </View>
+                {/* Skills */}
+                <Text style={styles.infoLabel}>Skills:</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter skills separated by commas"
+                  placeholderTextColor="#aaa"
+                  value={formData.skills}
+                  onChangeText={text => handleInputChange('skills', text)}
+                />
 
-                  {/* Skills */}
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Skills:</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Enter skills separated by commas"
-                      placeholderTextColor="#aaa"
-                      value={formData.skills}
-                      onChangeText={text => handleInputChange('skills', text)}
-                    />
-                  </View>
-
-                  {/* Password */}
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Password:</Text>
-                    <View style={styles.passwordContainer}>
-                      <TextInput
-                        style={styles.inputPassword}
-                        placeholder="Enter your password"
-                        placeholderTextColor="#aaa"
-                        value={formData.password}
-                        onChangeText={text => handleInputChange('password', text)}
-                        secureTextEntry={!showPassword}
-                      />
-                      <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                        <Ionicons
-                          name={showPassword ? 'eye' : 'eye-off'}
-                          size={22}
-                          color="#FFD700"
-                        />
-                      </TouchableOpacity>
-                    </View>
-                    {formData.password.length > 0 && isPasswordInvalid && (
-                      <Text style={styles.errorText}>Password must be at least 6 characters</Text>
-                    )}
-                  </View>
-
-                  {/* Confirm Password */}
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Confirm Password:</Text>
-                    <View style={styles.passwordContainer}>
-                      <TextInput
-                        style={styles.inputPassword}
-                        placeholder="Re-enter your password"
-                        placeholderTextColor="#aaa"
-                        value={formData.confirmPassword}
-                        onChangeText={text => handleInputChange('confirmPassword', text)}
-                        secureTextEntry={!showConfirmPassword}
-                      />
-                      <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-                        <Ionicons
-                          name={showConfirmPassword ? 'eye' : 'eye-off'}
-                          size={22}
-                          color="#FFD700"
-                        />
-                      </TouchableOpacity>
-                    </View>
-                    {formData.confirmPassword.length > 0 && isConfirmPasswordInvalid && (
-                      <Text style={styles.errorText}>Passwords do not match</Text>
-                    )}
-                  </View>
-                </View>
-
-                {/* Add Images Section - No container, just the content */}
+                {/* Add Images Section */}
                 <View style={styles.addImagesSection}>
-                  <Text style={styles.addImagesTitle}>Add Images</Text>
+                  <Text style={styles.addImagesTitle}>Add Images:</Text>
                   
                   <View style={styles.imageGrid}>
                     {portfolioImages.length === 0 ? (
@@ -691,72 +605,38 @@ const styles = StyleSheet.create({
     textAlign: 'center', 
     marginBottom: 32 
   },
-  form: { width: '100%' },
-  card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
+  form: { width: '100%' 
   },
-  cardTitle: { 
-    fontSize: 18, 
-    color: '#FFD700', 
-    fontWeight: 'bold', 
-    marginBottom: 20, 
-    textAlign: 'center' 
-  },
-  infoRow: { 
-    marginBottom: 15, 
-    borderBottomWidth: 1, 
-    borderBottomColor: 'rgba(255, 255, 255, 0.2)', 
-    paddingBottom: 10 
-  },
+
   infoLabel: { 
-    fontSize: 16, 
-    color: '#FFD700', 
-    fontWeight: '600', 
-    marginBottom: 8 
+    fontSize: 14, 
+    color: '#fff', 
+    marginBottom: 6, 
   },
   input: { 
     borderWidth: 1, 
     borderColor: '#FFD700', 
-    borderRadius: 8, 
-    paddingHorizontal: 12, 
-    paddingVertical: 10, 
-    fontSize: 14, 
+    borderRadius: 12, 
+    paddingHorizontal: 16, 
+    paddingVertical: 14, 
+    fontSize: 16,
+    marginBottom: 16,
     color: '#fff',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  passwordContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    borderWidth: 1, 
-    borderColor: '#FFD700', 
-    borderRadius: 8, 
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  inputPassword: { 
-    flex: 1, 
-    paddingVertical: 10, 
-    fontSize: 14, 
-    color: '#fff' 
   },
   errorText: { 
     color: '#ff3b30', 
     fontSize: 12, 
-    marginTop: 4 
+    marginTop: 4,
+    marginBottom: 16,
   },
-  // Add Images Section Styles - No container styling
+  // Add Images Section Styles
   addImagesSection: {
     marginBottom: 20,
   },
   addImagesTitle: { 
-    fontSize: 18, 
-    color: '#FFD700', 
-    fontWeight: 'bold', 
+    fontSize: 14, 
+    color: '#fff',  
     marginBottom: 15, 
     textAlign: 'left'
   },
