@@ -112,7 +112,7 @@ const RecommendedUsersScreen = ({ navigation }) => {
     {
       id: 6,
       name: "Pierra",
-      title: "Music Producer",
+      title: "Student Information",
       role: "Producer",
       email: "pierra@example.com",
       skills: "Music Production, Sound Design, Audio Engineering, Mixing",
