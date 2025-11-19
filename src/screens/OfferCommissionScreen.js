@@ -277,7 +277,7 @@ const OfferCommissionScreen = ({ navigation }) => {
 
             {/* Date Requested */}
             <View style={styles.detailSection}>
-              <Text style={styles.detailLabel}>Date Requested</Text>
+              <Text style={styles.detailLabel}>Date Offered</Text>
               <View style={styles.dateInputContainer}>
                 <TextInput
                   style={styles.dateTextInput}

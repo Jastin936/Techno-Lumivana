@@ -15,6 +15,7 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { CATEGORY_LIST, CATEGORY_ICON_MAP } from '../constants/categories';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts } from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -93,15 +94,8 @@ const mockCommissionsData = [
 ];
 
 // Filter categories - Same as CommissionsScreen
-const FILTER_CATEGORY_MAP = [
-  { name: 'All', icon: 'apps-outline' },
-  { name: 'Graphic Design', icon: 'color-palette-outline' },
-  { name: 'Illustration', icon: 'brush-outline' },
-  { name: 'Crafting', icon: 'hammer-outline' },
-  { name: 'Writing', icon: 'document-text-outline' },
-  { name: 'Photography', icon: 'camera-outline' },
-  { name: 'Tutoring', icon: 'school-outline' },
-];
+const FILTER_CATEGORY_MAP = CATEGORY_LIST;
+
 
 const COMMISSION_QUICK_LINKS = [
   { 

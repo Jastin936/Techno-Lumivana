@@ -17,6 +17,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { CATEGORY_LIST, CATEGORY_ICON_MAP } from '../constants/categories';
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -124,17 +125,8 @@ const HomeScreen = ({ navigation, route }) => {
 
   // Helper function to get icon based on category
   const getIconForCategory = (category) => {
-    const categoryMap = {
-      'Graphic Design': 'color-palette-outline',
-      'Illustration': 'brush-outline',
-      'Crafting': 'hammer-outline',
-      'Writing': 'document-text-outline',
-      'Photography': 'camera-outline',
-      'Tutoring': 'school-outline',
-      'Custom Commission': 'create-outline'
-    };
-    return categoryMap[category] || 'create-outline';
-  };
+  return CATEGORY_ICON_MAP[category] || 'create-outline';
+};
 
   // Continuous rotation loop (30s rotate, 30s rest)
   useEffect(() => {
@@ -187,16 +179,7 @@ const HomeScreen = ({ navigation, route }) => {
   };
 
   // Use the same categories and icons as CommissionsScreen
-  const FILTER_CATEGORY_MAP = [
-    { name: 'All', icon: 'apps-outline' },
-    { name: 'Graphic Design', icon: 'color-palette-outline' },
-    { name: 'Illustration', icon: 'brush-outline' },
-    { name: 'Crafting', icon: 'hammer-outline' },
-    { name: 'Writing', icon: 'document-text-outline' },
-    { name: 'Photography', icon: 'camera-outline' },
-    { name: 'Tutoring', icon: 'school-outline' },
-    { name: 'Custom Commission', icon: 'create-outline' },
-  ];
+ const FILTER_CATEGORY_MAP = CATEGORY_LIST;
 
   // Load user data from AsyncStorage
   useEffect(() => {
