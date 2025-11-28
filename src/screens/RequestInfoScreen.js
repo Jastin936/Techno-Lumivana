@@ -12,11 +12,12 @@ import {
   Image,
   Animated,
   Easing,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts } from 'expo-font';
-
+import MoreOptionsModal from "../components/MoreOptionsModal";
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const RequestInfoScreen = ({ navigation, route }) => {
@@ -27,11 +28,13 @@ const RequestInfoScreen = ({ navigation, route }) => {
   const [isModalVisible, setModalVisible] = useState(false);
   const [moreModal, setMoreModal] = useState({ visible: false, request: null });
   const [blockedRequests, setBlockedRequests] = useState([]);
-
+  const [blockedPosts, setBlockedPosts] = useState([]);
+  const [notInterestedPosts, setNotInterestedPosts] = useState([]);
   const slideAnim = useState(new Animated.Value(300))[0];
 
   // Get request data from navigation parameters or use default data
   const requestData = route.params?.requestData || {
+    id: Date.now(),
     title: 'Poster/Banner Design',
     type: 'Creative',
     artist: 'Kreideprinz',
@@ -82,22 +85,33 @@ const RequestInfoScreen = ({ navigation, route }) => {
     slideUp();
   };
 
-  const handleBlockRequest = () => {
-    setBlockedRequests((prev) => [...prev, requestData.id]);
+// BLOCK REQUEST
+const handleBlockPost = () => {
+  if (moreModal.request) {
+    setBlockedPosts(prev => [...prev, moreModal.request.id]);  // ✔ corrected
     setMoreModal({ visible: false, request: null });
-    navigation.goBack(); // Go back to previous screen after blocking
-  };
+    Alert.alert("Success", "Request has been blocked");
+  }
+};
 
-  const handleReportRequest = () => {
-    console.log('Report request:', requestData.title);
+// NOT INTERESTED
+const handleNotInterested = () => {
+  if (moreModal.request) {
+    setNotInterestedPosts(prev => [...prev, moreModal.request.id]); // ✔ corrected
     setMoreModal({ visible: false, request: null });
-  };
+    Alert.alert("Noted", "We’ll show fewer like this.");
+  }
+};
 
-  const handleNotInterested = () => {
-    console.log('Not interested in:', requestData.title);
+// REPORT
+const handleReportPost = () => {
+  if (moreModal.request) {
+    console.log("Report request:", moreModal.request.title); // ✔ corrected
     setMoreModal({ visible: false, request: null });
-    navigation.goBack(); // Go back to previous screen
-  };
+    Alert.alert("Report Submitted", "Thank you for reporting.");
+  }
+};
+
 
   // Helper function to get icon based on category
   const getIconForCategory = (category) => {
@@ -282,47 +296,15 @@ const RequestInfoScreen = ({ navigation, route }) => {
         </View>
       </Modal>
 
-      {/* MORE OPERATIONS MODAL - EXACT COPY FROM RECOMMENDED SCREEN */}
-      <Modal transparent visible={moreModal.visible} animationType="none">
-        <View style={styles.modalOverlay}>
-          <Animated.View
-            style={[
-              styles.bottomSheet,
-              { transform: [{ translateY: slideAnim }] },
-            ]}
-          >
-            <Text style={styles.bottomSheetModalTitle}>More Operations</Text>
-            <View style={styles.iconRow}>
-              <Ionicons name="logo-facebook" size={28} color="#1877F2" />
-              <Ionicons name="mail-outline" size={28} color="#EA4335" />
-              <Ionicons name="send-outline" size={28} color="#1DA1F2" />
-              <Ionicons name="logo-twitter" size={28} color="#fff" />
-            </View>
-            <View style={styles.optionRow}>
-              <Ionicons name="heart-dislike-outline" size={22} color="red" />
-              <Text style={styles.optionText}>Not interested</Text>
-            </View>
-            <View style={styles.optionRow}>
-              <Ionicons name="flag-outline" size={22} color="red" />
-              <Text style={styles.optionText}>Report Post</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.optionRow}
-              onPress={handleBlockRequest}
-            >
-              <Ionicons name="close-circle-outline" size={22} color="red" />
-              <Text style={styles.optionText}>Block user</Text>
-            </TouchableOpacity>
+        {/* More Options Modal */}  
+      <MoreOptionsModal
+        visible={moreModal.visible}
+        onClose={() => setMoreModal({ visible: false, post: null })}
+        onBlock={handleBlockPost}
+        onReport={handleReportPost}
+        onNotInterested={handleNotInterested}
+      />
 
-            <TouchableOpacity
-              style={styles.closeBtn}
-              onPress={() => setMoreModal({ visible: false, request: null })}
-            >
-              <Ionicons name="close" size={24} color="#FFD700" />
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </Modal>
     </LinearGradient>
   );
 };

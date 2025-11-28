@@ -16,7 +16,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts } from 'expo-font';
-
+import MoreOptionsModal from "../components/MoreOptionsModal";
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const ProductInfoScreen = ({ navigation, route }) => {
@@ -100,6 +100,22 @@ const ProductInfoScreen = ({ navigation, route }) => {
     setMoreModal({ visible: false, request: null });
     navigation.goBack(); // Go back to previous screen
   };
+
+    const handleBlockPost = () => {
+      if (moreModal.post) {
+        setBlockedPosts((prev) => [...prev, moreModal.post.id]);
+        setMoreModal({ visible: false, post: null });
+        Alert.alert("Success", "Post has been blocked");
+      }
+    };
+
+      const handleReportPost = () => {
+        if (moreModal.post) {
+          console.log('Report post:', moreModal.post.title);
+          setMoreModal({ visible: false, post: null });
+          Alert.alert("Report Submitted", "Thank you for reporting this post");
+        }
+      };
 
   // Handle image click to open modal
   const handleImagePress = (imageUri) => {
@@ -335,47 +351,14 @@ const ProductInfoScreen = ({ navigation, route }) => {
         </View>
       </Modal>
 
-      {/* MORE OPERATIONS MODAL - EXACT COPY FROM RECOMMENDED SCREEN */}
-      <Modal transparent visible={moreModal.visible} animationType="none">
-        <View style={styles.modalOverlay}>
-          <Animated.View
-            style={[
-              styles.bottomSheet,
-              { transform: [{ translateY: slideAnim }] },
-            ]}
-          >
-            <Text style={styles.bottomSheetModalTitle}>More Operations</Text>
-            <View style={styles.iconRow}>
-              <Ionicons name="logo-facebook" size={28} color="#1877F2" />
-              <Ionicons name="mail-outline" size={28} color="#EA4335" />
-              <Ionicons name="send-outline" size={28} color="#1DA1F2" />
-              <Ionicons name="logo-twitter" size={28} color="#fff" />
-            </View>
-            <View style={styles.optionRow}>
-              <Ionicons name="heart-dislike-outline" size={22} color="red" />
-              <Text style={styles.optionText}>Not interested</Text>
-            </View>
-            <View style={styles.optionRow}>
-              <Ionicons name="flag-outline" size={22} color="red" />
-              <Text style={styles.optionText}>Report Post</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.optionRow}
-              onPress={handleBlockRequest}
-            >
-              <Ionicons name="close-circle-outline" size={22} color="red" />
-              <Text style={styles.optionText}>Block user</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.closeBtn}
-              onPress={() => setMoreModal({ visible: false, request: null })}
-            >
-              <Ionicons name="close" size={24} color="#FFD700" />
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </Modal>
+              {/* More Options Modal */}  
+            <MoreOptionsModal
+              visible={moreModal.visible}
+              onClose={() => setMoreModal({ visible: false, post: null })}
+              onBlock={handleBlockPost}
+              onReport={handleReportPost}
+              onNotInterested={handleNotInterested}
+            />
     </LinearGradient>
   );
 };

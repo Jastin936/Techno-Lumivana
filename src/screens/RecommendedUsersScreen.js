@@ -11,21 +11,27 @@ import {
   Animated,
   Easing,
   Dimensions,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFonts } from "expo-font";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import MoreOptionsModal from "../components/MoreOptionsModal";
 // Get screen width for dynamic image sizes
 const { width } = Dimensions.get("window");
 const IMAGE_SIZE = (width - 40 - 12 * 2 - 8 * 2) / 3;
+
+
 
 const RecommendedUsersScreen = ({ navigation }) => {
   const [fontsLoaded] = useFonts({
     Milonga: require("../../assets/fonts/Milonga-Regular.ttf"),
   });
-
+   
+    const [blockedRequests, setBlockedRequests] = useState([]);
+    const [blockedPosts, setBlockedPosts] = useState([]);
+    const [notInterestedPosts, setNotInterestedPosts] = useState([]);
   const [userData, setUserData] = useState({
     name: "Lumivana Vivistera",
     profileImage: null,
@@ -184,7 +190,32 @@ const RecommendedUsersScreen = ({ navigation }) => {
     setMoreModal({ visible: true, user });
     slideUp();
   };
+// BLOCK REQUEST
+const handleBlockPost = () => {
+  if (moreModal.user) {
+    setBlockedPosts(prev => [...prev, moreModal.user.id]); 
+    setMoreModal({ visible: false, request: null });
+    Alert.alert("Success", "Request has been blocked");
+  }
+};
 
+// NOT INTERESTED
+const handleNotInterested = () => {
+  if (moreModal.user) {
+    setNotInterestedPosts(prev => [...prev, moreModal.user.id]);
+    setMoreModal({ visible: false, request: null });
+    Alert.alert("Noted", "We’ll show fewer like this.");
+  }
+};
+
+// REPORT
+const handleReportPost = () => {
+  if (moreModal.user) {
+    console.log("Report request:", moreModal.user.name);
+    setMoreModal({ visible: false, request: null });
+    Alert.alert("Report Submitted", "Thank you for reporting.");
+  }
+};
   // Function to handle user card press - UPDATED
   const handleUserPress = (user) => {
     navigation.navigate("RecommendedUsersInfo", { 
@@ -326,96 +357,15 @@ const RecommendedUsersScreen = ({ navigation }) => {
           )}
         </ScrollView>
 
-        {/* MORE OPERATIONS MODAL */}
-        <Modal transparent visible={moreModal.visible} animationType="none">
-          <TouchableOpacity
-            style={styles.modalBackdrop}
-            activeOpacity={1}
-            onPress={() => setMoreModal({ visible: false, user: null })}
-          >
-            <Animated.View
-              style={[
-                styles.bottomSheet,
-                { transform: [{ translateY: slideAnim }] },
-              ]}
-            >
-              <Text style={styles.modalTitle}>More Operations</Text>
-              <View style={styles.iconRow}>
-                <Ionicons name="logo-facebook" size={28} color="#1877F2" />
-                <Ionicons name="mail-outline" size={28} color="#EA4335" />
-                <Ionicons name="send-outline" size={28} color="#1DA1F2" />
-                <Ionicons name="logo-twitter" size={28} color="#fff" />
-              </View>
-              <View style={styles.optionRow}>
-                <Ionicons name="heart-dislike-outline" size={22} color="red" />
-                <Text style={styles.optionText}>Not interested</Text>
-              </View>
-              <View style={styles.optionRow}>
-                <Ionicons name="flag-outline" size={22} color="red" />
-                <Text style={styles.optionText}>Report Post</Text>
-              </View>
-              <TouchableOpacity
-                style={styles.optionRow}
-                onPress={() => handleBlockUser(moreModal.user)}
-              >
-                <Ionicons name="close-circle-outline" size={22} color="red" />
-                <Text style={styles.optionText}>Block user</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.closeBtn}
-                onPress={() => setMoreModal({ visible: false, user: null })}
-              >
-                <Ionicons name="close" size={24} color="#FFD700" />
-              </TouchableOpacity>
-            </Animated.View>
-          </TouchableOpacity>
-        </Modal>
-
-        {/* FOOTER */}
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={styles.footerItem}
-            onPress={() => navigation.navigate("Home")}
-          >
-            <Ionicons name="home" size={24} color="#FFD700" />
-            <Text style={[styles.footerText, styles.activeFooterText]}>Home</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.footerItem}
-            onPress={() => navigation.navigate("Search")}
-          >
-            <Ionicons name="search" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>Search</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.plusSquareButton}
-            onPress={() => navigation.navigate("Request")}
-          >
-            <View style={styles.plusSquareContainer}>
-              <Ionicons name="add" size={30} color="#FFD700" />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.footerItem}
-            onPress={() => navigation.navigate("Commissions")}
-          >
-            <Ionicons name="briefcase-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>Commissions</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.footerItem}
-            onPress={() => navigation.navigate("FAQs")}
-          >
-            <Ionicons name="help-circle-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>FAQs</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
+        {/* More Options Modal */}  
+      <MoreOptionsModal
+        visible={moreModal.visible}
+        onClose={() => setMoreModal({ visible: false, post: null })}
+        onBlock={handleBlockPost}
+        onReport={handleReportPost}
+        onNotInterested={handleNotInterested}
+      />
+       </SafeAreaView>
     </LinearGradient>
   );
 };

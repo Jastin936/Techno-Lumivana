@@ -20,6 +20,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { CATEGORY_LIST, CATEGORY_ICON_MAP } from '../constants/categories';
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import MoreOptionsModal from "../components/MoreOptionsModal";
 
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -301,19 +302,20 @@ const HomeScreen = ({ navigation, route }) => {
     }
   };
 
+    const handleNotInterested = () => {
+  if (moreModal.post) {
+    setNotInterestedPosts(prev => [...prev, moreModal.post.id]);
+    setMoreModal({ visible: false, post: null });
+    Alert.alert("Noted", "We'll show fewer posts like this.");
+  }
+};
+
+
   const handleReportPost = () => {
     if (moreModal.post) {
       console.log('Report post:', moreModal.post.title);
       setMoreModal({ visible: false, post: null });
       Alert.alert("Report Submitted", "Thank you for reporting this post");
-    }
-  };
-
-  const handleNotInterested = () => {
-    if (moreModal.post) {
-      console.log('Not interested in:', moreModal.post.title);
-      setMoreModal({ visible: false, post: null });
-      Alert.alert("Noted", "We'll show you less content like this");
     }
   };
 
@@ -535,50 +537,6 @@ const HomeScreen = ({ navigation, route }) => {
       </Modal>
     );
   };
-
-  // NEW: Ellipsis Modal Component (COPIED FROM RequestInfoScreen)
-  const EllipsisModal = () => (
-    <Modal transparent visible={moreModal.visible} animationType="none">
-      <View style={styles.modalOverlay}>
-        <Animated.View
-          style={[
-            styles.bottomSheet,
-            { transform: [{ translateY: slideAnim }] },
-          ]}
-        >
-          <Text style={styles.modalTitle}>More Operations</Text>
-          <View style={styles.iconRow}>
-            <Ionicons name="logo-facebook" size={28} color="#1877F2" />
-            <Ionicons name="mail-outline" size={28} color="#EA4335" />
-            <Ionicons name="send-outline" size={28} color="#1DA1F2" />
-            <Ionicons name="logo-twitter" size={28} color="#fff" />
-          </View>
-          <View style={styles.optionRow}>
-            <Ionicons name="heart-dislike-outline" size={22} color="red" />
-            <Text style={styles.optionText}>Not interested</Text>
-          </View>
-          <View style={styles.optionRow}>
-            <Ionicons name="flag-outline" size={22} color="red" />
-            <Text style={styles.optionText}>Report Post</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.optionRow}
-            onPress={handleBlockPost}
-          >
-            <Ionicons name="close-circle-outline" size={22} color="red" />
-            <Text style={styles.optionText}>Block user</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.closeBtn}
-            onPress={() => setMoreModal({ visible: false, post: null })}
-          >
-            <Ionicons name="close" size={24} color="#FFD700" />
-          </TouchableOpacity>
-        </Animated.View>
-      </View>
-    </Modal>
-  );
 
   return (
     <LinearGradient colors={["#0E0E0E", "#1A1A1A"]} style={styles.container}>
@@ -805,7 +763,15 @@ const HomeScreen = ({ navigation, route }) => {
         />
 
         {/* NEW: ELLIPSIS MODAL - COPIED FROM RequestInfoScreen */}
-        <EllipsisModal />
+        {/* More Options Modal */}  
+      <MoreOptionsModal
+        visible={moreModal.visible}
+        onClose={() => setMoreModal({ visible: false, post: null })}
+        onBlock={handleBlockPost}
+        onReport={handleReportPost}
+        onNotInterested={handleNotInterested}
+      />
+
       </SafeAreaView>
     </LinearGradient>
   );
