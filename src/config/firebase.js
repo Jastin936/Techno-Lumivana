@@ -21,3 +21,4 @@ export const db = getFirestore(app);
 
 // Storage (for images)
 export const storage = getStorage(app);
+export const auth = getAuth(app);

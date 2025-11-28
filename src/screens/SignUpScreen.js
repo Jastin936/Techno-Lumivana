@@ -19,6 +19,13 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { auth, storage, db } from "../config/firebaseConfig"; 
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, setDoc } from "firebase/firestore";
+import * as FileSystem from "expo-file-system";
+import uuid from "react-native-uuid";
+
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -115,22 +122,54 @@ const SignUpScreen = ({ navigation }) => {
     setSelectedImageIndex(null);
   };
 
-  const handleSignUp = async () => {
-    if (!validateForm()) return;
-    if (isEmailInvalid || isPasswordInvalid || isConfirmPasswordInvalid) return;
+const handleSignUp = async () => {
+  if (!validateForm()) return;
+  if (isEmailInvalid || isPasswordInvalid || isConfirmPasswordInvalid) return;
 
-    setIsLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      Alert.alert('Success!', 'Your account has been created successfully.', [
-        { text: 'OK', onPress: () => navigation.navigate('SignIn') },
-      ]);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to create account. Please try again.');
-    } finally {
-      setIsLoading(false);
+  setIsLoading(true);
+
+  try {
+    // 1. Create User
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const uid = userCredential.user.uid;
+
+    // 2. Upload COR photos
+    const uploadedImages = [];
+
+    for (const uri of corPhotos) {
+      const imgId = uuid.v4();
+      const imgRef = ref(storage, `users/${uid}/cor/${imgId}.jpg`);
+
+      // Convert to blob
+      const response = await fetch(uri);
+      const blob = await response.blob();
+
+      await uploadBytes(imgRef, blob);
+      const downloadURL = await getDownloadURL(imgRef);
+      uploadedImages.push(downloadURL);
     }
-  };
+
+    // 3. Save user data
+    await setDoc(doc(db, "users", uid), {
+      fullName,
+      email,
+      corPhotos: uploadedImages,
+      created_at: new Date(),
+      verified: false
+    });
+
+    // 4. Redirect
+    Alert.alert("Success!", "Account created successfully.", [
+      { text: "Proceed to Login", onPress: () => navigation.replace("Home") }
+    ]);
+
+  } catch (error) {
+    Alert.alert("Error", error.message);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <LinearGradient
