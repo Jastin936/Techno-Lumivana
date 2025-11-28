@@ -19,6 +19,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -122,6 +123,27 @@ const SignUpScreen = ({ navigation }) => {
     setIsLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 2000));
+      // Persist user profile data so MyAccountScreen can load it
+      try {
+        const userProfile = {
+          name: fullName.trim(),
+          email: email.trim(),
+          skills: [],
+          joinedDate: new Date().toISOString(),
+          description: '',
+        };
+
+        await AsyncStorage.setItem('userProfileData', JSON.stringify(userProfile));
+
+        // Save first COR photo as profileImage and all COR photos as portfolio
+        if (corPhotos && corPhotos.length > 0) {
+          await AsyncStorage.setItem('profileImage', corPhotos[0]);
+          await AsyncStorage.setItem('portfolioImages', JSON.stringify(corPhotos));
+        }
+      } catch (storageError) {
+        console.log('Error saving signup data to storage:', storageError);
+      }
+
       Alert.alert('Success!', 'Your account has been created successfully.', [
         { text: 'OK', onPress: () => navigation.navigate('SignIn') },
       ]);

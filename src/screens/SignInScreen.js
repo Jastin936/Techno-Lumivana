@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const rotateValue = new Animated.Value(0);
 
@@ -62,7 +63,7 @@ const SignInScreen = ({ navigation }) => {
     transform: [{ rotate: rotateInterpolate }],
   };
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password');
       return;
@@ -79,9 +80,29 @@ const SignInScreen = ({ navigation }) => {
       return;
     }
 
-    Alert.alert('Success', 'You have successfully signed in!', [
-      { text: 'OK', onPress: () => navigation.navigate('Home') },
-    ]);
+    try {
+      const saved = await AsyncStorage.getItem('userProfileData');
+      if (!saved) {
+        Alert.alert('Account not found', 'No account found. Please sign up first.');
+        return;
+      }
+
+      const parsed = JSON.parse(saved);
+      const savedEmail = parsed?.email || '';
+
+      if (savedEmail.toLowerCase() !== email.trim().toLowerCase()) {
+        Alert.alert('Account not found', 'No account matches this email. Please sign up first.');
+        return;
+      }
+
+      // At this stage, an account exists for the provided email. Proceed to Home.
+      Alert.alert('Success', 'You have successfully signed in!', [
+        { text: 'OK', onPress: () => navigation.navigate('Home') },
+      ]);
+    } catch (err) {
+      console.log('Sign-in storage error:', err);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    }
   };
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

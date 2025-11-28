@@ -315,6 +315,48 @@ const MyAccountScreen = ({ navigation, route }) => {
     setEditDescriptionModal(true);
   };
 
+  // Handle logout - clears stored user data and resets UI
+  const handleLogout = () => {
+    Alert.alert(
+      'Log out',
+      'Are you sure you want to log out? This will clear saved account data on this device.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Log out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem('userProfileData');
+              await AsyncStorage.removeItem('profileImage');
+              await AsyncStorage.removeItem('portfolioImages');
+
+              // Reset local state to defaults
+              const emptyUserData = {
+                name: 'Kreideprinz',
+                email: 'alberlin@gnail.com',
+                skills: [],
+                joinedDate: '',
+                description: 'Custom teams do not award consecutive additional title, and/or advanced format, including at followout advice in some aligas.',
+                profileImage: null,
+              };
+
+              setUserData(emptyUserData);
+              setPortfolioImages([]);
+              setRefreshKey(prev => prev + 1);
+
+              // Navigate back to SignIn
+              navigation.navigate('SignIn');
+            } catch (error) {
+              console.log('Error clearing storage on logout:', error);
+              Alert.alert('Error', 'Failed to log out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Save description
   const handleSaveDescription = async () => {
     if (newDescription.trim() === '') {
@@ -689,6 +731,21 @@ const styles = StyleSheet.create({
     color: '#000', 
     fontSize: 14, 
     fontWeight: '600' 
+  },
+  logoutButton: {
+    backgroundColor: 'transparent',
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    alignSelf: 'flex-start',
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 215, 0, 0.3)',
+  },
+  logoutButtonText: {
+    color: '#FFD700',
+    fontSize: 14,
+    fontWeight: '600',
   },
   descriptionCard: { 
     backgroundColor: 'rgba(255, 255, 255, 0.1)', 
