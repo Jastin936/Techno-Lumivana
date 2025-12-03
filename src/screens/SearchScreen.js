@@ -1,24 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFonts } from 'expo-font';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useState } from 'react';
 import {
-  View,
+  Animated,
+  Dimensions,
+  FlatList,
+  Image,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  Image,
-  ScrollView,
-  FlatList,
-  Dimensions,
-  Modal,
-  Animated,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { CATEGORY_LIST, CATEGORY_ICON_MAP } from '../constants/categories';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useFonts } from 'expo-font';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CATEGORY_LIST } from '../constants/categories';
+import { useTheme } from '../context/ThemeContext';
 
 const rotateValue = new Animated.Value(0);
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -162,6 +163,7 @@ const COMMISSION_QUICK_LINKS = [
 
 // --- Helper Component for Commission Item ---
 const CommissionItem = ({ date, title, description, status, category, onPress }) => {
+  const { isDarkMode, colors } = useTheme();
   const getStatusColor = (status) => {
     switch (status) {
       case 'On Going':
@@ -169,27 +171,28 @@ const CommissionItem = ({ date, title, description, status, category, onPress })
       case 'Canceled':
         return '#F44336'; // Red
       default:
-        return '#aaa';
+        return colors.textMuted;
     }
   };
 
   return (
-    <TouchableOpacity style={styles.commissionItemCard} onPress={onPress}>
-      <View style={styles.thumbnailPlaceholder}>
-        <Ionicons name="image-outline" size={30} color="#555" />
+    <TouchableOpacity style={[styles.commissionItemCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]} onPress={onPress}>
+      <View style={[styles.thumbnailPlaceholder, { backgroundColor: colors.surfaceLight }]}>
+        <Ionicons name="image-outline" size={30} color={colors.textMuted} />
       </View>
       <View style={styles.detailsContainer}>
         <View style={styles.headerRow}>
-          <Text style={styles.dateText}>{date}</Text>
+          <Text style={[styles.dateText, { color: colors.textSecondary }]}>{date}</Text>
           <Text style={[styles.statusTag, { backgroundColor: getStatusColor(status) }]}>
             {status}
           </Text>
         </View>
-        <Text style={styles.titleText}>{title}</Text>
-        <Text style={styles.descriptionText}>{description}</Text>
+        <Text style={[styles.titleText, { color: colors.text }]}>{title}</Text>
+        <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{description}</Text>
         <View style={styles.categoryRow}>
-          <Ionicons name={FILTER_CATEGORY_MAP.find(cat => cat.name === category)?.icon || 'apps-outline'} size={14} color="#FFD700" />
-          <Text style={styles.categoryText}>{category}</Text>
+          {/* FIX: Safe find for category icon */}
+          <Ionicons name={FILTER_CATEGORY_MAP.find(cat => cat.name === category)?.icon || 'apps-outline'} size={14} color={colors.primary} />
+          <Text style={[styles.categoryText, { color: colors.primary }]}>{category}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -198,6 +201,7 @@ const CommissionItem = ({ date, title, description, status, category, onPress })
 
 // --- Filter Modal Component - Same as CommissionsScreen ---
 const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory }) => {
+  const { isDarkMode, colors } = useTheme();
   return (
     <Modal
       animationType="slide"
@@ -206,20 +210,20 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory
       onRequestClose={onClose}
     >
       <View style={modalStyles.centeredView}>
-        <View style={modalStyles.modalView}>
+        <View style={[modalStyles.modalView, { backgroundColor: colors.card }]}>
           <View style={modalStyles.headerRow}>
-            <Text style={modalStyles.title}>Filter</Text>
+            <Text style={[modalStyles.title, { color: colors.primary }]}>Filter</Text>
             <TouchableOpacity onPress={onClose} style={modalStyles.closeButton}>
-              <Ionicons name="close" size={24} color="#FFD700" /> 
+              <Ionicons name="close" size={24} color={colors.primary} /> 
             </TouchableOpacity>
           </View>
           
-          <Text style={modalStyles.categoryHeader}>Category</Text>
+          <Text style={[modalStyles.categoryHeader, { color: colors.text }]}>Category</Text>
           <ScrollView style={modalStyles.categoryList}>
             {FILTER_CATEGORY_MAP.map((item) => (
               <TouchableOpacity
                 key={item.name}
-                style={modalStyles.categoryItem}
+                style={[modalStyles.categoryItem, { borderBottomColor: colors.border }]}
                 onPress={() => {
                   setSelectedCategory(item.name);
                   onClose();
@@ -229,15 +233,18 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory
                   <Ionicons 
                     name={item.icon} 
                     size={25} 
-                    color="#FFD700"
+                    color={colors.primary}
                     style={modalStyles.categoryIcon}
                   />
-                  <Text style={modalStyles.categoryText}>{item.name}</Text>
+                  <Text style={[modalStyles.categoryText, { color: colors.textSecondary }]}>{item.name}</Text>
                 </View>
 
-                <View style={modalStyles.checkbox(selectedCategory === item.name)}>
+                <View style={[modalStyles.checkbox(selectedCategory === item.name), { 
+                  borderColor: selectedCategory === item.name ? colors.primary : colors.border,
+                  backgroundColor: selectedCategory === item.name ? colors.primary : 'transparent'
+                }]}>
                   {selectedCategory === item.name && (
-                    <Ionicons name="checkmark-sharp" size={16} color="#000" />
+                    <Ionicons name="checkmark-sharp" size={16} color={isDarkMode ? "#000" : "#000"} />
                   )}
                 </View>
               </TouchableOpacity>
@@ -251,6 +258,7 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory
 
 // --- SearchScreen Component ---
 const SearchScreen = ({ navigation }) => {
+  const { isDarkMode, colors, gradients } = useTheme();
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
   });
@@ -303,12 +311,17 @@ const SearchScreen = ({ navigation }) => {
     try {
       const savedUserData = await AsyncStorage.getItem('userProfileData');
       if (savedUserData) {
-        const parsedData = JSON.parse(savedUserData);
-        setUserData(prevData => ({
-          ...prevData,
-          name: parsedData.name || '',
-          profileImage: parsedData.profileImage || null
-        }));
+        // FIX: Safer parsing
+        try {
+          const parsedData = JSON.parse(savedUserData);
+          setUserData(prevData => ({
+            ...prevData,
+            name: parsedData.name || '',
+            profileImage: parsedData.profileImage || null
+          }));
+        } catch (parseError) {
+          console.log('Error parsing user data:', parseError);
+        }
       }
 
       const savedProfileImage = await AsyncStorage.getItem('profileImage');
@@ -384,18 +397,19 @@ const SearchScreen = ({ navigation }) => {
 
   const renderQuickLink = ({ item }) => (
     <TouchableOpacity 
-      style={styles.quickLinkItem} 
+      style={[styles.quickLinkItem, { backgroundColor: colors.card, borderColor: colors.cardBorder }]} 
       onPress={() => handleQuickLinkPress(item)} 
     >
-      <View style={styles.quickLinkImageContainer}>
-        <Ionicons name={item.icon} size={40} color="#FFD700" />
+      <View style={[styles.quickLinkImageContainer, { backgroundColor: colors.surfaceLight, borderColor: colors.border }]}>
+        <Ionicons name={item.icon} size={40} color={colors.primary} />
       </View>
       <View style={styles.quickLinkTextContent}>
-        <Text style={styles.quickLinkTitle}>{item.title}</Text>
-        <Text style={styles.quickLinkDescription}>{item.description}</Text>
+        <Text style={[styles.quickLinkTitle, { color: colors.text }]}>{item.title}</Text>
+        <Text style={[styles.quickLinkDescription, { color: colors.textSecondary }]}>{item.description}</Text>
         <View style={styles.quickLinkCategory}>
-          <Ionicons name={FILTER_CATEGORY_MAP.find(cat => cat.name === item.category)?.icon || 'apps-outline'} size={12} color="#FFD700" />
-          <Text style={styles.quickLinkCategoryText}>{item.category}</Text>
+          {/* FIX: Safe find for category icon */}
+          <Ionicons name={FILTER_CATEGORY_MAP.find(cat => cat.name === item.category)?.icon || 'apps-outline'} size={12} color={colors.primary} />
+          <Text style={[styles.quickLinkCategoryText, { color: colors.primary }]}>{item.category}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -410,9 +424,13 @@ const SearchScreen = ({ navigation }) => {
   }
 
   return (
-    <LinearGradient colors={["#0E0E0E", "#1A1A1A"]} style={styles.container}>
+    <LinearGradient 
+      colors={isDarkMode ? gradients.background : gradients.main} 
+      locations={isDarkMode ? [0, 1] : [0, 0.58, 0.84]}
+      style={styles.container}
+    >
       <SafeAreaView style={{ flex: 1 }}>
-        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+        <StatusBar barStyle={isDarkMode ? "light-content" : "light-content"} translucent backgroundColor="transparent" />
 
         {/* HEADER */}
         <View style={styles.header}>
@@ -423,7 +441,7 @@ const SearchScreen = ({ navigation }) => {
                 style={[styles.logo, animatedLogoStyle]}
                 resizeMode="contain"
               />
-              <Text style={[styles.logoText, { fontFamily: 'Milonga' }]}>Lumivana</Text>
+              <Text style={[styles.logoText, { fontFamily: 'Milonga', color: isDarkMode ? colors.text : '#FFFFFF' }]}>Lumivana</Text>
             </View>
 
             <TouchableOpacity
@@ -436,7 +454,7 @@ const SearchScreen = ({ navigation }) => {
                   style={styles.profileImage} 
                 />
               ) : (
-                <Ionicons name="person-circle-outline" size={36} color="#FFD700" />
+                <Ionicons name="person-circle-outline" size={36} color={colors.primary} />
               )}
             </TouchableOpacity>
           </View>
@@ -445,10 +463,18 @@ const SearchScreen = ({ navigation }) => {
         {/* IMAGE PLACEHOLDER - MOVED ABOVE SEARCH BAR */}
         {searchQuery.length === 0 && (
           <View style={styles.imagePlaceholderContainer}>
-            <View style={styles.imagePlaceholder}>
-              <Ionicons name="images-outline" size={50} color="#666" />
-              <Text style={styles.imagePlaceholderText}>Featured Commissions</Text>
-              <Text style={styles.imagePlaceholderSubtext}>
+            <View style={[styles.imagePlaceholder, { 
+              backgroundColor: isDarkMode ? colors.surface : colors.surfaceLight,
+              borderColor: isDarkMode ? colors.border : colors.cardBorder
+            }]}>
+              <Ionicons name="images-outline" size={50} color={isDarkMode ? colors.textMuted : colors.primary} />
+              <Text style={[styles.imagePlaceholderText, { 
+                color: isDarkMode ? colors.text : '#0B005F',
+                fontWeight: 'bold'
+              }]}>Featured Commissions</Text>
+              <Text style={[styles.imagePlaceholderSubtext, { 
+                color: isDarkMode ? colors.textSecondary : '#0B005F' 
+              }]}>
                 Discover amazing artwork and creative services
               </Text>
             </View>
@@ -457,32 +483,32 @@ const SearchScreen = ({ navigation }) => {
 
         {/* 🔍 SEARCH BAR AND FILTER - Now below image placeholder */}
         <View style={styles.searchBarContainer}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search-outline" size={20} color="#FFD700" />
+          <View style={[styles.searchBar, { backgroundColor: isDarkMode ? colors.surface : 'rgba(255, 255, 255, 0.15)' }]}>
+            <Ionicons name="search-outline" size={20} color={colors.primary} />
             <TextInput
               placeholder="Search commissions..."
-              placeholderTextColor="#aaa"
-              style={styles.searchInput}
+              placeholderTextColor={isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.6)'}
+              style={[styles.searchInput, { color: isDarkMode ? colors.text : '#FFFFFF' }]}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
           </View>
-          <TouchableOpacity style={styles.filterButton} onPress={() => setFilterVisible(true)}>
-            <Ionicons name="filter-outline" size={22} color="#FFD700" />
+          <TouchableOpacity style={[styles.filterButton, { backgroundColor: isDarkMode ? colors.surface : 'rgba(255, 255, 255, 0.15)' }]} onPress={() => setFilterVisible(true)}>
+            <Ionicons name="filter-outline" size={22} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
         {/* Active Filter Indicator */}
         {selectedCategory !== 'All' && (
-          <View style={styles.activeFilterContainer}>
-            <Text style={styles.activeFilterText}>
-              Filtering by: <Text style={styles.activeFilterCategory}>{selectedCategory}</Text>
+          <View style={[styles.activeFilterContainer, { backgroundColor: isDarkMode ? 'rgba(255, 215, 0, 0.1)' : 'rgba(207, 173, 1, 0.1)' }]}>
+            <Text style={[styles.activeFilterText, { color: colors.textSecondary }]}>
+              Filtering by: <Text style={[styles.activeFilterCategory, { color: colors.primary }]}>{selectedCategory}</Text>
             </Text>
             <TouchableOpacity 
               style={styles.clearFilterButton}
               onPress={() => setSelectedCategory('All')}
             >
-              <Ionicons name="close-circle" size={16} color="#FFD700" />
+              <Ionicons name="close-circle" size={16} color={colors.primary} />
             </TouchableOpacity>
           </View>
         )}
@@ -496,7 +522,7 @@ const SearchScreen = ({ navigation }) => {
           {/* Commission Quick Links (Only visible when search bar is empty) */}
           {searchQuery.length === 0 && (
             <View style={styles.quickLinksSection}>
-              <Text style={styles.sectionTitle}>Browse Commission Types</Text>
+              <Text style={[styles.sectionTitle, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Browse Commission Types</Text>
               <FlatList
                 data={filteredQuickLinks}
                 renderItem={renderQuickLink}
@@ -511,7 +537,7 @@ const SearchScreen = ({ navigation }) => {
           {/* Search Results (Displayed when searching or when category filter is active) */}
           {(searchQuery.length > 0 || selectedCategory !== 'All') && (
             <View style={styles.resultsContainer}>
-              <Text style={styles.sectionTitle}>
+              <Text style={[styles.sectionTitle, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>
                 {searchQuery.length > 0 
                   ? `Search Results for "${searchQuery}"`
                   : `All ${selectedCategory} Commissions`
@@ -531,14 +557,14 @@ const SearchScreen = ({ navigation }) => {
                 ))}
                 {filteredCommissions.length === 0 && (
                   <View style={styles.noResultsContainer}>
-                    <Ionicons name="search-outline" size={50} color="#666" />
-                    <Text style={styles.noResultsText}>
+                    <Ionicons name="search-outline" size={50} color={colors.textMuted} />
+                    <Text style={[styles.noResultsText, { color: colors.textSecondary }]}>
                       {searchQuery.length > 0 
                         ? `No results found for "${searchQuery}"`
                         : `No ${selectedCategory} commissions found`
                       }
                     </Text>
-                    <Text style={styles.noResultsSubText}>
+                    <Text style={[styles.noResultsSubText, { color: colors.textMuted }]}>
                       Try adjusting your search or filters
                     </Text>
                   </View>
@@ -549,26 +575,26 @@ const SearchScreen = ({ navigation }) => {
         </ScrollView>
 
         {/* FOOTER */}
-        <View style={styles.footer}>
+        <View style={[styles.footer, { backgroundColor: isDarkMode ? colors.surface : 'rgba(255, 255, 255, 0.15)' }]}>
           <TouchableOpacity 
             style={styles.footerItem}
             onPress={() => navigation.navigate('Home')}
           >
-            <Ionicons name="home-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>Home</Text>
+            <Ionicons name="home-outline" size={24} color={isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)'} />
+            <Text style={[styles.footerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>Home</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.footerItem}>
-            <Ionicons name="search" size={24} color="#FFD700" />
-            <Text style={[styles.footerText, styles.activeFooterText]}>Search</Text>
+            <Ionicons name="search" size={24} color={colors.primary} />
+            <Text style={[styles.footerText, styles.activeFooterText, { color: colors.primary }]}>Search</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={styles.plusSquareButton}
             onPress={() => navigation.navigate('Request')}
           >
-            <View style={styles.plusSquareContainer}>
-              <Ionicons name="add" size={30} color="#FFD700" />
+            <View style={[styles.plusSquareContainer, { borderColor: colors.primary }]}>
+              <Ionicons name="add" size={30} color={colors.primary} />
             </View>
           </TouchableOpacity>
 
@@ -576,16 +602,16 @@ const SearchScreen = ({ navigation }) => {
             style={styles.footerItem}
             onPress={() => navigation.navigate('Commissions')}
           >
-            <Ionicons name="briefcase-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>Commissions</Text>
+            <Ionicons name="briefcase-outline" size={24} color={isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)'} />
+            <Text style={[styles.footerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>Commissions</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={styles.footerItem}
             onPress={() => navigation.navigate('FAQs')}
           >
-            <Ionicons name="help-circle-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>FAQs</Text>
+            <Ionicons name="help-circle-outline" size={24} color={isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)'} />
+            <Text style={[styles.footerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>FAQs</Text>
           </TouchableOpacity>
         </View>
 
@@ -611,7 +637,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderBottomLeftRadius: 20, 
     borderBottomRightRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.2)',
   },  
   headerTop: {
     flexDirection: 'row',
@@ -630,7 +655,6 @@ const styles = StyleSheet.create({
   },
   logoText: { 
     fontSize: 28, 
-    color: '#fff',
     fontFamily: 'Milonga',
   },
   profileIcon: {
@@ -646,7 +670,7 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#FFD700',
+    borderColor: 'transparent', // Will be set dynamically
   },
   
   // NEW: Image Placeholder Styles - Now positioned above search bar
@@ -658,22 +682,18 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     width: '100%',
     height: 150,
-    backgroundColor: 'rgba(30,30,30,0.85)',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)',
     borderStyle: 'dashed',
   },
   imagePlaceholderText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
     marginTop: 8,
   },
   imagePlaceholderSubtext: {
-    color: '#aaa',
     fontSize: 12,
     marginTop: 4,
     textAlign: 'center',
@@ -691,20 +711,17 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1C1C1C",
     borderRadius: 10,
     paddingHorizontal: 10,
     height: 38,
   },
   searchInput: { 
     flex: 1, 
-    color: "#fff", 
     marginLeft: 8, 
     fontSize: 14 
   },
   filterButton: {
     marginLeft: 10,
-    backgroundColor: "#1C1C1C",
     borderRadius: 10,
     padding: 10,
   },
@@ -714,19 +731,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
     marginHorizontal: 16,
     padding: 8,
     borderRadius: 8,
     marginBottom: 10,
   },
   activeFilterText: {
-    color: '#fff',
     fontSize: 14,
     marginRight: 8,
   },
   activeFilterCategory: {
-    color: '#FFD700',
     fontWeight: 'bold',
   },
   clearFilterButton: {
@@ -747,10 +761,10 @@ const styles = StyleSheet.create({
   },
   quickLinkItem: {
     width: '48%',
-    backgroundColor: 'rgba(30,30,30,0.85)',
     borderRadius: 12,
     padding: 12,
     marginBottom: 16,
+    borderWidth: 1,
   },
   quickLinkColumnWrapper: {
     justifyContent: 'space-between',
@@ -758,23 +772,21 @@ const styles = StyleSheet.create({
   quickLinkImageContainer: {
     width: '100%',
     height: 80,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 8,
     marginBottom: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
   },
   quickLinkTextContent: {
     // 
   },
   quickLinkTitle: {
-    color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   quickLinkDescription: {
-    color: '#aaa',
     fontSize: 12,
     marginBottom: 6,
   },
@@ -783,7 +795,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   quickLinkCategoryText: {
-    color: '#FFD700',
     fontSize: 11,
     marginLeft: 4,
   },
@@ -799,18 +810,15 @@ const styles = StyleSheet.create({
   },
   commissionItemCard: {
     flexDirection: 'row',
-    backgroundColor: '#1C1C1C',
     borderRadius: 12,
+    borderWidth: 1,
     padding: 12,
     marginBottom: 10,
     alignItems: 'flex-start',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   thumbnailPlaceholder: {
     width: 90,
     height: 90,
-    backgroundColor: '#333',
     borderRadius: 8,
     marginRight: 12,
     justifyContent: 'center',
@@ -827,7 +835,6 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 12,
-    color: '#aaa',
     fontWeight: '500',
     marginTop: 2,
   },
@@ -844,12 +851,10 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
     marginBottom: 2,
   },
   descriptionText: {
     fontSize: 12,
-    color: '#aaa',
     marginBottom: 4,
   },
   categoryRow: {
@@ -859,7 +864,6 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 12,
-    color: '#FFD700',
     marginLeft: 4,
   },
 
@@ -870,14 +874,12 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   noResultsText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
     marginTop: 16,
     textAlign: 'center',
   },
   noResultsSubText: {
-    color: '#aaa',
     fontSize: 14,
     textAlign: 'center',
     marginTop: 8,
@@ -888,7 +890,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
     marginBottom: 12,
   },
 
@@ -901,20 +902,17 @@ const styles = StyleSheet.create({
     paddingBottom: 40, 
     borderTopLeftRadius: 20, 
     borderTopRightRadius: 20, 
-    backgroundColor: 'rgba(0,0,0,0.2)' 
   },
   footerItem: { 
     alignItems: 'center',
     flex: 1,
   },
   footerText: { 
-    color: '#aaa', 
     fontSize: 12, 
     marginTop: 2, 
     textAlign: 'center' 
   },
   activeFooterText: { 
-    color: '#FFD700', 
     fontWeight: 'bold' 
   },
   plusSquareButton: {
@@ -925,7 +923,7 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderWidth: 2,
-    borderColor: '#FFD700',
+    borderColor: 'transparent', // Will be set dynamically
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -947,7 +945,6 @@ const modalStyles = StyleSheet.create({
   modalView: {
     width: '100%',
     height: SCREEN_HEIGHT * 0.45,
-    backgroundColor: '#1C1C1C',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 25,
@@ -961,7 +958,6 @@ const modalStyles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFD700',
     flex: 1,
     textAlign: 'center',
   },
@@ -976,7 +972,6 @@ const modalStyles = StyleSheet.create({
   categoryHeader: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFF',
     marginBottom: 10,
   },
   categoryList: {
@@ -988,7 +983,6 @@ const modalStyles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   categoryTextContainer: { 
     flexDirection: 'row',
@@ -999,15 +993,12 @@ const modalStyles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 16,
-    color: '#CCC',
   },
   checkbox: (isChecked) => ({
     width: 24,
     height: 24,
     borderRadius: 4,
     borderWidth: 2,
-    borderColor: isChecked ? '#FFD700' : '#FFF',
-    backgroundColor: isChecked ? '#FFD700' : 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
   }),

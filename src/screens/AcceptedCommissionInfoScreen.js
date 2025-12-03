@@ -1,27 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  Dimensions,
-  Modal,
-  Image,
-  Animated,
-  Easing,
-  TextInput,
-  Alert,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts } from 'expo-font';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useState } from 'react';
+import {
+  Alert,
+  Animated,
+  Dimensions,
+  Easing,
+  Image,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
+  const { isDarkMode, colors, gradients } = useTheme();
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
   });
@@ -81,8 +83,8 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
 
   if (!fontsLoaded) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: '#fff' }}>Loading...</Text>
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', backgroundColor: isDarkMode ? colors.background : colors.background }]}>
+        <Text style={{ color: colors.text }}>Loading...</Text>
       </View>
     );
   }
@@ -332,15 +334,19 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
   };
 
   return (
-    <LinearGradient colors={['#0E0E0E', '#1A1A1A']} style={styles.container}>
+    <LinearGradient 
+      colors={isDarkMode ? gradients.background : gradients.main} 
+      locations={isDarkMode ? [0, 1] : [0, 0.58, 0.84]}
+      style={styles.container}
+    >
       <SafeAreaView style={{ flex: 1 }}>
-        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+        <StatusBar barStyle={isDarkMode ? "light-content" : "light-content"} translucent backgroundColor="transparent" />
 
         {/* Header (Back button on the left) */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate("Commissions")}>
-              <Text style={styles.backButtonText}>←</Text>
+              <Text style={[styles.backButtonText, { color: isDarkMode ? colors.primary : '#FFFFFF' }]}>←</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -350,15 +356,19 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
           {/* New Container for Image and Badges */}
           <View style={styles.imageContainerWithBadges}>
             {/* Top Image Placeholder - Show first reference photo if available */}
-            <View style={styles.topImagePlaceholder}>
-              {requestData.referencePhotos && requestData.referencePhotos.length > 0 ? (
+            <View style={[styles.topImagePlaceholder, { 
+              backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight,
+              borderColor: isDarkMode ? 'rgba(255, 215, 0, 0.2)' : colors.cardBorder
+            }]}>
+              {/* FIX: Use optional chaining to prevent crash */}
+              {requestData.referencePhotos?.length > 0 ? (
                 <Image 
                   source={{ uri: requestData.referencePhotos[0] }} 
                   style={styles.mainImage}
                   resizeMode="cover"
                 />
               ) : (
-                <Ionicons name="image-outline" size={60} color="#666" />
+                <Ionicons name="image-outline" size={60} color={colors.textMuted} />
               )}
             </View>
             
@@ -368,8 +378,8 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
 
           {/* Info Section (below image) */}
           <View style={styles.infoSection}>
-            <Text style={styles.requestTitle}>{requestData.title}</Text>
-            <Text style={styles.requestType}>{requestData.category || requestData.type}</Text>
+            <Text style={[styles.requestTitle, { color: colors.primary }]}>{requestData.title}</Text>
+            <Text style={[styles.requestType, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>{requestData.category || requestData.type}</Text>
 
             {/* Cancelled Banner - Shows when commission is cancelled */}
             <CancelledBanner />
@@ -381,15 +391,15 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
             <View style={styles.artistRow}>
               <View style={styles.leftSide}>
                 <View style={styles.profileCircle}>
-                  <Ionicons name="person-circle-outline" size={40} color="#FFD700" />
+                  <Ionicons name="person-circle-outline" size={40} color={colors.primary} />
                 </View>
-                <Text style={styles.artistName}>{requestData.artist}</Text>
+                <Text style={[styles.artistName, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>{requestData.artist}</Text>
               </View>
 
               {/* Right Side Actions: Follow + Menu */}
               <View style={styles.rightSideActions}>
-                <TouchableOpacity style={styles.followButton}>
-                  <Text style={styles.followButtonText}>Follow</Text>
+                <TouchableOpacity style={[styles.followButton, { borderColor: colors.border }]}>
+                  <Text style={[styles.followButtonText, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Follow</Text>
                 </TouchableOpacity>
 
                 {/* Menu Button */}
@@ -397,7 +407,7 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
                   style={styles.menuButton}
                   onPress={openMoreModal}
                 >
-                  <Ionicons name="ellipsis-vertical" size={24} color="#FFD700" />
+                  <Ionicons name="ellipsis-vertical" size={24} color={colors.primary} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -405,56 +415,77 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
 
           {/* Commission Details Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Commission Details</Text>
+            <Text style={[styles.sectionTitle, { color: colors.primary }]}>Commission Details</Text>
 
             {/* Show cancellation reason if cancelled */}
             {(requestData.status === 'cancelled' || requestData.status === 'Canceled' || requestData.status === 'canceled') && requestData.cancellationReason && (
               <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Cancellation Reason</Text>
-                <Text style={styles.detailValue}>{requestData.cancellationReason}</Text>
+                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Cancellation Reason</Text>
+                <Text style={[styles.detailValue, { 
+                  color: colors.text, 
+                  backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+                }]}>{requestData.cancellationReason}</Text>
               </View>
             )}
 
             {/* Show completion details if completed */}
             {(requestData.status === 'complete' || requestData.status === 'completed' || requestData.status === 'Complete') && requestData.completionNotes && (
               <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Completion Notes</Text>
-                <Text style={styles.detailValue}>{requestData.completionNotes}</Text>
+                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Completion Notes</Text>
+                <Text style={[styles.detailValue, { 
+                  color: colors.text, 
+                  backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+                }]}>{requestData.completionNotes}</Text>
               </View>
             )}
 
             {/* Show agreed price if available (for completed commissions) */}
             {(requestData.status === 'complete' || requestData.status === 'completed' || requestData.status === 'Complete') && requestData.agreedPrice && (
               <View style={styles.detailItem}>
-                <Text style={styles.detailLabel}>Agreed Price</Text>
-                <Text style={styles.detailValue}>${requestData.agreedPrice}</Text>
+                <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Agreed Price</Text>
+                <Text style={[styles.detailValue, { 
+                  color: colors.text, 
+                  backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+                }]}>${requestData.agreedPrice}</Text>
               </View>
             )}
 
             {/* Description */}
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Description</Text>
-              <Text style={styles.detailValue}>{requestData.description}</Text>
+              <Text style={[styles.detailLabel, { color: isDarkMode ? colors.textSecondary : '#FFFFFF' }]}>Description</Text>
+              <Text style={[styles.detailValue, { 
+                color: colors.text, 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+              }]}>{requestData.description}</Text>
             </View>
 
             {/* Contact Information */}
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Contact Information</Text>
-              <Text style={styles.detailValue}>{requestData.email}</Text>
+              <Text style={[styles.detailLabel, { color: isDarkMode ? colors.textSecondary : '#FFFFFF' }]}>Contact Information</Text>
+              <Text style={[styles.detailValue, { 
+                color: colors.text, 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+              }]}>{requestData.email}</Text>
             </View>
 
             {/* Commission Date */}
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Commission Date</Text>
-              <Text style={styles.detailValue}>{requestData.date}</Text>
+              <Text style={[styles.detailLabel, { color: isDarkMode ? colors.textSecondary : '#FFFFFF' }]}>Commission Date</Text>
+              <Text style={[styles.detailValue, { 
+                color: colors.text, 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+              }]}>{requestData.date}</Text>
             </View>
           </View>
 
           {/* Image Grid Section - Show all reference photos */}
           <View style={styles.imageGrid}>
-            {requestData.referencePhotos && requestData.referencePhotos.length > 0 ? (
+            {/* FIX: Use optional chaining to prevent crash */}
+            {requestData.referencePhotos?.length > 0 ? (
               requestData.referencePhotos.map((photoUri, index) => (
-                <View key={index} style={styles.gridImage}>
+                <View key={`photo-${requestData.id || 'unknown'}-${index}-${photoUri}`} style={[styles.gridImage, { 
+                  backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+                }]}>
                   <Image 
                     source={{ uri: photoUri }} 
                     style={styles.gridImageContent}
@@ -463,10 +494,12 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
                 </View>
               ))
             ) : (
-              // Show placeholder images if no reference photos
+              // Show placeholder images if no reference photos - use unique keys
               [1, 2, 3, 4].map((_, index) => (
-                <View key={index} style={styles.gridImage}>
-                  <Ionicons name="image-outline" size={40} color="#666" />
+                <View key={`placeholder-${requestData.id || 'unknown'}-${index}`} style={[styles.gridImage, { 
+                  backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+                }]}>
+                  <Ionicons name="image-outline" size={40} color={colors.textMuted} />
                 </View>
               ))
             )}
@@ -474,31 +507,31 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
         </ScrollView>
 
         {/* FOOTER */}
-        <View style={styles.footer}>
+        <View style={[styles.footer, { backgroundColor: isDarkMode ? colors.surface : 'rgba(255, 255, 255, 0.15)' }]}>
           <TouchableOpacity style={styles.footerItem} onPress={() => navigation.navigate('Home')}>
-            <Ionicons name="home" size={24} color="#FFD700" />
-            <Text style={[styles.footerText, styles.activeFooterText]}>Home</Text>
+            <Ionicons name="home" size={24} color={isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)'} />
+            <Text style={[styles.footerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>Home</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.footerItem} onPress={() => navigation.navigate('Search')}>
-            <Ionicons name="search-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>Search</Text>
+            <Ionicons name="search-outline" size={24} color={isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)'} />
+            <Text style={[styles.footerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>Search</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.plusSquareButton} onPress={() => navigation.navigate('Request')}>
-            <View style={styles.plusSquareContainer}>
-              <Ionicons name="add" size={30} color="#FFD700" />
+            <View style={[styles.plusSquareContainer, { borderColor: colors.primary }]}>
+              <Ionicons name="add" size={30} color={colors.primary} />
             </View>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.footerItem} onPress={() => navigation.navigate('Commissions')}>
-            <Ionicons name="briefcase-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>Commissions</Text>
+            <Ionicons name="briefcase-outline" size={24} color={colors.primary} />
+            <Text style={[styles.footerText, styles.activeFooterText, { color: colors.primary }]}>Commissions</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.footerItem} onPress={() => navigation.navigate('FAQs')}>
-            <Ionicons name="help-circle-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>FAQs</Text>
+            <Ionicons name="help-circle-outline" size={24} color={isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)'} />
+            <Text style={[styles.footerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>FAQs</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -622,38 +655,42 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
           <Animated.View
             style={[
               styles.bottomSheet,
-              { transform: [{ translateY: slideAnim }] },
+              { 
+                transform: [{ translateY: slideAnim }],
+                backgroundColor: colors.card,
+                borderColor: colors.primary
+              },
             ]}
           >
-            <Text style={styles.modalTitle}>More Operations</Text>
+            <Text style={[styles.modalTitle, { color: colors.primary }]}>More Operations</Text>
             <View style={styles.iconRow}>
               <Ionicons name="logo-facebook" size={28} color="#1877F2" />
               <Ionicons name="mail-outline" size={28} color="#EA4335" />
               <Ionicons name="send-outline" size={28} color="#1DA1F2" />
-              <Ionicons name="logo-twitter" size={28} color="#fff" />
+              <Ionicons name="logo-twitter" size={28} color={colors.text} />
             </View>
             
             {/* All text properly wrapped in Text components */}
             <TouchableOpacity style={styles.optionRow} onPress={handleNotInterested}>
               <Ionicons name="heart-dislike-outline" size={22} color="red" />
-              <Text style={styles.optionText}>Not interested</Text>
+              <Text style={[styles.optionText, { color: colors.text }]}>Not interested</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.optionRow} onPress={handleReportRequest}>
               <Ionicons name="flag-outline" size={22} color="red" />
-              <Text style={styles.optionText}>Report Post</Text>
+              <Text style={[styles.optionText, { color: colors.text }]}>Report Post</Text>
             </TouchableOpacity>
             
             <TouchableOpacity style={styles.optionRow} onPress={handleBlockRequest}>
               <Ionicons name="close-circle-outline" size={22} color="red" />
-              <Text style={styles.optionText}>Block user</Text>
+              <Text style={[styles.optionText, { color: colors.text }]}>Block user</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.closeBtn}
               onPress={() => setMoreModal({ visible: false, request: null })}
             >
-              <Ionicons name="close" size={24} color="#FFD700" />
+              <Ionicons name="close" size={24} color={colors.primary} />
             </TouchableOpacity>
           </Animated.View>
         </View>
@@ -675,7 +712,7 @@ const styles = StyleSheet.create({
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
   backButton: { marginRight: 12, padding: 4 },
-  backButtonText: { fontSize: 28, color: '#FFD700', fontWeight: 'bold' },
+  backButtonText: { fontSize: 28, fontWeight: 'bold' },
 
   content: { flex: 1, paddingHorizontal: 24, paddingTop: 10 },
 
@@ -690,12 +727,10 @@ const styles = StyleSheet.create({
   topImagePlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 215, 0, 0.2)',
     borderStyle: 'dashed',
     overflow: 'hidden',
   },
@@ -804,12 +839,10 @@ const styles = StyleSheet.create({
   requestTitle: {
     fontSize: 26,
     fontWeight: 'bold',
-    color: '#FFD700',
     fontFamily: 'Milonga',
   },
   requestType: {
     fontSize: 16,
-    color: '#fff',
     marginBottom: 8,
   },
 
@@ -837,7 +870,6 @@ const styles = StyleSheet.create({
   },
   artistName: {
     fontSize: 18,
-    color: '#fff',
     fontWeight: 'bold',
   },
 
@@ -845,13 +877,11 @@ const styles = StyleSheet.create({
   followButton: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: '#3949AB',
     paddingHorizontal: 14,
     paddingVertical: 5,
     borderRadius: 8,
   },
   followButtonText: {
-    color: '#3949AB',
     fontWeight: 'bold',
     fontSize: 16,
   },
@@ -863,15 +893,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#FFD700',
     marginBottom: 12,
   },
   detailItem: { marginBottom: 16 },
-  detailLabel: { fontSize: 14, color: '#aaa', marginBottom: 6 },
+  detailLabel: { fontSize: 14, marginBottom: 6 },
   detailValue: {
     fontSize: 15,
-    color: '#fff',
-    backgroundColor: 'rgba(255,255,255,0.1)',
     padding: 12,
     borderRadius: 8,
   },
@@ -885,7 +912,6 @@ const styles = StyleSheet.create({
   gridImage: {
     width: (SCREEN_WIDTH - 72) / 2,
     height: 120,
-    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -905,17 +931,15 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.2)',
   },
   footerItem: { alignItems: 'center', flex: 1 },
-  footerText: { color: '#aaa', fontSize: 12, marginTop: 2, textAlign: 'center' },
-  activeFooterText: { color: '#FFD700', fontWeight: 'bold' },
+  footerText: { fontSize: 12, marginTop: 2, textAlign: 'center' },
+  activeFooterText: { fontWeight: 'bold' },
   plusSquareButton: { alignItems: 'center', marginHorizontal: 10 },
   plusSquareContainer: {
     width: 45,
     height: 45,
     borderWidth: 2,
-    borderColor: '#FFD700',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -1132,11 +1156,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-    backgroundColor: "#2A2A2A",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderWidth: 1,
-    borderColor: "#FFD700",
     padding: 20,
   },
   iconRow: {
@@ -1150,7 +1172,6 @@ const styles = StyleSheet.create({
     marginBottom: 12 
   },
   optionText: { 
-    color: "#fff", 
     marginLeft: 8, 
     fontSize: 15 
   },

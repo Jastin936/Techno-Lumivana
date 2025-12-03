@@ -1,21 +1,23 @@
-import React, { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useState } from 'react';
 import {
-  View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
+  View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 const ResetPasswordScreen = ({ navigation }) => {
+  const { isDarkMode, colors, gradients } = useTheme();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -26,17 +28,14 @@ const ResetPasswordScreen = ({ navigation }) => {
     confirmPassword.length > 0 && password !== confirmPassword;
 
   const handleResetPassword = () => {
-    // Alert if fields are empty
     if (!password || !confirmPassword) {
       Alert.alert('Error', 'Please fill in both password fields.');
       return;
     }
-    // Alert if password is invalid
     if (isPasswordInvalid) {
       Alert.alert('Error', 'Password must be at least 6 characters.');
       return;
     }
-    // Alert if passwords do not match
     if (isConfirmPasswordInvalid) {
       Alert.alert('Error', 'Passwords do not match.');
       return;
@@ -51,6 +50,7 @@ const ResetPasswordScreen = ({ navigation }) => {
           onPress: () => {
             setPassword('');
             setConfirmPassword('');
+            // FIX: Navigate to Login Screen
             navigation.navigate('SignIn');
           },
         },
@@ -61,37 +61,39 @@ const ResetPasswordScreen = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={['#CFAD01', '#30204D', '#0B005F']}
-      locations={[0, 0.58, 0.84]}
+      colors={isDarkMode ? gradients.background : gradients.main}
+      locations={isDarkMode ? [0, 1] : [0, 0.58, 0.84]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+        <StatusBar barStyle={isDarkMode ? "light-content" : "light-content"} translucent backgroundColor="transparent" />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoid}
         >
           <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-            {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <Text style={styles.backButtonText}>←</Text>
+                <Text style={[styles.backButtonText, { color: isDarkMode ? colors.primary : '#FFFFFF' }]}>←</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Content */}
             <View style={styles.content}>
-              <Text style={styles.title}>Reset Password</Text>
-              <Text style={styles.subtitle}>Create a new password for your account</Text>
+              <Text style={[styles.title, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Reset Password</Text>
+              <Text style={[styles.subtitle, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>Create a new password for your account</Text>
 
               <View style={styles.form}>
                 {/* New Password */}
-                <Text style={styles.label}>New Password:</Text>
+                <Text style={[styles.label, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>New Password:</Text>
                 <View style={styles.inputContainer}>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, {
+                      borderColor: colors.primary,
+                      color: isDarkMode ? colors.text : '#FFFFFF',
+                      backgroundColor: isDarkMode ? colors.inputBackground : 'transparent'
+                    }]}
                     placeholder="Enter new password"
-                    placeholderTextColor="#aaa"
+                    placeholderTextColor={isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)'}
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
@@ -99,20 +101,24 @@ const ResetPasswordScreen = ({ navigation }) => {
                     autoCorrect={false}
                   />
                   <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
-                    <Ionicons name={showPassword ? 'eye' : 'eye-off'} size={24} color="#FFD700" />
+                    <Ionicons name={showPassword ? 'eye' : 'eye-off'} size={24} color={colors.primary} />
                   </TouchableOpacity>
                 </View>
                 {isPasswordInvalid && (
-                  <Text style={styles.errorText}>Password must be at least 6 characters</Text>
+                  <Text style={[styles.errorText, { color: colors.error }]}>Password must be at least 6 characters</Text>
                 )}
 
                 {/* Confirm Password */}
-                <Text style={styles.label}>Confirm Password:</Text>
+                <Text style={[styles.label, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Confirm Password:</Text>
                 <View style={styles.inputContainer}>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, {
+                      borderColor: colors.primary,
+                      color: isDarkMode ? colors.text : '#FFFFFF',
+                      backgroundColor: isDarkMode ? colors.inputBackground : 'transparent'
+                    }]}
                     placeholder="Confirm new password"
-                    placeholderTextColor="#aaa"
+                    placeholderTextColor={isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)'}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     secureTextEntry={!showConfirmPassword}
@@ -123,19 +129,18 @@ const ResetPasswordScreen = ({ navigation }) => {
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                     style={styles.eyeIcon}
                   >
-                    <Ionicons name={showConfirmPassword ? 'eye' : 'eye-off'} size={24} color="#FFD700" />
+                    <Ionicons name={showConfirmPassword ? 'eye' : 'eye-off'} size={24} color={colors.primary} />
                   </TouchableOpacity>
                 </View>
                 {isConfirmPasswordInvalid && (
-                  <Text style={styles.errorText}>Passwords do not match</Text>
+                  <Text style={[styles.errorText, { color: colors.error }]}>Passwords do not match</Text>
                 )}
 
-                {/* Reset Button */}
                 <TouchableOpacity
-                  style={styles.sendButton} // always gold
-                  onPress={handleResetPassword} // keeps Alert
+                  style={[styles.sendButton, { backgroundColor: colors.primary }]}
+                  onPress={handleResetPassword}
                 >
-                  <Text style={styles.sendButtonText}>Reset Password</Text>
+                  <Text style={[styles.sendButtonText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Reset Password</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -151,41 +156,32 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   keyboardAvoid: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingBottom: 20, paddingTop: 50 },
-
   header: { paddingHorizontal: 24, paddingBottom: 20 },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  backButtonText: { fontSize: 28, color: '#fff', fontWeight: '300' },
-
+  backButtonText: { fontSize: 28, fontWeight: '300' },
   content: { flex: 1, paddingHorizontal: 24 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#ccc', textAlign: 'center', marginBottom: 32 },
-
+  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontSize: 14, textAlign: 'center', marginBottom: 32 },
   form: { width: '100%' },
-  label: { color: '#fff', fontSize: 14, marginBottom: 6 },
-
+  label: { fontSize: 14, marginBottom: 6 },
   inputContainer: { position: 'relative', marginBottom: 8 },
   input: {
     borderWidth: 1,
-    borderColor: '#FFD700',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: '#fff',
     paddingRight: 45,
   },
   eyeIcon: { position: 'absolute', right: 12, top: 12 },
-
-  errorText: { color: '#ff3b30', fontSize: 12, marginBottom: 8 },
-
+  errorText: { fontSize: 12, marginBottom: 8 },
   sendButton: {
-    backgroundColor: '#FFD700', // always gold
     borderRadius: 50,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 20,
   },
-  sendButtonText: { color: '#000', fontSize: 16, fontWeight: '600' },
+  sendButtonText: { fontSize: 16, fontWeight: '600' },
 });
 
 export default ResetPasswordScreen;

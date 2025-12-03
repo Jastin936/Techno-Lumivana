@@ -1,27 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  Image,
-  Alert,
-  Modal,
-  TextInput,
-  Dimensions,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFonts } from 'expo-font';
 import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useState } from 'react';
+import {
+  Alert,
+  Dimensions,
+  Image,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const MyAccountScreen = ({ navigation, route }) => {
+  const { isDarkMode, colors, gradients } = useTheme();
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
   });
@@ -428,18 +430,22 @@ const MyAccountScreen = ({ navigation, route }) => {
   if (!fontsLoaded) return null;
 
   return (
-    <LinearGradient colors={['#CFAD01', '#30204D', '#0B005F']} style={styles.container}>
+    <LinearGradient 
+      colors={isDarkMode ? gradients.background : gradients.main} 
+      locations={isDarkMode ? [0, 1] : [0, 0.58, 0.84]}
+      style={styles.container}
+    >
       <SafeAreaView style={{ flex: 1 }}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <StatusBar barStyle={isDarkMode ? "light-content" : "light-content"} backgroundColor="transparent" translucent />
 
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>←</Text>
+            <Text style={[styles.backButtonText, { color: isDarkMode ? colors.primary : '#FFFFFF' }]}>←</Text>
           </TouchableOpacity>
 
           <View style={styles.headerTitleContainer}>
-            <Text style={[styles.headerTitle, { fontFamily: 'Milonga' }]}>My Account</Text>
+            <Text style={[styles.headerTitle, { fontFamily: 'Milonga', color: isDarkMode ? colors.text : '#FFFFFF' }]}>My Account</Text>
           </View>
         </View>
 
@@ -452,34 +458,37 @@ const MyAccountScreen = ({ navigation, route }) => {
             {userData.profileImage ? (
               <Image 
                 source={{ uri: userData.profileImage }} 
-                style={styles.profileImage} 
+                style={[styles.profileImage, { borderColor: colors.primary }]} 
               />
             ) : (
-              <Ionicons name="person-circle-outline" size={120} color="#FFD700" />
+              <Ionicons name="person-circle-outline" size={120} color={colors.primary} />
             )}
-            <Text style={styles.nameText}>{userData.name}</Text>
+            <Text style={[styles.nameText, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>{userData.name}</Text>
           </View>
 
           {/* Student Information */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Student Information</Text>
+          <View style={[styles.card, { 
+            backgroundColor: isDarkMode ? colors.card : 'rgba(255, 255, 255, 0.15)',
+            borderColor: isDarkMode ? colors.border : colors.cardBorder
+          }]}>
+            <Text style={[styles.cardTitle, { color: colors.primary }]}>Student Information</Text>
             
             {/* Contact Information */}
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Contact Information</Text>
-              <Text style={styles.infoValue}>{formatContactInfo()}</Text>
+            <View style={[styles.infoRow, { borderBottomColor: isDarkMode ? colors.border : 'rgba(255, 255, 255, 0.2)' }]}>
+              <Text style={[styles.infoLabel, { color: colors.primary  }]}>Contact Information</Text>
+              <Text style={[styles.infoValue, { color: '#fff' }]}>{formatContactInfo()}</Text>
             </View>
             
             {/* Skills */}
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Skills</Text>
-              <Text style={styles.infoValue}>{formatSkills()}</Text>
+            <View style={[styles.infoRow, { borderBottomColor: isDarkMode ? colors.border : 'rgba(255, 255, 255, 0.2)' }]}>
+              <Text style={[styles.infoLabel, { color: colors.primary  }]}>Skills</Text>
+              <Text style={[styles.infoValue, { color: '#fff' }]}>{formatSkills()}</Text>
             </View>
             
             {/* Joined Date - Updates after edit profile */}
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Profile Last Updated</Text>
-              <Text style={styles.infoValue}>{displayJoinedDate()}</Text>
+            <View style={[styles.infoRow, { borderBottomColor: isDarkMode ? colors.border : 'rgba(255, 255, 255, 0.2)' }]}>
+              <Text style={[styles.infoLabel, { color: colors.primary }]}>Profile Last Updated</Text>
+              <Text style={[styles.infoValue, { color: '#fff' }]}>{displayJoinedDate()}</Text>
             </View>
             
             {/* Social Media Icons */}
@@ -512,28 +521,34 @@ const MyAccountScreen = ({ navigation, route }) => {
             </View>
             
             {/* Edit Profile Button */}
-            <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-              <Text style={styles.editButtonText}>Edit Profile</Text>
+            <TouchableOpacity style={[styles.editButton, { backgroundColor: colors.primary }]} onPress={handleEditProfile}>
+              <Text style={[styles.editButtonText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Edit Profile</Text>
             </TouchableOpacity>
           </View>
 
           {/* Description with Edit Icon */}
-          <View style={styles.descriptionCard}>
-            <Text style={styles.descriptionText}>{userData.description}</Text>
+          <View style={[styles.descriptionCard, { 
+            backgroundColor: isDarkMode ? colors.card : 'rgba(255, 255, 255, 0.15)',
+            borderColor: isDarkMode ? colors.border : colors.cardBorder
+          }]}>
+            <Text style={[styles.descriptionText, { color: colors.text }]}>{userData.description}</Text>
             <TouchableOpacity 
               style={styles.editDescriptionIcon}
               onPress={handleEditDescription}
             >
-              <Ionicons name="pencil-outline" size={20} color="#FFD700" />
+              <Ionicons name="pencil-outline" size={20} color={colors.primary} />
             </TouchableOpacity>
           </View>
 
           {/* Portfolio Grid */}
-          <View style={styles.imageCard}>
-            <Text style={styles.imageGridTitle}>Portfolio ({portfolioImages.length} images)</Text>
+          <View style={[styles.imageCard, { 
+            backgroundColor: isDarkMode ? colors.card : 'rgba(255, 255, 255, 0.15)',
+            borderColor: isDarkMode ? colors.border : colors.cardBorder
+          }]}>
+            <Text style={[styles.imageGridTitle, { color: colors.primary }]}>Portfolio ({portfolioImages.length} images)</Text>
             <View style={styles.imageGrid}>
               {portfolioImages.length === 0 ? (
-                <Text style={styles.noImagesText}>
+                <Text style={[styles.noImagesText, { color: colors.primary }]}>
                   No images yet. Add one below!
                 </Text>
               ) : (
@@ -544,22 +559,22 @@ const MyAccountScreen = ({ navigation, route }) => {
                     onPress={() => openPortfolioImageModal(index)}
                     onLongPress={() => deleteImage(index)}
                   >
-                    <Image source={{ uri }} style={styles.gridImage} resizeMode="cover" />
+                    <Image source={{ uri }} style={[styles.gridImage, { borderColor: colors.primary }]} resizeMode="cover" />
                     <View style={styles.deleteOverlay}>
-                      <Ionicons name="trash-outline" size={18} color="#fff" />
+                      <Ionicons name="trash-outline" size={18} color={colors.text} />
                     </View>
                   </TouchableOpacity>
                 ))
               )}
             </View>
 
-            <TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
-              <Ionicons name="add-circle-outline" size={28} color="#000" />
-              <Text style={styles.addImageText}>Add Image</Text>
+            <TouchableOpacity style={[styles.addImageButton, { backgroundColor: colors.primary }]} onPress={pickImage}>
+              <Ionicons name="add-circle-outline" size={28} color={isDarkMode ? colors.text : colors.buttonText} />
+              <Text style={[styles.addImageText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Add Image</Text>
             </TouchableOpacity>
 
             {portfolioImages.length > 0 && (
-              <Text style={styles.deleteHintText}>
+              <Text style={[styles.deleteHintText, { color: colors.primary }]}>
                 Long press an image to delete it
               </Text>
             )}
@@ -573,38 +588,42 @@ const MyAccountScreen = ({ navigation, route }) => {
           animationType="slide"
           onRequestClose={handleCancelDescription}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Edit Description</Text>
+          <View style={[styles.modalOverlay, { backgroundColor: colors.modalOverlay || 'rgba(0, 0, 0, 0.7)' }]}>
+            <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+              <Text style={[styles.modalTitle, { color: colors.primary }]}>Edit Description</Text>
               
               <TextInput
-                style={styles.descriptionInput}
+                style={[styles.descriptionInput, {
+                  borderColor: colors.inputBorder,
+                  color: colors.inputText,
+                  backgroundColor: colors.inputBackground
+                }]}
                 multiline={true}
                 numberOfLines={6}
                 value={newDescription}
                 onChangeText={setNewDescription}
                 placeholder="Enter your description..."
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.inputPlaceholder}
                 textAlignVertical="top"
               />
               
-              <Text style={styles.charCount}>
+              <Text style={[styles.charCount, { color: colors.textSecondary }]}>
                 {newDescription.length}/500 characters
               </Text>
 
               <View style={styles.modalButtons}>
                  <TouchableOpacity 
-                  style={[styles.modalButton, styles.saveButton]} 
+                  style={[styles.modalButton, styles.saveButton, { backgroundColor: colors.primary }]} 
                   onPress={handleSaveDescription}
                 >
-                  <Text style={styles.saveButtonText}>Save</Text>
+                  <Text style={[styles.saveButtonText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Save</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity 
-                  style={[styles.modalButton, styles.cancelButton]} 
+                  style={[styles.modalButton, styles.cancelButton, { borderColor: colors.border }]} 
                   onPress={handleCancelDescription}
                 >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                  <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -623,7 +642,7 @@ const MyAccountScreen = ({ navigation, route }) => {
               style={styles.fullScreenCloseButton}
               onPress={closePortfolioImageModal}
             >
-              <Ionicons name="close" size={30} color="#fff" />
+              <Ionicons name="close" size={30} color={colors.text} />
             </TouchableOpacity>
             
             {selectedImageIndex !== null && portfolioImages[selectedImageIndex] && (
@@ -650,9 +669,9 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   backButton: { position: 'absolute', left: 24, top: 50, zIndex: 10 },
-  backButtonText: { fontSize: 28, color: '#FFD700', fontWeight: '300' },
+  backButtonText: { fontSize: 28, fontWeight: '300' },
   headerTitleContainer: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 28, color: '#fff' },
+  headerTitle: { fontSize: 28 },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
   profileSection: { alignItems: 'center', marginVertical: 30 },
   profileImage: {
@@ -660,20 +679,16 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     borderWidth: 2,
-    borderColor: '#FFD700',
   },
-  nameText: { fontSize: 24, color: '#fff', fontWeight: 'bold', marginTop: 10 },
+  nameText: { fontSize: 24, fontWeight: 'bold', marginTop: 10 },
   card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 12,
     padding: 20,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   cardTitle: { 
     fontSize: 18, 
-    color: '#FFD700', 
     fontWeight: 'bold', 
     marginBottom: 20, 
     textAlign: 'center' 
@@ -681,18 +696,15 @@ const styles = StyleSheet.create({
   infoRow: { 
     marginBottom: 15, 
     borderBottomWidth: 1, 
-    borderBottomColor: 'rgba(255, 255, 255, 0.2)', 
     paddingBottom: 10 
   },
   infoLabel: { 
     fontSize: 16, 
-    color: '#FFD700', 
     fontWeight: '600', 
     marginBottom: 5 
   },
   infoValue: { 
     fontSize: 14, 
-    color: '#fff',
     lineHeight: 20,
   },
   // Social Media Styles - Now above Edit Profile button
@@ -720,7 +732,6 @@ const styles = StyleSheet.create({
     height: 50,
   },
   editButton: { 
-    backgroundColor: '#FFD700', 
     borderRadius: 20, 
     paddingVertical: 10, 
     paddingHorizontal: 20, 
@@ -728,7 +739,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   editButtonText: { 
-    color: '#000', 
     fontSize: 14, 
     fontWeight: '600' 
   },
@@ -740,25 +750,20 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginTop: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
   },
   logoutButtonText: {
-    color: '#FFD700',
     fontSize: 14,
     fontWeight: '600',
   },
   descriptionCard: { 
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
     borderRadius: 12, 
     padding: 20, 
     marginBottom: 20, 
     borderWidth: 1, 
-    borderColor: 'rgba(255, 215, 0, 0.3)',
     position: 'relative',
   },
   descriptionText: { 
     fontSize: 14, 
-    color: '#fff', 
     textAlign: 'center', 
     lineHeight: 20, 
     opacity: 0.8,
@@ -773,15 +778,12 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   imageCard: { 
-    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
     borderRadius: 12, 
     padding: 20, 
-    borderWidth: 1, 
-    borderColor: 'rgba(255, 215, 0, 0.3)' 
+    borderWidth: 1
   },
   imageGridTitle: { 
     fontSize: 18, 
-    color: '#FFD700', 
     fontWeight: 'bold', 
     marginBottom: 15, 
     textAlign: 'center' 
@@ -801,11 +803,9 @@ const styles = StyleSheet.create({
     width: '100%', 
     height: '100%', 
     borderRadius: 8, 
-    borderWidth: 1, 
-    borderColor: 'rgba(255, 215, 0, 0.3)' 
+    borderWidth: 1
   },
   noImagesText: { 
-    color: '#FFD700', 
     textAlign: 'center', 
     opacity: 0.7,
     width: '100%',
@@ -813,7 +813,6 @@ const styles = StyleSheet.create({
   },
   addImageButton: {
     marginTop: 15,
-    backgroundColor: '#FFD700',
     borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
@@ -823,7 +822,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   addImageText: { 
-    color: '#000', 
     fontSize: 14, 
     fontWeight: '600', 
     marginLeft: 5 
@@ -837,7 +835,6 @@ const styles = StyleSheet.create({
     padding: 3 
   },
   deleteHintText: { 
-    color: '#FFD700', 
     fontSize: 12, 
     textAlign: 'center', 
     marginTop: 5, 
@@ -846,13 +843,11 @@ const styles = StyleSheet.create({
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#30204D',
     borderRadius: 15,
     padding: 25,
     width: '90%',
@@ -861,24 +856,19 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFD700',
     textAlign: 'center',
     marginBottom: 20,
     fontFamily: 'Milonga',
   },
   descriptionInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 10,
     padding: 15,
-    color: '#fff',
     fontSize: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)',
     minHeight: 120,
     textAlignVertical: 'top',
   },
   charCount: {
-    color: '#FFD700',
     fontSize: 12,
     textAlign: 'right',
     marginTop: 5,
@@ -897,20 +887,16 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
   },
   cancelButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#FFD700',
   },
   saveButton: {
-    backgroundColor: '#FFD700',
   },
   cancelButtonText: {
-    color: '#FFD700',
     fontSize: 16,
     fontWeight: '600',
   },
   saveButtonText: {
-    color: '#000',
     fontSize: 16,
     fontWeight: '600',
   },

@@ -1,21 +1,23 @@
-import React, { useState } from 'react';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
+  View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../context/ThemeContext';
 
 const ForgotPasswordEmailScreen = ({ navigation }) => {
+  const { isDarkMode, colors, gradients } = useTheme();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -53,17 +55,17 @@ const ForgotPasswordEmailScreen = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={['#CFAD01', '#30204D', '#0B005F']}
-      locations={[0, 0.58, 0.84]}
+      colors={isDarkMode ? gradients.background : gradients.main}
+      locations={isDarkMode ? [0, 1] : [0, 0.58, 0.84]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <StatusBar barStyle={isDarkMode ? "light-content" : "light-content"} backgroundColor="transparent" translucent />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoid}
         >
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
             {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity
@@ -71,24 +73,28 @@ const ForgotPasswordEmailScreen = ({ navigation }) => {
                 onPress={() => navigation.goBack()}
                 disabled={isLoading}
               >
-                <Text style={styles.backButtonText}>←</Text>
+                <Text style={[styles.backButtonText, { color: isDarkMode ? colors.primary : '#FFFFFF' }]}>←</Text>
               </TouchableOpacity>
             </View>
 
             {/* Content */}
             <View style={styles.content}>
-              <Text style={styles.title}>Forgot Password</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.title, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Forgot Password</Text>
+              <Text style={[styles.subtitle, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>
                 Enter your email address to send the OTP code
               </Text>
 
               {/* Form */}
               <View style={styles.form}>
-                <Text style={styles.label}>Email:</Text>
+                <Text style={[styles.label, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Email:</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, {
+                    borderColor: colors.primary,
+                    color: isDarkMode ? colors.text : '#FFFFFF',
+                    backgroundColor: isDarkMode ? colors.inputBackground : 'transparent'
+                  }]}
                   placeholder="Enter your email"
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor={isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)'}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -97,19 +103,19 @@ const ForgotPasswordEmailScreen = ({ navigation }) => {
                   editable={!isLoading}
                 />
                 {isEmailInvalid && (
-                  <Text style={styles.errorText}>Please enter a valid email address</Text>
+                  <Text style={[styles.errorText, { color: colors.error }]}>Please enter a valid email address</Text>
                 )}
 
                 {/* Send OTP Button */}
                 <TouchableOpacity
-                  style={styles.sendButton}
+                  style={[styles.sendButton, { backgroundColor: colors.primary }]}
                   onPress={handleSendOTP}
                   disabled={isLoading}
                 >
                   {isLoading ? (
-                    <ActivityIndicator color="#000" size="small" />
+                    <ActivityIndicator color={isDarkMode ? colors.text : colors.buttonText} size="small" />
                   ) : (
-                    <Text style={styles.sendButtonText}>Submit</Text>
+                    <Text style={[styles.sendButtonText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Submit</Text>
                   )}
                 </TouchableOpacity>
               </View>
@@ -128,35 +134,32 @@ const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, paddingBottom: 20 },
 
   header: { paddingHorizontal: 24, paddingTop: 50, paddingBottom: 20 },
-  backButtonText: { fontSize: 28, color: '#fff', fontWeight: '300' },
+  backButtonText: { fontSize: 28, fontWeight: '300' },
 
   content: { flex: 1, paddingHorizontal: 24 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#ccc', textAlign: 'center', marginBottom: 32, lineHeight: 20 },
+  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontSize: 14, textAlign: 'center', marginBottom: 32, lineHeight: 20 },
 
   form: { width: '100%' },
-  label: { color: '#fff', fontSize: 14, marginBottom: 6 },
+  label: { fontSize: 14, marginBottom: 6 },
 
   input: {
     borderWidth: 1,
-    borderColor: '#FFD700',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
     marginBottom: 8,
-    color: '#fff',
   },
-  errorText: { color: '#ff6b6b', fontSize: 14, marginBottom: 16 },
+  errorText: { fontSize: 14, marginBottom: 16 },
 
   sendButton: {
-    backgroundColor: '#FFD700',
     borderRadius: 50,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 10,
   },
-  sendButtonText: { color: '#000', fontSize: 16, fontWeight: '600' },
+  sendButtonText: { fontSize: 16, fontWeight: '600' },
 });
 
 export default ForgotPasswordEmailScreen;

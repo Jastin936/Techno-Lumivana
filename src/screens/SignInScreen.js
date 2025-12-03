@@ -1,25 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useState } from 'react';
 import {
-  View,
+  Alert,
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  Image,
-  Alert,
-  Animated,
+  View
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../context/ThemeContext';
 
 const rotateValue = new Animated.Value(0);
 
+// Improved hash function for password (must match SignUpScreen)
+const hashPassword = (password) => {
+  // Add a simple salt based on password length to reduce collisions
+  const salt = password.length.toString();
+  let hash = 0;
+  const combined = password + salt;
+  
+  for (let i = 0; i < combined.length; i++) {
+    const char = combined.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  
+  // Add password length and first/last chars to hash to further reduce collisions
+  const firstChar = password.length > 0 ? password.charCodeAt(0) : 0;
+  const lastChar = password.length > 0 ? password.charCodeAt(password.length - 1) : 0;
+  hash = ((hash << 3) - hash) + firstChar + lastChar;
+  
+  return Math.abs(hash).toString(16) + password.length.toString(16);
+};
+
 const SignInScreen = ({ navigation }) => {
+  const { isDarkMode, colors, gradients, toggleTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -89,10 +111,34 @@ const SignInScreen = ({ navigation }) => {
 
       const parsed = JSON.parse(saved);
       const savedEmail = parsed?.email || '';
+      const savedPassword = parsed?.password || '';
 
       if (savedEmail.toLowerCase() !== email.trim().toLowerCase()) {
         Alert.alert('Account not found', 'No account matches this email. Please sign up first.');
         return;
+      }
+
+      // Validate password by comparing hashes
+      // Also check plain text for backward compatibility with old accounts
+      const hashedPassword = hashPassword(password);
+      const isPasswordValid = savedPassword && (
+        savedPassword === hashedPassword || 
+        savedPassword === password // Backward compatibility for old accounts
+      );
+      
+      if (!isPasswordValid) {
+        Alert.alert('Invalid Password', 'The password you entered is incorrect.');
+        return;
+      }
+      
+      // If password was stored in plain text, update it to hashed for security
+      if (savedPassword === password) {
+        try {
+          const updatedProfile = { ...parsed, password: hashedPassword };
+          await AsyncStorage.setItem('userProfileData', JSON.stringify(updatedProfile));
+        } catch (updateError) {
+          console.log('Error updating password hash:', updateError);
+        }
       }
 
       // At this stage, an account exists for the provided email. Proceed to Home.
@@ -111,18 +157,29 @@ const SignInScreen = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={['#CFAD01', '#30204D', '#0B005F']}
-      locations={[0, 0.58, 0.84]}
+      colors={isDarkMode ? gradients.background : gradients.main}
+      locations={isDarkMode ? [0, 1] : [0, 0.58, 0.84]}
       style={{ flex: 1 }}
     >
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor="transparent" translucent />
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoid}
         >
           <View style={styles.header}>
+            {/* Dark Mode Toggle - Top Right */}
+            <TouchableOpacity
+              style={[styles.themeToggle, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }]}
+              onPress={toggleTheme}
+            >
+              <Ionicons
+                name={isDarkMode ? 'sunny' : 'moon'}
+                size={24}
+                color={colors.primary}
+              />
+            </TouchableOpacity>
             <View style={styles.logoCircle}>
               <Animated.Image
                 source={require('../../assets/lumivana.png')}
@@ -133,15 +190,19 @@ const SignInScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.content}>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Welcome back! Please enter your details</Text>
+            <Text style={[styles.title, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Welcome Back</Text>
+            <Text style={[styles.subtitle, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.9)' }]}>Welcome back! Please enter your details</Text>
 
             <View style={styles.form}>
-              <Text style={styles.label}>Email:</Text>
+              <Text style={[styles.label, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Email:</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { 
+                  borderColor: colors.inputBorder || colors.primary, 
+                  color: colors.inputText || colors.text,
+                  backgroundColor: colors.inputBackground || colors.surface 
+                }]}
                 placeholder="Enter your email"
-                placeholderTextColor="#aaa"
+                placeholderTextColor={colors.inputPlaceholder || colors.textMuted}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -149,12 +210,15 @@ const SignInScreen = ({ navigation }) => {
               />
               {isEmailInvalid && <Text style={styles.errorText}>Please enter a valid email address</Text>}
 
-              <Text style={styles.label}>Password:</Text>
-              <View style={styles.passwordContainer}>
+              <Text style={[styles.label, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Password:</Text>
+              <View style={[styles.passwordContainer, { 
+                borderColor: colors.inputBorder || colors.primary,
+                backgroundColor: colors.inputBackground || colors.surface 
+              }]}>
                 <TextInput
-                  style={styles.inputPassword}
+                  style={[styles.inputPassword, { color: colors.inputText || colors.text }]}
                   placeholder="Enter your password"
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor={colors.inputPlaceholder || colors.textMuted}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry={!showPassword}
@@ -163,7 +227,7 @@ const SignInScreen = ({ navigation }) => {
                   <Ionicons
                     name={showPassword ? 'eye' : 'eye-off'}
                     size={22}
-                    color="#FFD700"
+                    color={colors.primary}
                   />
                 </TouchableOpacity>
               </View>
@@ -173,23 +237,26 @@ const SignInScreen = ({ navigation }) => {
                 style={styles.forgotPassword}
                 onPress={() => navigation.navigate('ForgotPasswordEmail')}
               >
-                <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+                <Text style={[styles.forgotPasswordText, { color: colors.primary }]}>Forgot password?</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.signInButton} onPress={handleSignIn}>
+              <TouchableOpacity 
+                style={[styles.signInButton, { backgroundColor: colors.primary }]} 
+                onPress={handleSignIn}
+              >
                 <Text style={styles.signInButtonText}>Sign In</Text>
               </TouchableOpacity>
 
               <View style={styles.divider}>
-                <View style={styles.dividerLine} />
+                <View style={[styles.dividerLine, { backgroundColor: isDarkMode ? '#777' : 'rgba(255, 255, 255, 0.3)' }]} />
     
-                <View style={styles.dividerLine} />
+                <View style={[styles.dividerLine, { backgroundColor: isDarkMode ? '#777' : 'rgba(255, 255, 255, 0.3)' }]} />
               </View>
 
               <View style={styles.bottomText}>
-                <Text style={styles.bottomNormal}>Don't have an account? </Text>
+                <Text style={[styles.bottomNormal, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.9)' }]}>Don't have an account? </Text>
                 <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-                  <Text style={styles.bottomLink}>Sign up</Text>
+                  <Text style={[styles.bottomLink, { color: colors.primary }]}>Sign up</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -203,7 +270,18 @@ const SignInScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   keyboardAvoid: { flex: 1 },
-  header: { alignItems: 'center', paddingTop: 60, paddingBottom: 20 },
+  header: { alignItems: 'center', paddingTop: 60, paddingBottom: 20, position: 'relative' },
+  themeToggle: {
+    position: 'absolute',
+    top: 60,
+    right: 24,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+    zIndex: 10,
+  },
   logoCircle: {
     width: 90,
     height: 90,
@@ -214,44 +292,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   content: { flex: 1, paddingHorizontal: 24 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 4 },
-  subtitle: { fontSize: 14, color: '#ccc', textAlign: 'center', marginBottom: 32 },
+  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 4 },
+  subtitle: { fontSize: 14, textAlign: 'center', marginBottom: 32 },
   form: { width: '100%' },
-  label: { color: '#fff', fontSize: 14, marginBottom: 4 },
+  label: { fontSize: 14, marginBottom: 4 },
   input: {
     borderWidth: 1,
-    borderColor: '#FFD700',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
     marginBottom: 8,
-    color: '#fff',
   },
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#FFD700',
     borderRadius: 12,
     marginBottom: 8,
     paddingHorizontal: 10,
   },
-  inputPassword: { flex: 1, paddingVertical: 14, fontSize: 16, color: '#fff' },
+  inputPassword: { flex: 1, paddingVertical: 14, fontSize: 16 },
   errorText: { color: '#ff3b30', fontSize: 12, marginBottom: 8 },
   forgotPassword: { alignSelf: 'flex-end', marginBottom: 20 },
-  forgotPasswordText: { color: '#FFD700', fontSize: 13 },
-  signInButton: { backgroundColor: '#FFD700', borderRadius: 50, paddingVertical: 16, alignItems: 'center', marginBottom: 24 },
+  forgotPasswordText: { fontSize: 13 },
+  signInButton: { borderRadius: 50, paddingVertical: 16, alignItems: 'center', marginBottom: 24 },
   signInButtonText: { color: '#000', fontSize: 16, fontWeight: '600' },
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#777' },
-  dividerText: { marginHorizontal: 10, color: '#fff', fontSize: 14 },
-  googleButton: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#FFD700', borderRadius: 50, paddingVertical: 12, justifyContent: 'center', marginBottom: 30 },
+  dividerLine: { flex: 1, height: 1 },
+  dividerText: { marginHorizontal: 10, fontSize: 14 },
+  googleButton: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 50, paddingVertical: 12, justifyContent: 'center', marginBottom: 30 },
   googleIcon: { width: 20, height: 20, marginRight: 8 },
-  googleButtonText: { color: '#fff', fontSize: 16, fontWeight: '500' },
+  googleButtonText: { fontSize: 16, fontWeight: '500' },
   bottomText: { flexDirection: 'row', justifyContent: 'center' },
-  bottomNormal: { color: '#ccc', fontSize: 14 },
-  bottomLink: { color: '#FFD700', fontSize: 14, fontWeight: '600' },
+  bottomNormal: { fontSize: 14 },
+  bottomLink: { fontSize: 14, fontWeight: '600' },
 });
 
 export default SignInScreen;

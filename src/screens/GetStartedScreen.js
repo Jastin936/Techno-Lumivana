@@ -1,14 +1,14 @@
-import React, { useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
+  Animated,
+  Dimensions,
   SafeAreaView,
   StatusBar,
-  Image,
-  Dimensions,
-  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 // Gradient background
@@ -16,12 +16,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 // Import Google Font hook
 import { useFonts } from 'expo-font';
+import { useTheme } from '../context/ThemeContext';
 
 const rotateValue = new Animated.Value(0);
 
 const { width, height } = Dimensions.get('window');
 
 const GetStartedScreen = ({ navigation }) => {
+  const { isDarkMode, colors, gradients, toggleTheme } = useTheme();
   // Load font
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
@@ -88,12 +90,26 @@ const GetStartedScreen = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={['#CFAD01', '#30204D', '#0B005F']}
-      locations={[0, 0.58, 0.84]} // match your Figma stops
+      colors={isDarkMode ? gradients.background : gradients.main}
+      locations={isDarkMode ? [0, 1] : [0, 0.58, 0.84]}
       style={styles.container}
     >
       <SafeAreaView style={{ flex: 1 }}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <StatusBar barStyle={isDarkMode ? "light-content" : "light-content"} backgroundColor="transparent" translucent />
+
+        {/* Dark Mode Toggle - Top Right */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={[styles.themeToggle, { backgroundColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' }]}
+            onPress={toggleTheme}
+          >
+            <Ionicons
+              name={isDarkMode ? 'sunny' : 'moon'}
+              size={24}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
+        </View>
 
         {/* Main Content */}
         <View style={styles.content}>
@@ -113,26 +129,26 @@ const GetStartedScreen = ({ navigation }) => {
 
           {/* Text Content */}
           <View style={styles.textContainer}>
-            <Text style={styles.title}>Lumivana</Text>
+            <Text style={[styles.title, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Lumivana</Text>
           </View>
 
           {/* Buttons */}
           <View style={styles.buttonsContainer}>
             <TouchableOpacity 
-              style={styles.getStartedButton}
+              style={[styles.getStartedButton, { borderColor: colors.primary }]}
               onPress={() => navigation.navigate('SignIn')}
             >
-              <Text style={styles.getStartedButtonText}>Get Started</Text>
+              <Text style={[styles.getStartedButtonText, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Get Started</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
+          <Text style={[styles.footerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.8)' }]}>
             By continuing, you agree to our{' '}
-            <Text style={styles.link}>Terms of Service</Text> and{' '}
-            <Text style={styles.link}>Privacy Policy</Text>
+            <Text style={[styles.link, { color: colors.primary }]}>Terms of Service</Text> and{' '}
+            <Text style={[styles.link, { color: colors.primary }]}>Privacy Policy</Text>
           </Text>
         </View>
       </SafeAreaView>
@@ -143,6 +159,18 @@ const GetStartedScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  header: {
+    paddingTop: 50,
+    paddingHorizontal: 24,
+    alignItems: 'flex-end',
+  },
+  themeToggle: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
   },
   content: {
     flex: 1,
@@ -173,7 +201,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 64,
-    color: '#fff', // white text looks better on dark bg
     textAlign: 'center',
     fontFamily: 'Milonga',
   },
@@ -187,13 +214,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     alignItems: 'center',
     justifyContent: 'center',
-
-   // border
     borderWidth: 2,
-    borderColor: '#CFAD01',         // yellow border like your gradient
   },
   getStartedButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -204,12 +227,10 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontSize: 12,
-    color: '#eee',
     textAlign: 'center',
     lineHeight: 16,
   },
   link: {
-    color: '#FFD700',
     fontWeight: '500',
   },
 });

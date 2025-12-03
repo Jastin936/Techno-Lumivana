@@ -1,27 +1,30 @@
-import React, { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFonts } from "expo-font";
+import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, useState } from "react";
 import {
-  View,
+  Animated,
+  Dimensions,
+  Easing,
+  Linking,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  Modal,
-  Animated,
-  Easing,
-  Dimensions,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useFonts } from "expo-font";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTheme } from "../context/ThemeContext";
 
 // Get screen width for dynamic image sizes
 const { width } = Dimensions.get("window");
 const IMAGE_SIZE = (width - 40 - 12 * 2 - 8 * 2) / 3;
 
 const RecommendedUsersScreen = ({ navigation }) => {
+  const { isDarkMode, colors, gradients } = useTheme();
   const [fontsLoaded] = useFonts({
     Milonga: require("../../assets/fonts/Milonga-Regular.ttf"),
   });
@@ -107,7 +110,7 @@ const RecommendedUsersScreen = ({ navigation }) => {
       bio: "Award-winning fiction writer and content creator with multiple published works and extensive blogging experience.",
       followers: 532,
       milestone: false,
-
+      referencePhotos: [] // FIX: Added missing referencePhotos to prevent crash
     },
     {
       id: 6,
@@ -131,6 +134,27 @@ const RecommendedUsersScreen = ({ navigation }) => {
 
   const slideAnim = useState(new Animated.Value(300))[0];
 
+  // Load following state from AsyncStorage
+  useEffect(() => {
+    loadFollowingState();
+  }, []);
+
+  const loadFollowingState = async () => {
+    try {
+      const savedFollowing = await AsyncStorage.getItem('followingState');
+      if (savedFollowing) {
+        // FIX: Added try-catch for JSON parsing
+        try {
+          setFollowing(JSON.parse(savedFollowing));
+        } catch (e) {
+          console.log('Error parsing following state');
+        }
+      }
+    } catch (error) {
+      console.log('Error loading following state:', error);
+    }
+  };
+
   const slideUp = () => {
     slideAnim.setValue(300);
     Animated.timing(slideAnim, {
@@ -145,12 +169,17 @@ const RecommendedUsersScreen = ({ navigation }) => {
     try {
       const savedUserData = await AsyncStorage.getItem("userProfileData");
       if (savedUserData) {
-        const parsedData = JSON.parse(savedUserData);
-        setUserData((prev) => ({
-          ...prev,
-          name: parsedData.name || "Lumivana Vivistera",
-          profileImage: parsedData.profileImage || null,
-        }));
+        // FIX: Added try-catch for JSON parsing
+        try {
+          const parsedData = JSON.parse(savedUserData);
+          setUserData((prev) => ({
+            ...prev,
+            name: parsedData.name || "Lumivana Vivistera",
+            profileImage: parsedData.profileImage || null,
+          }));
+        } catch (e) {
+          console.log('Error parsing user data');
+        }
       }
       const savedProfileImage = await AsyncStorage.getItem("profileImage");
       if (savedProfileImage) {
@@ -163,7 +192,17 @@ const RecommendedUsersScreen = ({ navigation }) => {
 
   useEffect(() => {
     loadUserData();
+    loadFollowingState();
   }, []);
+
+  // Refresh following state when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadFollowingState();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const filteredUsers = USERS.filter(
     (u) =>
@@ -171,8 +210,17 @@ const RecommendedUsersScreen = ({ navigation }) => {
       (selectedFilter === "All" || u.role.includes(selectedFilter))
   );
 
-  const toggleFollow = (id) => {
-    setFollowing((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleFollow = async (id) => {
+    const userName = USERS.find(u => u.id === id)?.name;
+    if (!userName) return;
+    
+    const newFollowing = { ...following, [userName]: !following[userName] };
+    setFollowing(newFollowing);
+    try {
+      await AsyncStorage.setItem('followingState', JSON.stringify(newFollowing));
+    } catch (error) {
+      console.log('Error saving following state:', error);
+    }
   };
 
   const handleBlockUser = (user) => {
@@ -185,9 +233,10 @@ const RecommendedUsersScreen = ({ navigation }) => {
     slideUp();
   };
 
-  // Function to handle user card press - UPDATED
+  // Function to handle user card press
   const handleUserPress = (user) => {
-    navigation.navigate("RecommendedUsersInfo", { 
+    // FIX: Updated navigation name to match App.js exactly
+    navigation.navigate("RecommendedUsersInfoScreen", { 
       requestData: {
         title: user.title,
         artist: user.name,
@@ -195,7 +244,8 @@ const RecommendedUsersScreen = ({ navigation }) => {
         skills: user.skills,
         joinedDate: user.joinedDate,
         bio: user.bio,
-        referencePhotos: user.referencePhotos
+        // Safe access to referencePhotos
+        referencePhotos: user.referencePhotos || []
       }
     });
   };
@@ -203,10 +253,14 @@ const RecommendedUsersScreen = ({ navigation }) => {
   if (!fontsLoaded) return null;
 
   return (
-    <LinearGradient colors={["#0E0E0E", "#1A1A1A"]} style={styles.container}>
+    <LinearGradient 
+      colors={isDarkMode ? gradients.background : gradients.main} 
+      locations={isDarkMode ? [0, 1] : [0, 0.58, 0.84]}
+      style={styles.container}
+    >
       <SafeAreaView style={{ flex: 1 }}>
         <StatusBar
-          barStyle="light-content"
+          barStyle={isDarkMode ? "light-content" : "light-content"}
           translucent
           backgroundColor="transparent"
         />
@@ -218,16 +272,19 @@ const RecommendedUsersScreen = ({ navigation }) => {
               style={styles.backButton}
               onPress={() => navigation.navigate("Home")}
             >
-              <Text style={styles.backButtonText}>←</Text>
+              <Text style={[styles.backButtonText, { color: colors.primary }]}>←</Text>
             </TouchableOpacity>
-            <Text style={[styles.headerTitle, { fontFamily: "Milonga" }]}>
+            <Text style={[styles.headerTitle, { fontFamily: "Milonga", color: isDarkMode ? colors.text : '#FFFFFF' }]}>
               Recommended Users
             </Text>
           </View>
         </View>
 
         {/* FILTER TABS */}
-        <View style={styles.tabContainer}>
+        <View style={[styles.tabContainer, { 
+          backgroundColor: isDarkMode ? colors.surface : 'rgba(255, 255, 255, 0.15)',
+          borderColor: colors.border 
+        }]}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -239,13 +296,14 @@ const RecommendedUsersScreen = ({ navigation }) => {
                 onPress={() => setSelectedFilter(filter)}
                 style={[
                   styles.tabButton,
-                  selectedFilter === filter && styles.activeTabButton,
+                  selectedFilter === filter && { borderBottomWidth: 2, borderColor: colors.primary },
                 ]}
               >
                 <Text
                   style={[
                     styles.tabText,
-                    selectedFilter === filter && styles.activeTabText,
+                    { color: isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.8)' },
+                    selectedFilter === filter && { color: colors.primary, fontWeight: "bold" },
                   ]}
                 >
                   {filter}
@@ -262,21 +320,22 @@ const RecommendedUsersScreen = ({ navigation }) => {
             filteredUsers.map((user) => (
               <TouchableOpacity 
                 key={user.id} 
-                style={styles.userCard}
+                style={[styles.userCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
                 onPress={() => handleUserPress(user)}
                 activeOpacity={0.7}
               >
                 <View style={styles.cardInner}>
-                  <View style={styles.avatar} />
+                  <View style={[styles.avatar, { backgroundColor: colors.primary }]} />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.userName}>{user.name}</Text>
-                    <Text style={styles.userRole}>{user.role}</Text>
+                    <Text style={[styles.userName, { color: colors.text }]}>{user.name}</Text>
+                    <Text style={[styles.userRole, { color: colors.textSecondary }]}>{user.role}</Text>
                   </View>
 
                   <TouchableOpacity
                     style={[
                       styles.followBtn,
-                      following[user.id] && styles.followingBtn,
+                      { backgroundColor: following[user.name] ? 'transparent' : colors.primary },
+                      following[user.name] && { borderWidth: 1.5, borderColor: colors.primary },
                     ]}
                     onPress={(e) => {
                       e.stopPropagation();
@@ -286,10 +345,10 @@ const RecommendedUsersScreen = ({ navigation }) => {
                     <Text
                       style={[
                         styles.followText,
-                        following[user.id] && styles.followingText,
+                        { color: following[user.name] ? colors.primary : (isDarkMode ? colors.text : "#000") },
                       ]}
                     >
-                      {following[user.id] ? "Following" : "Follow"}
+                      {following[user.name] ? "Following" : "Follow"}
                     </Text>
                   </TouchableOpacity>
 
@@ -299,14 +358,14 @@ const RecommendedUsersScreen = ({ navigation }) => {
                       openMoreModal(user);
                     }}
                   >
-                    <Text style={styles.actionText}>⋮</Text>
+                    <Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
                   </TouchableOpacity>
                 </View>
 
                 {/* Milestone Text Row */}
                 {user.milestone && (
                   <View style={styles.milestoneRow}>
-                    <Text style={styles.milestoneText}>
+                    <Text style={[styles.milestoneText, { color: colors.primary }]}>
                       <Text style={styles.trophyEmoji}>🏆</Text> Reached a new
                       milestone of {user.followers} total followers
                     </Text>
@@ -315,14 +374,14 @@ const RecommendedUsersScreen = ({ navigation }) => {
 
                 {/* Post Preview */}
                 <View style={styles.postPreviewRow}>
-                  <View style={styles.postImagePlaceholder} />
-                  <View style={styles.postImagePlaceholder} />
-                  <View style={styles.postImagePlaceholder} />
+                  <View style={[styles.postImagePlaceholder, { backgroundColor: colors.surfaceLight }]} />
+                  <View style={[styles.postImagePlaceholder, { backgroundColor: colors.surfaceLight }]} />
+                  <View style={[styles.postImagePlaceholder, { backgroundColor: colors.surfaceLight }]} />
                 </View>
               </TouchableOpacity>
             ))
           ) : (
-            <Text style={styles.noUsersText}>No users found</Text>
+            <Text style={[styles.noUsersText, { color: colors.textSecondary }]}>No users found</Text>
           )}
         </ScrollView>
 
@@ -336,66 +395,78 @@ const RecommendedUsersScreen = ({ navigation }) => {
             <Animated.View
               style={[
                 styles.bottomSheet,
-                { transform: [{ translateY: slideAnim }] },
+                { 
+                  transform: [{ translateY: slideAnim }],
+                  backgroundColor: colors.card,
+                  borderColor: colors.primary
+                },
               ]}
             >
-              <Text style={styles.modalTitle}>More Operations</Text>
-              <View style={styles.iconRow}>
+            <Text style={[styles.modalTitle, { color: colors.primary }]}>More Operations</Text>
+            <View style={styles.iconRow}>
+              <TouchableOpacity onPress={() => Linking.openURL('https://www.facebook.com')}>
                 <Ionicons name="logo-facebook" size={28} color="#1877F2" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => Linking.openURL('mailto:support@lumivana.com')}>
                 <Ionicons name="mail-outline" size={28} color="#EA4335" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => Linking.openURL('https://t.me/lumivana')}>
                 <Ionicons name="send-outline" size={28} color="#1DA1F2" />
-                <Ionicons name="logo-twitter" size={28} color="#fff" />
-              </View>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => Linking.openURL('https://twitter.com/lumivana')}>
+                <Ionicons name="logo-twitter" size={28} color={colors.text} />
+              </TouchableOpacity>
+            </View>
               <View style={styles.optionRow}>
                 <Ionicons name="heart-dislike-outline" size={22} color="red" />
-                <Text style={styles.optionText}>Not interested</Text>
+                <Text style={[styles.optionText, { color: colors.text }]}>Not interested</Text>
               </View>
               <View style={styles.optionRow}>
                 <Ionicons name="flag-outline" size={22} color="red" />
-                <Text style={styles.optionText}>Report Post</Text>
+                <Text style={[styles.optionText, { color: colors.text }]}>Report Post</Text>
               </View>
               <TouchableOpacity
                 style={styles.optionRow}
                 onPress={() => handleBlockUser(moreModal.user)}
               >
                 <Ionicons name="close-circle-outline" size={22} color="red" />
-                <Text style={styles.optionText}>Block user</Text>
+                <Text style={[styles.optionText, { color: colors.text }]}>Block user</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={styles.closeBtn}
                 onPress={() => setMoreModal({ visible: false, user: null })}
               >
-                <Ionicons name="close" size={24} color="#FFD700" />
+                <Ionicons name="close" size={24} color={colors.primary} />
               </TouchableOpacity>
             </Animated.View>
           </TouchableOpacity>
         </Modal>
 
         {/* FOOTER */}
-        <View style={styles.footer}>
+        <View style={[styles.footer, { backgroundColor: isDarkMode ? colors.surface : 'rgba(255, 255, 255, 0.15)' }]}>
           <TouchableOpacity
             style={styles.footerItem}
             onPress={() => navigation.navigate("Home")}
           >
-            <Ionicons name="home" size={24} color="#FFD700" />
-            <Text style={[styles.footerText, styles.activeFooterText]}>Home</Text>
+            <Ionicons name="home" size={24} color={colors.primary} />
+            <Text style={[styles.footerText, styles.activeFooterText, { color: colors.primary }]}>Home</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.footerItem}
             onPress={() => navigation.navigate("Search")}
           >
-            <Ionicons name="search" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>Search</Text>
+            <Ionicons name="search" size={24} color={isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)'} />
+            <Text style={[styles.footerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>Search</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.plusSquareButton}
             onPress={() => navigation.navigate("Request")}
           >
-            <View style={styles.plusSquareContainer}>
-              <Ionicons name="add" size={30} color="#FFD700" />
+            <View style={[styles.plusSquareContainer, { borderColor: colors.primary }]}>
+              <Ionicons name="add" size={30} color={colors.primary} />
             </View>
           </TouchableOpacity>
 
@@ -403,16 +474,16 @@ const RecommendedUsersScreen = ({ navigation }) => {
             style={styles.footerItem}
             onPress={() => navigation.navigate("Commissions")}
           >
-            <Ionicons name="briefcase-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>Commissions</Text>
+            <Ionicons name="briefcase-outline" size={24} color={isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)'} />
+            <Text style={[styles.footerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>Commissions</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.footerItem}
             onPress={() => navigation.navigate("FAQs")}
           >
-            <Ionicons name="help-circle-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>FAQs</Text>
+            <Ionicons name="help-circle-outline" size={24} color={isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)'} />
+            <Text style={[styles.footerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>FAQs</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -420,7 +491,6 @@ const RecommendedUsersScreen = ({ navigation }) => {
   );
 };
 
-// ... (styles remain the same)
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
@@ -432,7 +502,6 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.2)",
   },
   headerLeft: {
     flexDirection: "row",
@@ -444,17 +513,13 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 28,
-    color: "#FFD700",
     fontWeight: "bold",
   },
   headerTitle: {
     fontSize: 24,
-    color: "#fff",
   },
   tabContainer: {
-    backgroundColor: "rgba(0,0,0,0.2)",
     borderBottomWidth: 1,
-    borderColor: "#333",
     marginTop: 0,
     paddingBottom: 5,
   },
@@ -468,9 +533,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     marginRight: 10,
   },
-  tabText: { color: "#999", fontSize: 13 },
-  activeTabButton: { borderBottomWidth: 2, borderColor: "#FFD700" },
-  activeTabText: { color: "#FFD700", fontWeight: "bold" },
+  tabText: { fontSize: 13 },
   content: {
     paddingHorizontal: 20,
     paddingBottom: 80,
@@ -478,23 +541,20 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   userCard: {
-    backgroundColor: "#1C1C1C",
     borderRadius: 15,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: "#333",
     overflow: "hidden",
   },
   cardInner: { flexDirection: "row", alignItems: "center", padding: 12 },
   avatar: {
     width: 40,
     height: 40,
-    backgroundColor: "#FFD700",
     borderRadius: 20,
     marginRight: 10,
   },
-  userName: { color: "#fff", fontWeight: "bold", fontSize: 15 },
-  userRole: { color: "#999", fontSize: 12 },
+  userName: { fontWeight: "bold", fontSize: 15 },
+  userRole: { fontSize: 12 },
   milestoneRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -502,7 +562,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   milestoneText: {
-    color: "#FFD700",
     fontSize: 12,
     fontWeight: "500",
     marginLeft: 0,
@@ -512,26 +571,12 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   followBtn: {
-    backgroundColor: "#FFD700",
     borderRadius: 20,
     paddingHorizontal: 18,
     paddingVertical: 8,
     marginLeft: 'auto',
   },
-  followText: { color: "#000", fontWeight: "600", fontSize: 14 },
-  followingBtn: {
-    backgroundColor: "transparent",
-    borderWidth: 1.5,
-    borderColor: "#FFD700",
-  },
-  followingText: { color: "#FFD700" },
-  actionText: {
-    color: "#FFD700",
-    marginLeft: 8,
-    fontSize: 24,
-    alignSelf: 'center',
-    paddingHorizontal: 4,
-  },
+  followText: { fontWeight: "600", fontSize: 14 },
   postPreviewRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -539,13 +584,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   postImagePlaceholder: {
-    backgroundColor: "#333",
     borderRadius: 8,
     width: IMAGE_SIZE,
     height: IMAGE_SIZE,
   },
   noUsersText: {
-    color: "#999",
     textAlign: "center",
     fontSize: 16,
     marginTop: 50,
@@ -557,15 +600,12 @@ const styles = StyleSheet.create({
   },
   bottomSheet: {
     width: "100%",
-    backgroundColor: "#2A2A2A",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderWidth: 1,
-    borderColor: "#FFD700",
     padding: 20,
   },
   modalTitle: {
-    color: "#FFD700",
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 10,
@@ -576,7 +616,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   optionRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
-  optionText: { color: "#fff", marginLeft: 8, fontSize: 15 },
+  optionText: { marginLeft: 8, fontSize: 15 },
   closeBtn: { position: "absolute", top: 10, right: 15 },
   footer: {
     flexDirection: "row",
@@ -586,20 +626,17 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.2)",
   },
   footerItem: {
     alignItems: "center",
     flex: 1,
   },
   footerText: {
-    color: "#fff",
     fontSize: 12,
     marginTop: 2,
     textAlign: "center",
   },
   activeFooterText: {
-    color: "#FFD700",
     fontWeight: "bold",
   },
   plusSquareButton: {
@@ -610,7 +647,6 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderWidth: 2,
-    borderColor: "#FFD700",
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",

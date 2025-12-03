@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { useFonts } from 'expo-font';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
+  Animated,
+  Dimensions,
   SafeAreaView,
   StatusBar,
-  Image,
-  Dimensions,
-  TextInput,
-  Animated,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useFonts } from 'expo-font';
-import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -21,6 +19,7 @@ const { width, height } = Dimensions.get('window');
 const rotateValue = new Animated.Value(0);
 
 const RequestScreen = ({ navigation }) => {
+  const { isDarkMode, colors, gradients } = useTheme();
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
   });
@@ -71,13 +70,13 @@ const RequestScreen = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={['#CFAD01', '#30204D', '#0B005F']}
-      locations={[0, 0.58, 0.84]}
+      colors={isDarkMode ? gradients.background : gradients.main}
+      locations={isDarkMode ? [0, 1] : [0, 0.58, 0.84]}
       style={styles.container}
     >
       <SafeAreaView style={{ flex: 1 }}>
         <StatusBar
-          barStyle="light-content"
+          barStyle={isDarkMode ? "light-content" : "dark-content"}
           backgroundColor="transparent"
           translucent
         />
@@ -90,7 +89,7 @@ const RequestScreen = ({ navigation }) => {
               style={[styles.logo, animatedLogoStyle]}
               resizeMode="contain"
             />
-            <Text style={[styles.logoText, { fontFamily: 'Milonga' }]}>
+            <Text style={[styles.logoText, { fontFamily: 'Milonga', color: isDarkMode ? colors.text : '#FFFFFF' }]}>
               Lumivana
             </Text>
           </View>
@@ -100,7 +99,7 @@ const RequestScreen = ({ navigation }) => {
             style={styles.backButton}
             onPress={() => navigation.navigate('Home')}
           >
-            <Text style={styles.backButtonText}>←</Text>
+            <Text style={[styles.backButtonText, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>←</Text>
           </TouchableOpacity>
         </View>
 
@@ -118,24 +117,24 @@ const RequestScreen = ({ navigation }) => {
           {/* Action Buttons */}
           <View style={styles.buttonsContainer}>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[styles.actionButton, { backgroundColor: colors.primary }]}
               onPress={() => navigation.navigate('RequestCommission')}
             >
-              <Text style={styles.actionButtonText}>Request</Text>
+              <Text style={[styles.actionButtonText, { color: isDarkMode ? colors.text : "#FFFFFF" }]}>Request</Text>
             </TouchableOpacity>
 
             {/* OR with lines */}
             <View style={styles.orContainer}>
-              <View style={styles.line} />
-              <Text style={styles.orText}>or</Text>
-              <View style={styles.line} />
+              <View style={[styles.line, { backgroundColor: colors.primary }]} />
+              <Text style={[styles.orText, { color: isDarkMode ? colors.primary : '#FFFFFF' }]}>or</Text>
+              <View style={[styles.line, { backgroundColor: colors.primary }]} />
             </View>
 
             <TouchableOpacity 
-              style={[styles.actionButton, styles.secondaryButton]}
+              style={[styles.actionButton, styles.secondaryButton, { borderColor: colors.primary }]}
               onPress={() => navigation.navigate('OfferCommission')}
             >
-              <Text style={[styles.actionButtonText, styles.secondaryButtonText]}>Offer</Text>
+              <Text style={[styles.actionButtonText, styles.secondaryButtonText, { color: isDarkMode ? colors.primary : '#FFFFFF' }]}>Offer</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -167,11 +166,10 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 28,
-    color: '#fff',
     fontWeight: '300',
   },
   logo: { width: 50, height: 50, marginRight: 12 },
-  logoText: { fontSize: 32, color: '#fff' },
+  logoText: { fontSize: 32 },
   content: { 
     flex: 1, 
     paddingHorizontal: 24, 
@@ -191,7 +189,6 @@ const styles = StyleSheet.create({
     paddingBottom: 200,
   },
   actionButton: {
-    backgroundColor: '#FFD700',
     borderRadius: 50,
     paddingVertical: 16,
     alignItems: 'center',
@@ -201,16 +198,13 @@ const styles = StyleSheet.create({
   secondaryButton: {
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: '#FFD700',
     marginTop: 20,
   },
   actionButtonText: { 
-    color: '#000', 
     fontSize: 16, 
     fontWeight: '600' 
   },
   secondaryButtonText: {
-    color: '#FFD700',
   },
   orContainer: {
     flexDirection: 'row',
@@ -220,11 +214,9 @@ const styles = StyleSheet.create({
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: '#FFD700',
     marginHorizontal: 10,
   },
   orText: {
-    color: '#FFD700',
     fontSize: 16,
     fontWeight: '600',
     paddingHorizontal: 10,

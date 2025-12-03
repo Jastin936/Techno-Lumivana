@@ -1,27 +1,24 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  Image,
-  Dimensions,
-  ScrollView,
-  TextInput,
-  Alert,
-  Modal,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts } from 'expo-font';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useState } from 'react';
+import {
+  Alert,
+  Dimensions,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
 const CancelFormScreen = ({ navigation, route }) => {
+  const { isDarkMode, colors, gradients } = useTheme();
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
   });
@@ -55,12 +52,14 @@ const CancelFormScreen = ({ navigation, route }) => {
       return;
     }
 
-    // Create cancellation data object
-    const cancellationData = {
-      id: Date.now().toString(), // Generate unique ID
-      title: commissionName,
-      description: description,
+    // Create cancelled commission data
+    const cancelledCommission = {
+      ...requestData,
+      id: requestData.id || Date.now().toString(),
+      status: 'Canceled',
+      cancellationReason: description,
       cancelledAt: new Date().toISOString(),
+      title: commissionName || requestData.title
     };
 
     // Show success alert
@@ -71,17 +70,9 @@ const CancelFormScreen = ({ navigation, route }) => {
         {
           text: 'OK',
           onPress: () => {
-            // Navigate to AcceptedCommissionScreen and pass updated request data with cancellation info
-            navigation.navigate('AcceptedCommissionInfo', { 
-              requestData: {
-                ...requestData, // Keep all original data
-                status: 'cancelled', // Update status to cancelled
-                cancellationReason: description, // Add cancellation reason
-                cancelledAt: new Date().toISOString(), // Add cancellation timestamp
-                title: commissionName || requestData.title // Use entered name or original title
-              },
-              cancellationData: cancellationData,
-              showCancellationModal: true // Flag to show modal
+            // Navigate to Commissions screen with cancelled commission data
+            navigation.navigate('Commissions', { 
+              cancelledCommission: cancelledCommission
             });
           }
         }
@@ -111,13 +102,13 @@ const CancelFormScreen = ({ navigation, route }) => {
 
   return (
     <LinearGradient
-      colors={['#CFAD01', '#30204D', '#0B005F']}
-      locations={[0, 0.58, 0.84]}
+      colors={isDarkMode ? gradients.background : gradients.main}
+      locations={isDarkMode ? [0, 1] : [0, 0.58, 0.84]}
       style={styles.container}
     >
       <SafeAreaView style={{ flex: 1 }}>
         <StatusBar
-          barStyle="light-content"
+          barStyle={isDarkMode ? "light-content" : "light-content"}
           backgroundColor="transparent"
           translucent
         />
@@ -128,10 +119,10 @@ const CancelFormScreen = ({ navigation, route }) => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.backButtonText}>←</Text>
+            <Text style={[styles.backButtonText, { color: isDarkMode ? colors.primary : '#FFFFFF' }]}>←</Text>
           </TouchableOpacity>
 
-          <Text style={[styles.screenTitle, { fontFamily: 'Milonga' }]}>
+          <Text style={[styles.screenTitle, { fontFamily: 'Milonga', color: isDarkMode ? colors.text : '#FFFFFF' }]}>
             Cancel Form
           </Text>
 
@@ -139,36 +130,47 @@ const CancelFormScreen = ({ navigation, route }) => {
         </View>
 
         {/* Main Content */}
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.detailsCard}>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <View style={[styles.detailsCard, { 
+            backgroundColor: isDarkMode ? colors.card : 'rgba(255, 255, 255, 0.15)',
+            borderColor: isDarkMode ? colors.border : colors.cardBorder
+          }]}>
             {/* Commission Name */}
             <View style={styles.detailSection}>
-              <Text style={styles.detailLabel}>Commission Name **\***</Text>
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Commission Name **\***</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, {
+                  borderColor: colors.primary,
+                  color: isDarkMode ? colors.text : '#FFFFFF',
+                  backgroundColor: isDarkMode ? colors.inputBackground : 'transparent'
+                }]}
                 value={commissionName}
                 onChangeText={setCommissionName}
                 placeholder={`Enter Commission Name`}
-                placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                placeholderTextColor={isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)'}
               />
             </View>
 
             {/* Description */}
             <View style={styles.detailSection}>
-              <Text style={styles.detailLabel}>Reason of Cancellation:</Text>
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Reason of Cancellation:</Text>
 
                {/* Added text below the description input */}
-              <Text style={styles.instructionText}>
+              <Text style={[styles.instructionText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>
                 Please tell us why you're canceling this work to continue.
                 {"\n"}
                 We'd appreciate your feedback — share your reason to proceed.
               </Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, {
+                  borderColor: colors.primary,
+                  color: isDarkMode ? colors.text : '#FFFFFF',
+                  backgroundColor: isDarkMode ? colors.inputBackground : 'transparent'
+                }]}
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Describe the reason for cancellation here..."
-                placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                placeholderTextColor={isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)'}
                 multiline
                 numberOfLines={5}
                 textAlignVertical="top"
@@ -179,17 +181,20 @@ const CancelFormScreen = ({ navigation, route }) => {
             <View style={styles.detailSection}>
               <View style={styles.buttonRow}>
                 <TouchableOpacity
-                  style={[styles.buttonInput, styles.primaryButton]}
+                  style={[styles.buttonInput, styles.primaryButton, { 
+                    backgroundColor: colors.primary,
+                    borderColor: colors.primary
+                  }]}
                   onPress={handleConfirm}
                 >
-                  <Text style={styles.primaryButtonText}>Confirm</Text>
+                  <Text style={[styles.primaryButtonText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Confirm</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity 
-                  style={[styles.buttonInput, styles.secondaryButton]}
+                  style={[styles.buttonInput, styles.secondaryButton, { borderColor: colors.border }]}
                   onPress={handleDecline}
                 >
-                  <Text style={styles.secondaryButtonText}>Decline</Text>
+                  <Text style={[styles.secondaryButtonText, { color: colors.primary }]}>Decline</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -219,12 +224,10 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 28,
-    color: '#fff',
     fontWeight: '300',
   },
   screenTitle: {
     fontSize: 24,
-    color: '#fff',
     textAlign: 'center',
     flex: 1,
   },
@@ -236,7 +239,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   detailsCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 15,
     padding: 20,
     marginBottom: 30,
@@ -248,15 +250,12 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontSize: 16,
-    color: '#FFD700',
     fontWeight: '600',
     marginBottom: 8,
   },
   textInput: {
     fontSize: 16,
-    color: '#fff',
     borderWidth: 1,
-    borderColor: '#FFD700',
     borderRadius: 8,
     padding: 12,
     textAlignVertical: 'top',
@@ -264,7 +263,6 @@ const styles = StyleSheet.create({
   // New style for the instruction text
   instructionText: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
     textAlign: 'left',
     marginTop: 3,
     marginBottom: 16,
@@ -278,7 +276,6 @@ const styles = StyleSheet.create({
   },
   buttonInput: {
     borderWidth: 1,
-    borderColor: '#FFD700',
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
@@ -286,20 +283,17 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   primaryButton: {
-    backgroundColor: '#FFD700',
     flex: 1,
   },
   secondaryButton: {
     backgroundColor: 'transparent',
     flex: 1,
   },
-  primaryButtonText: { 
-    color: '#000', 
-    fontSize: 16, 
-    fontWeight: '600' 
+  primaryButtonText: {
+    fontSize: 16,
+    fontWeight: '600'
   },
   secondaryButtonText: {
-    color: '#FFD700',
     fontSize: 16,
     fontWeight: '600',
   },

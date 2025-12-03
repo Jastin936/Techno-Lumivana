@@ -1,26 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  Image,
-  Dimensions,
-  Alert,
-  Animated,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFonts } from 'expo-font';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useState } from 'react';
+import {
+  Alert,
+  Animated,
+  Dimensions,
+  Image,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 const rotateValue = new Animated.Value(0);
 
 const { width, height } = Dimensions.get('window');
 
 const ProfileScreen = ({ navigation }) => {
+  const { isDarkMode, colors, gradients, toggleTheme } = useTheme();
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
   });
@@ -30,51 +32,39 @@ const ProfileScreen = ({ navigation }) => {
     profileImage: null
   });
 
-  // Continuous rotation loop (30s rotate, 30s rest)
+  // Continuous rotation loop
   useEffect(() => {
     const startRotation = () => {
-      // Reset rotation value
       rotateValue.setValue(0);
-      
-      // Rotate for 30 seconds
       Animated.timing(rotateValue, {
         toValue: 10,
         duration: 30000,
         useNativeDriver: true,
       }).start(() => {
-        // After rotation completes, wait 30 seconds then restart
         setTimeout(() => {
           startRotation();
         }, 30000);
       });
     };
-
-    // Start the loop
     startRotation();
-    
-    // Cleanup function
     return () => {
       rotateValue.stopAnimation();
     };
   }, []);
 
-  // Interpolate rotation value
   const rotateInterpolate = rotateValue.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
 
-  // Animated style for logo
   const animatedLogoStyle = {
     transform: [{ rotate: rotateInterpolate }],
   };
 
-  // Load saved data when component mounts
   useEffect(() => {
     loadUserData();
   }, []);
 
-  // Load user data from AsyncStorage
   const loadUserData = async () => {
     try {
       const savedUserData = await AsyncStorage.getItem('userProfileData');
@@ -86,8 +76,6 @@ const ProfileScreen = ({ navigation }) => {
           profileImage: parsedData.profileImage || null
         }));
       }
-
-      // Also load profile image from AsyncStorage (in case it's stored separately)
       const savedProfileImage = await AsyncStorage.getItem('profileImage');
       if (savedProfileImage) {
         setUserData(prevData => ({
@@ -100,12 +88,10 @@ const ProfileScreen = ({ navigation }) => {
     }
   };
 
-  // Set up focus listener to refresh data when screen comes into focus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadUserData();
     });
-
     return unsubscribe;
   }, [navigation]);
 
@@ -132,13 +118,13 @@ const ProfileScreen = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={['#CFAD01', '#30204D', '#0B005F']}
+      colors={isDarkMode ? gradients.background : gradients.main}
       locations={[0, 0.58, 0.84]}
       style={styles.container}
     >
       <SafeAreaView style={{ flex: 1 }}>
         <StatusBar
-          barStyle="light-content"
+          barStyle="dark-content" // Force dark content for yellow background
           backgroundColor="transparent"
           translucent
         />
@@ -151,23 +137,38 @@ const ProfileScreen = ({ navigation }) => {
               style={[styles.logo, animatedLogoStyle]}
               resizeMode="contain"
             />
-            <Text style={[styles.logoText, { fontFamily: 'Milonga' }]}>
+            {/* FIX: Logo Text to Black for visibility on Yellow */}
+            <Text style={[styles.logoText, { fontFamily: 'Milonga', color: '#FFFFFF' }]}>
               Lumivana
             </Text>
           </View>
 
-          {/* Back Button on Upper Right */}
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.navigate('Home')}
-          >
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
+          {/* Theme Toggle and Back Button */}
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.themeToggle}
+              onPress={toggleTheme}
+            >
+              {/* FIX: Icon to Black */}
+              <Ionicons
+                name={isDarkMode ? 'sunny' : 'moon'}
+                size={24}
+                color={'#ffff'}
+              />
+            </TouchableOpacity>
+            {/* FIX: Back Button to Black */}
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.navigate('Home')}
+            >
+              <Text style={[styles.backButtonText, { color: '#FFFFFF' }]}>←</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Main Content */}
         <View style={styles.content}>
-          {/* Profile Icon - Same as MyAccountScreen */}
+          {/* Profile Icon */}
           <View style={styles.imageContainer}>
             {userData.profileImage ? (
               <Image 
@@ -178,27 +179,31 @@ const ProfileScreen = ({ navigation }) => {
               <Ionicons
                 name="person-circle-outline"
                 size={200}
-                color="#FFD700"
+                color={colors.primary}
               />
             )}
           </View>
 
           {/* Name */}
           <View style={styles.textContainer}>
-            <Text style={styles.nameText}>{userData.name}</Text>
+            {/* FIX: Name Text to White for visibility on Dark Blue bottom */}
+            <Text style={[styles.nameText, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>{userData.name}</Text>
           </View>
 
           {/* Buttons */}
           <View style={styles.buttonsContainer}>
             <TouchableOpacity
-              style={styles.actionButton}
+              style={[styles.actionButton, { backgroundColor: colors.primary }]}
               onPress={() => navigation.navigate('MyAccount')}
             >
-              <Text style={styles.actionButtonText}>My Account</Text>
+              <Text style={[styles.actionButtonText, { color: isDarkMode ? '#000' : '#fff' }]}>My Account</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.actionButton} onPress={handleLogout}>
-              <Text style={styles.actionButtonText}>Log Out</Text>
+            <TouchableOpacity 
+              style={[styles.actionButton, { backgroundColor: colors.primary }]} 
+              onPress={handleLogout}
+            >
+              <Text style={[styles.actionButtonText, { color: isDarkMode ? '#000' : '#fff' }]}>Log Out</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -222,6 +227,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center' 
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  themeToggle: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.05)', // Slight dark tint for visibility
+  },
   backButton: {
     width: 40,
     height: 40,
@@ -230,11 +248,10 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 28,
-    color: '#fff',
     fontWeight: '300',
   },
   logo: { width: 50, height: 50, marginRight: 12 },
-  logoText: { fontSize: 32, color: '#fff' },
+  logoText: { fontSize: 32 },
   content: { flex: 1, paddingHorizontal: 24, justifyContent: 'space-between' },
   imageContainer: { 
     alignItems: 'center', 
@@ -246,26 +263,27 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 100,
     borderWidth: 2,
-    borderColor: '#FFD700',
+    borderColor: '#FFF',
   },
   textContainer: { alignItems: 'center', paddingBottom: 100 },
   nameText: { 
     fontSize: 36, 
-    color: '#fff', 
     fontFamily: 'Milonga', 
     textAlign: 'center',
-    lineHeight: 42 
+    lineHeight: 42,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)', // Added shadow for better readability
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   buttonsContainer: { width: '100%', paddingBottom: 100},
   actionButton: {
-    backgroundColor: '#FFD700',
     borderRadius: 50,
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 20,
     width: '100%',
   },
-  actionButtonText: { color: '#000', fontSize: 16, fontWeight: '600' },
+  actionButtonText: { fontSize: 16, fontWeight: '600' },
 });
 
 export default ProfileScreen;

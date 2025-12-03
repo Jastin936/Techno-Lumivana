@@ -1,24 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  ScrollView,
-  TextInput,
-  Image,
-  Animated,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useFonts } from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFonts } from 'expo-font';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useEffect, useState } from 'react';
+import {
+  Animated,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 const rotateValue = new Animated.Value(0);
 
 const FAQsScreen = ({ navigation }) => {
+  const { isDarkMode, colors, gradients } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFAQ, setExpandedFAQ] = useState(null);
 
@@ -131,11 +133,12 @@ const FAQsScreen = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={["#0E0E0E", "#1A1A1A"]}
+      colors={isDarkMode ? gradients.background : gradients.main}
+      locations={isDarkMode ? [0, 1] : [0, 0.58, 0.84]}
       style={styles.container}
     >
       <SafeAreaView style={{ flex: 1 }}>
-        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+        <StatusBar barStyle={isDarkMode ? "light-content" : "light-content"} translucent backgroundColor="transparent" />
 
         {/* HEADER - Same as HomeScreen */}
         <View style={styles.header}>
@@ -145,7 +148,7 @@ const FAQsScreen = ({ navigation }) => {
               style={[styles.logo, animatedLogoStyle]}
               resizeMode="contain"
             />
-            <Text style={styles.logoText}>Lumivana</Text>
+            <Text style={[styles.logoText, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Lumivana</Text>
           </View>
           
           {/* Updated Profile Icon - Same as HomeScreen */}
@@ -156,22 +159,22 @@ const FAQsScreen = ({ navigation }) => {
             {userData.profileImage ? (
               <Image 
                 source={{ uri: userData.profileImage }} 
-                style={styles.profileImage} 
+                style={[styles.profileImage, { borderColor: colors.primary }]} 
               />
             ) : (
-              <Ionicons name="person-circle-outline" size={36} color="#FFD700" />
+              <Ionicons name="person-circle-outline" size={36} color={colors.primary} />
             )}
           </TouchableOpacity>
         </View>
 
         {/* 🔍 SEARCH BAR - Removed filter button */}
         <View style={styles.searchBarContainer}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search-outline" size={20} color="#FFD700" />
+          <View style={[styles.searchBar, { backgroundColor: isDarkMode ? colors.surface : 'rgba(255, 255, 255, 0.15)' }]}>
+            <Ionicons name="search-outline" size={20} color={colors.primary} />
             <TextInput
               placeholder="Search FAQs..."
-              placeholderTextColor="#aaa"
-              style={styles.searchInput}
+              placeholderTextColor={isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.6)'}
+              style={[styles.searchInput, { color: isDarkMode ? colors.text : '#FFFFFF' }]}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -182,49 +185,49 @@ const FAQsScreen = ({ navigation }) => {
         <ScrollView contentContainerStyle={styles.content}>
           {filteredFAQs.length > 0 ? (
             filteredFAQs.map(faq => (
-              <View key={faq.id} style={styles.faqCard}>
+              <View key={faq.id} style={[styles.faqCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
                 <TouchableOpacity
                   style={styles.faqQuestion}
                   onPress={() => setExpandedFAQ(expandedFAQ === faq.id ? null : faq.id)}
                 >
-                  <Text style={styles.questionText}>{faq.question}</Text>
+                  <Text style={[styles.questionText, { color: colors.text }]}>{faq.question}</Text>
                   <Ionicons
                     name={expandedFAQ === faq.id ? 'chevron-up-outline' : 'chevron-down-outline'}
                     size={20}
-                    color="#FFD700"
+                    color={colors.primary}
                   />
                 </TouchableOpacity>
                 {expandedFAQ === faq.id && (
                   <View style={styles.faqAnswer}>
-                    <Text style={styles.answerText}>{faq.answer}</Text>
+                    <Text style={[styles.answerText, { color: colors.textSecondary }]}>{faq.answer}</Text>
                   </View>
                 )}
               </View>
             ))
           ) : (
             <View style={styles.emptyState}>
-              <Ionicons name="help-circle-outline" size={64} color="#FFD700" />
-              <Text style={styles.emptyText}>No FAQs found</Text>
+              <Ionicons name="help-circle-outline" size={64} color={colors.primary} />
+              <Text style={[styles.emptyText, { color: colors.primary }]}>No FAQs found</Text>
             </View>
           )}
         </ScrollView>
 
         {/* Footer */}
-        <View style={styles.footer}>
+        <View style={[styles.footer, { backgroundColor: isDarkMode ? colors.surface : 'rgba(255, 255, 255, 0.15)' }]}>
           <TouchableOpacity 
             style={styles.footerItem} 
             onPress={() => navigation.navigate('Home')}
           >
-            <Ionicons name="home-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>Home</Text>
+            <Ionicons name="home-outline" size={24} color={isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)'} />
+            <Text style={[styles.footerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>Home</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={styles.footerItem}
             onPress={() => navigation.navigate('Search')}
           >
-            <Ionicons name="search-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>Search</Text>
+            <Ionicons name="search-outline" size={24} color={isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)'} />
+            <Text style={[styles.footerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>Search</Text>
           </TouchableOpacity>
 
           {/* Plus Square Icon in Center */}
@@ -232,8 +235,8 @@ const FAQsScreen = ({ navigation }) => {
             style={styles.plusSquareButton}
             onPress={() => navigation.navigate('Request')}
           >
-            <View style={styles.plusSquareContainer}>
-              <Ionicons name="add" size={30} color="#FFD700" />
+            <View style={[styles.plusSquareContainer, { borderColor: colors.primary }]}>
+              <Ionicons name="add" size={30} color={colors.primary} />
             </View>
           </TouchableOpacity>
 
@@ -241,13 +244,13 @@ const FAQsScreen = ({ navigation }) => {
             style={styles.footerItem} 
             onPress={() => navigation.navigate('Commissions')}
           >
-            <Ionicons name="briefcase-outline" size={24} color="#FFD700" />
-            <Text style={styles.footerText}>Commissions</Text>
+            <Ionicons name="briefcase-outline" size={24} color={isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)'} />
+            <Text style={[styles.footerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>Commissions</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.footerItem}>
-            <Ionicons name="help-circle" size={24} color="#FFD700" />
-            <Text style={[styles.footerText, styles.activeFooterText]}>FAQs</Text>
+            <Ionicons name="help-circle" size={24} color={colors.primary} />
+            <Text style={[styles.footerText, styles.activeFooterText, { color: colors.primary }]}>FAQs</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -268,11 +271,10 @@ const styles = StyleSheet.create({
     paddingBottom: 16, 
     borderBottomLeftRadius: 20, 
     borderBottomRightRadius: 20, 
-    backgroundColor: 'rgba(0,0,0,0.2)' 
   },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
   logo: { width: 40, height: 40, marginRight: 8 },
-  logoText: { fontSize: 28, color: '#fff', fontFamily: 'Milonga' },
+  logoText: { fontSize: 28, fontFamily: 'Milonga' },
   profileIcon: {
     width: 36,
     height: 36,
@@ -286,7 +288,6 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#FFD700',
   },
 
   // SEARCH BAR STYLES - Removed filter button
@@ -301,14 +302,12 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1C1C1C",
     borderRadius: 10,
     paddingHorizontal: 10,
     height: 38,
   },
   searchInput: { 
     flex: 1, 
-    color: "#fff", 
     marginLeft: 8, 
     fontSize: 14 
   },
@@ -320,11 +319,9 @@ const styles = StyleSheet.create({
   },
 
   faqCard: { 
-    backgroundColor: 'rgba(30,30,30,0.85)', 
     borderRadius: 12, 
     marginBottom: 16, 
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
     overflow: 'hidden' 
   },
   faqQuestion: { 
@@ -334,7 +331,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   questionText: { 
-    color: '#fff', 
     fontWeight: 'bold', 
     fontSize: 16, 
     flex: 1, 
@@ -345,7 +341,6 @@ const styles = StyleSheet.create({
     paddingBottom: 16 
   },
   answerText: { 
-    color: '#aaa', 
     fontSize: 14 
   },
 
@@ -356,7 +351,6 @@ const styles = StyleSheet.create({
     paddingVertical: 60 
   },
   emptyText: { 
-    color: '#FFD700', 
     fontSize: 18,
     marginTop: 16,
   },
@@ -369,20 +363,17 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.2)',
   },
   footerItem: { 
     alignItems: 'center',
     flex: 1,
   },
   footerText: { 
-    color: '#fff', 
     fontSize: 12, 
     marginTop: 2,
     textAlign: 'center',
   },
   activeFooterText: { 
-    color: '#FFD700', 
     fontWeight: 'bold' 
   },
   // Plus Square Button
@@ -394,7 +385,6 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderWidth: 2,
-    borderColor: '#FFD700',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',

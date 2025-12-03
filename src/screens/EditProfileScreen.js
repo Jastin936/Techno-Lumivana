@@ -1,29 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFonts } from 'expo-font';
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
+  Alert,
+  Dimensions,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-  Image,
-  Modal,
-  Dimensions,
+  View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { useFonts } from 'expo-font';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as ImagePicker from 'expo-image-picker';
+import { useTheme } from '../context/ThemeContext';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const EditProfileScreen = ({ navigation, route }) => {
+  const { isDarkMode, colors, gradients } = useTheme();
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
   });
@@ -269,9 +271,9 @@ const EditProfileScreen = ({ navigation, route }) => {
         {
           text: 'Yes',
           onPress: async () => {
-            // Convert skills string to array
+            // FIX: Split by comma OR semicolon, and remove empty strings
             const skillsArray = formData.skills
-              .split(',')
+              .split(/[,;]+/) 
               .map(skill => skill.trim())
               .filter(skill => skill.length > 0);
 
@@ -338,21 +340,21 @@ const EditProfileScreen = ({ navigation, route }) => {
 
   return (
     <LinearGradient
-      colors={['#CFAD01', '#30204D', '#0B005F']}
-      locations={[0, 0.58, 0.84]}
+      colors={isDarkMode ? gradients.background : gradients.main}
+      locations={isDarkMode ? [0, 1] : [0, 0.58, 0.84]}
       style={styles.container}
     >
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <StatusBar barStyle={isDarkMode ? "light-content" : "light-content"} backgroundColor="transparent" translucent />
 
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backButtonText}>←</Text>
+            <Text style={[styles.backButtonText, { color: isDarkMode ? colors.primary : '#FFFFFF' }]}>←</Text>
           </TouchableOpacity>
 
           <View style={styles.headerTitleContainer}>
-            <Text style={[styles.headerTitle, { fontFamily: 'Milonga' }]}>Edit Profile</Text>
+            <Text style={[styles.headerTitle, { fontFamily: 'Milonga', color: isDarkMode ? colors.text : '#FFFFFF' }]}>Edit Profile</Text>
           </View>
         </View>
 
@@ -366,86 +368,98 @@ const EditProfileScreen = ({ navigation, route }) => {
               <View style={styles.profileIconContainer}>
                 <View style={styles.profileImageContainer}>
                   {profileImage ? (
-                    <Image source={{ uri: profileImage }} style={styles.profileImage} />
+                    <Image source={{ uri: profileImage }} style={[styles.profileImage, { borderColor: colors.primary }]} />
                   ) : (
-                    <Ionicons name="person-circle-outline" size={120} color="#FFD700" />
+                    <Ionicons name="person-circle-outline" size={120} color={colors.primary} />
                   )}
                   <TouchableOpacity 
-                    style={styles.editIconContainer} 
+                    style={[styles.editIconContainer, { backgroundColor: colors.primary }]} 
                     onPress={openImagePickerModal}
                   >
-                    <Ionicons name="camera" size={20} color="#fff" />
+                    <Ionicons name="camera" size={20} color={isDarkMode ? colors.text : colors.buttonText} />
                   </TouchableOpacity>
                 </View>
               </View>
 
               <View style={styles.form}>
                 {/* Name */}
-                <Text style={styles.infoLabel}>Name:</Text>
+                <Text style={[styles.infoLabel, { color: colors.primary }]}>Name:</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, {
+                    borderColor: colors.inputBorder,
+                    color: colors.inputText,
+                    backgroundColor: colors.inputBackground
+                  }]}
                   placeholder="Enter your name"
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor={colors.inputPlaceholder}
                   value={formData.name}
                   onChangeText={text => handleInputChange('name', text)}
                 />
 
                 {/* Email */}
-                <Text style={styles.infoLabel}>Email:</Text>
+                <Text style={[styles.infoLabel, { color: colors.primary }]}>Email:</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, {
+                    borderColor: colors.inputBorder,
+                    color: colors.inputText,
+                    backgroundColor: colors.inputBackground
+                  }]}
                   placeholder="Enter your email"
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor={colors.inputPlaceholder}
                   value={formData.email}
                   onChangeText={text => handleInputChange('email', text)}
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
                 {isEmailInvalid && (
-                  <Text style={styles.errorText}>Please enter a valid email address</Text>
+                  <Text style={[styles.errorText, { color: colors.error }]}>Please enter a valid email address</Text>
                 )}
 
                 {/* Skills */}
-                <Text style={styles.infoLabel}>Skills:</Text>
+                <Text style={[styles.infoLabel, { color: colors.primary }]}>Skills:</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, {
+                    borderColor: colors.inputBorder,
+                    color: colors.inputText,
+                    backgroundColor: colors.inputBackground
+                  }]}
                   placeholder="Enter skills separated by commas"
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor={colors.inputPlaceholder}
                   value={formData.skills}
                   onChangeText={text => handleInputChange('skills', text)}
                 />
 
                 {/* Add Images Section */}
                 <View style={styles.addImagesSection}>
-                  <Text style={styles.addImagesTitle}>Add Images:</Text>
+                  <Text style={[styles.addImagesTitle, { color: colors.primary }]}>Add Images:</Text>
                   
                   <View style={styles.imageGrid}>
                     {portfolioImages.length === 0 ? (
-                      <Text style={styles.noImagesText}>
+                      <Text style={[styles.noImagesText, { color: colors.primary }]}>
                         No images yet. Add one below!
                       </Text>
                     ) : (
                       portfolioImages.map((uri, index) => (
                         <TouchableOpacity
-                          key={index}
+                          key={`image-${index}-${uri}`}
                           style={styles.imageItem}
                           onLongPress={() => deleteImage(index)}
                         >
-                          <Image source={{ uri }} style={styles.gridImage} resizeMode="cover" />
+                          <Image source={{ uri }} style={[styles.gridImage, { borderColor: colors.primary }]} resizeMode="cover" />
                           <View style={styles.deleteOverlay}>
-                            <Ionicons name="trash-outline" size={18} color="#fff" />
+                            <Ionicons name="trash-outline" size={18} color={colors.text} />
                           </View>
                         </TouchableOpacity>
                       ))
                     )}
                   </View>
 
-                  <TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
-                    <Ionicons name="add-circle-outline" size={28} color="#FFD700" />
+                  <TouchableOpacity style={[styles.addImageButton, { backgroundColor: colors.primary }]} onPress={pickImage}>
+                    <Ionicons name="add-circle-outline" size={28} color={isDarkMode ? colors.text : colors.buttonText} />
                   </TouchableOpacity>
 
                   {portfolioImages.length > 0 && (
-                    <Text style={styles.deleteHintText}>
+                    <Text style={[styles.deleteHintText, { color: colors.primary }]}>
                       Long press an image to delete it
                     </Text>
                   )}
@@ -453,15 +467,15 @@ const EditProfileScreen = ({ navigation, route }) => {
 
                 {/* Buttons */}
                 <View style={styles.buttonsContainer}>
-                  <TouchableOpacity style={styles.updateButton} onPress={handleUpdateProfile}>
-                    <Text style={styles.updateButtonText}>Update Profile</Text>
+                  <TouchableOpacity style={[styles.updateButton, { backgroundColor: colors.primary }]} onPress={handleUpdateProfile}>
+                    <Text style={[styles.updateButtonText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Update Profile</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={styles.cancelButton}
+                    style={[styles.cancelButton, { borderColor: colors.border }]}
                     onPress={handleCancel}
                   >
-                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                    <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -476,32 +490,32 @@ const EditProfileScreen = ({ navigation, route }) => {
           animationType="slide"
           onRequestClose={closeImagePickerModal}
         >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Profile Picture Options</Text>
+          <View style={[styles.modalOverlay, { backgroundColor: colors.modalOverlay || 'rgba(0, 0, 0, 0.7)' }]}>
+            <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+              <Text style={[styles.modalTitle, { color: colors.primary }]}>Profile Picture Options</Text>
               
               <TouchableOpacity 
                 style={styles.modalOption} 
                 onPress={takePhotoWithCamera}
               >
-                <Ionicons name="camera" size={24} color="#FFD700" />
-                <Text style={styles.modalOptionText}>Take Photo</Text>
+                <Ionicons name="camera" size={24} color={colors.primary} />
+                <Text style={[styles.modalOptionText, { color: colors.text }]}>Take Photo</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
                 style={styles.modalOption} 
                 onPress={showProfilePicture}
               >
-                <Ionicons name="eye" size={24} color="#FFD700" />
-                <Text style={styles.modalOptionText}>See Profile Picture</Text>
+                <Ionicons name="eye" size={24} color={colors.primary} />
+                <Text style={[styles.modalOptionText, { color: colors.text }]}>See Profile Picture</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
                 style={styles.modalOption} 
                 onPress={pickImageFromGallery}
               >
-                <Ionicons name="images" size={24} color="#FFD700" />
-                <Text style={styles.modalOptionText}>Choose from Gallery</Text>
+                <Ionicons name="images" size={24} color={colors.primary} />
+                <Text style={[styles.modalOptionText, { color: colors.text }]}>Choose from Gallery</Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -509,17 +523,17 @@ const EditProfileScreen = ({ navigation, route }) => {
                 onPress={handleDeleteProfilePicture}
                 disabled={!profileImage}
               >
-                <Ionicons name="trash-outline" size={24} color={profileImage ? "#FF6B6B" : "#666"} />
-                <Text style={[styles.modalOptionText, !profileImage && styles.disabledText]}>
+                <Ionicons name="trash-outline" size={24} color={profileImage ? colors.error : colors.textMuted} />
+                <Text style={[styles.modalOptionText, { color: colors.text }, !profileImage && { color: colors.textMuted }]}>
                   Delete Profile Picture
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity 
-                style={styles.modalCancelButton} 
+                style={[styles.modalCancelButton, { borderColor: colors.border }]} 
                 onPress={closeImagePickerModal}
               >
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: colors.text }]}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -537,7 +551,7 @@ const EditProfileScreen = ({ navigation, route }) => {
               style={styles.fullScreenCloseButton}
               onPress={closeProfilePictureModal}
             >
-              <Ionicons name="close" size={30} color="#fff" />
+              <Ionicons name="close" size={30} color={colors.text} />
             </TouchableOpacity>
             
             {profileImage && (
@@ -568,9 +582,9 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   backButton: { position: 'absolute', left: 24, top: 50, zIndex: 10 },
-  backButtonText: { fontSize: 28, color: '#FFD700', fontWeight: '300' },
+  backButtonText: { fontSize: 28, fontWeight: '300' },
   headerTitleContainer: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 28, color: '#fff' },
+  headerTitle: { fontSize: 28 },
   profileIconContainer: { 
     alignItems: 'center', 
     marginBottom: 20, 
@@ -584,24 +598,20 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     borderWidth: 2,
-    borderColor: '#FFD700',
   },
   editIconContainer: {
     position: 'absolute',
     bottom: 5,
     right: 5,
-    backgroundColor: '#FFD700',
     borderRadius: 15,
     width: 30,
     height: 30,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#fff',
   },
   subtitle: { 
     fontSize: 14, 
-    color: '#ccc', 
     textAlign: 'center', 
     marginBottom: 32 
   },
@@ -610,22 +620,17 @@ const styles = StyleSheet.create({
 
   infoLabel: { 
     fontSize: 14, 
-    color: '#fff', 
     marginBottom: 6, 
   },
   input: { 
     borderWidth: 1, 
-    borderColor: '#FFD700', 
     borderRadius: 12, 
     paddingHorizontal: 16, 
     paddingVertical: 14, 
     fontSize: 16,
     marginBottom: 16,
-    color: '#fff',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   errorText: { 
-    color: '#ff3b30', 
     fontSize: 12, 
     marginTop: 4,
     marginBottom: 16,
@@ -635,8 +640,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   addImagesTitle: { 
-    fontSize: 14, 
-    color: '#fff',  
+    fontSize: 14,  
     marginBottom: 15, 
     textAlign: 'left'
   },
@@ -655,11 +659,9 @@ const styles = StyleSheet.create({
     width: '100%', 
     height: '100%', 
     borderRadius: 8, 
-    borderWidth: 1, 
-    borderColor: 'rgba(255, 215, 0, 0.3)' 
+    borderWidth: 1
   },
   noImagesText: { 
-    color: '#FFD700', 
     textAlign: 'center', 
     opacity: 0.7,
     width: '100%',
@@ -675,7 +677,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   addImageText: { 
-    color: '#000', 
     fontSize: 14, 
     fontWeight: '600', 
     marginLeft: 5 
@@ -689,7 +690,6 @@ const styles = StyleSheet.create({
     padding: 3 
   },
   deleteHintText: { 
-    color: '#FFD700', 
     fontSize: 12, 
     textAlign: 'center', 
     marginTop: 8, 
@@ -703,37 +703,31 @@ const styles = StyleSheet.create({
   },
   updateButton: { 
     flex: 1, 
-    backgroundColor: '#FFD700', 
     borderRadius: 50, 
     paddingVertical: 16, 
     alignItems: 'center' 
   },
   updateButtonText: { 
-    color: '#000', 
     fontSize: 16, 
     fontWeight: '600' 
   },
   cancelButton: { 
     flex: 1, 
     borderWidth: 1, 
-    borderColor: '#FFD700', 
     borderRadius: 50, 
     paddingVertical: 16, 
     alignItems: 'center' 
   },
   cancelButtonText: { 
-    color: '#FFD700', 
     fontSize: 16, 
     fontWeight: '600' 
   },
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#30204D',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -741,7 +735,6 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    color: '#FFD700',
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
@@ -755,7 +748,6 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   modalOptionText: {
-    color: '#fff',
     fontSize: 16,
     marginLeft: 15,
     fontWeight: '500',
@@ -765,11 +757,9 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#FFD700',
     borderRadius: 10,
   },
   modalCancelText: {
-    color: '#FFD700',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -777,7 +767,6 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   disabledText: {
-    color: '#666',
   },
   // Full Screen Image Modal Styles
   fullScreenModalOverlay: {

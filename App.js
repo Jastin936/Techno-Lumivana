@@ -1,54 +1,44 @@
-import React from 'react';
-import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ActivityIndicator, View } from 'react-native';
 
 // Import font hook
-import { useFonts, Milonga_400Regular } from '@expo-google-fonts/milonga';
+import { Milonga_400Regular, useFonts } from '@expo-google-fonts/milonga';
 
-// Screens
-import GetStartedScreen from './src/screens/GetStartedScreen';
-import SignInScreen from './src/screens/SignInScreen';
-import HomeScreen from './src/screens/HomeScreen';
-import ProductInfoScreen from './src/screens/ProductInfo';
-import RequestInfoScreen from './src/screens/RequestInfoScreen';
-import RecommendedUsersScreen from "./src/screens/RecommendedUsersScreen";
-import RecommendedUsersInfoScreen from './src/screens/RecommendedUsersInfoScreen';
-import SearchScreen from './src/screens/SearchScreen';
-import RequestScreen from './src/screens/RequestScreen';
-import RequestCommissionScreen from './src/screens/RequestCommissionScreen';
-import OfferCommissionScreen from './src/screens/OfferCommissionScreen';
-import CommissionsScreen from './src/screens/CommissionsScreen';
+// ✅ IMPORT THEME PROVIDER
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+
+// Import Screens
 import AcceptedCommissionInfoScreen from './src/screens/AcceptedCommissionInfoScreen';
-import ConfirmPaymentScreen from './src/screens/ConfirmPaymentScreen';
-import CancelFormScreen from './src/screens/CancelFormScreen';
-import FAQsScreen from './src/screens/FAQsScreen';
-import ProfileScreen from './src/screens/ProfileScreen';
-import MyAccountScreen from './src/screens/MyAccountScreen';
-import EditProfileScreen from './src/screens/EditProfileScreen';
-import SignUpScreen from './src/screens/SignUpScreen';
-import ForgotPasswordEmailScreen from './src/screens/ForgotPasswordEmailScreen';
-import OTPScreen from './src/screens/OTPScreen';
-import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
-// NEW: Import AgreementFormScreen
 import AgreementFormScreen from './src/screens/AgreementFormScreen';
+import CancelFormScreen from './src/screens/CancelFormScreen';
+import CommissionsScreen from './src/screens/CommissionsScreen';
+import ConfirmPaymentScreen from './src/screens/ConfirmPaymentScreen';
+import EditProfileScreen from './src/screens/EditProfileScreen';
+import FAQsScreen from './src/screens/FAQsScreen';
+import ForgotPasswordEmailScreen from './src/screens/ForgotPasswordEmailScreen';
+import GetStartedScreen from './src/screens/GetStartedScreen';
+import HomeScreen from './src/screens/HomeScreen';
+import MyAccountScreen from './src/screens/MyAccountScreen';
+import OfferCommissionScreen from './src/screens/OfferCommissionScreen';
+import OTPScreen from './src/screens/OTPScreen';
+import ProductInfoScreen from './src/screens/ProductInfo';
+import ProfileScreen from './src/screens/ProfileScreen';
+import RecommendedScreen from "./src/screens/RecommendedScreen";
+import RecommendedUsersInfoScreen from "./src/screens/RecommendedUsersInfoScreen";
+import RecommendedUsersScreen from "./src/screens/RecommendedUsersScreen";
+import RequestCommissionScreen from './src/screens/RequestCommissionScreen';
+import RequestInfoScreen from './src/screens/RequestInfoScreen';
+import RequestScreen from './src/screens/RequestScreen';
+import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
+import SearchScreen from './src/screens/SearchScreen';
+import SignInScreen from './src/screens/SignInScreen';
+import SignUpScreen from './src/screens/SignUpScreen';
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 
-const App = () => {
-  // Load Google Font
-  const [fontsLoaded] = useFonts({
-    Milonga: Milonga_400Regular, // 👈 assign a custom key
-  });
-
-  if (!fontsLoaded) {
-    // Show a spinner while font loads
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#007AFF" />
-      </View>
-    );
-  }
+const AppNavigator = () => {
+  const { colors } = useTheme();
 
   return (
     <NavigationContainer>
@@ -56,24 +46,23 @@ const App = () => {
         initialRouteName="GetStarted"
         screenOptions={{
           headerShown: false,
-          cardStyle: { backgroundColor: '#ffffff' },
+          contentStyle: { backgroundColor: colors.background },
         }}
       >
         <Stack.Screen name="GetStarted" component={GetStartedScreen} />
         <Stack.Screen name="SignIn" component={SignInScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="ProductInfo" component={ProductInfoScreen} />
-        <Stack.Screen name="RequestInfo" component={RequestInfoScreen} />
+        <Stack.Screen name="RecommendedScreen" component={RecommendedScreen} />
         <Stack.Screen name="RecommendedUsersScreen" component={RecommendedUsersScreen} />
-        <Stack.Screen name="RecommendedUsersInfo" component={RecommendedUsersInfoScreen} />
+        
+        {/* FIX: Changed name to "RecommendedUsersInfoScreen" to match your navigation call */}
+        <Stack.Screen name="RecommendedUsersInfoScreen" component={RecommendedUsersInfoScreen} />
+        
         <Stack.Screen name="Search" component={SearchScreen} />
         <Stack.Screen name="Request" component={RequestScreen} />
         <Stack.Screen name="RequestCommission" component={RequestCommissionScreen} />
         <Stack.Screen name="OfferCommission" component={OfferCommissionScreen} />
         <Stack.Screen name="Commissions" component={CommissionsScreen} />
-        <Stack.Screen name="AcceptedCommissionInfo" component={AcceptedCommissionInfoScreen} />
-        <Stack.Screen name="ConfirmPayment" component={ConfirmPaymentScreen} />
-        <Stack.Screen name="CancelForm" component={CancelFormScreen} />
         <Stack.Screen name="FAQs" component={FAQsScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="MyAccount" component={MyAccountScreen} />
@@ -82,9 +71,39 @@ const App = () => {
         <Stack.Screen name="ForgotPasswordEmail" component={ForgotPasswordEmailScreen} />
         <Stack.Screen name="OTP" component={OTPScreen} />
         <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-        <Stack.Screen name="AgreementForm" component={AgreementFormScreen} options={{ headerShown: false }} />
+        
+        {/* Action Screens */}
+        <Stack.Screen name="RequestInfo" component={RequestInfoScreen} />
+        <Stack.Screen name="AgreementForm" component={AgreementFormScreen} />
+        <Stack.Screen name="ConfirmPayment" component={ConfirmPaymentScreen} />
+        <Stack.Screen name="CancelForm" component={CancelFormScreen} />
+        <Stack.Screen name="ProductInfo" component={ProductInfoScreen} />
+        <Stack.Screen name="AcceptedCommissionInfo" component={AcceptedCommissionInfoScreen} />
+        
       </Stack.Navigator>
     </NavigationContainer>
+  );
+}
+
+const App = () => {
+  // Load Google Font
+  const [fontsLoaded] = useFonts({
+    Milonga: Milonga_400Regular,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
+  return (
+    // ✅ CRITICAL FIX: ThemeProvider MUST wrap everything here
+    <ThemeProvider>
+      <AppNavigator />
+    </ThemeProvider>
   );
 };
 

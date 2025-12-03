@@ -1,27 +1,30 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  Image,
-  Dimensions,
-  ScrollView,
-  TextInput,
-  Alert,
-  Modal,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useFonts } from 'expo-font';
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useState } from 'react';
+import {
+  Alert,
+  Dimensions,
+  Image,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
 const OfferCommissionScreen = ({ navigation }) => {
+  const { isDarkMode, colors, gradients } = useTheme();
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
   });
@@ -153,7 +156,7 @@ const OfferCommissionScreen = ({ navigation }) => {
     return dateString;
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     // Validate required fields
     if (!commissionName.trim()) {
       Alert.alert('Missing Information', 'Please enter a commission name.');
@@ -175,6 +178,32 @@ const OfferCommissionScreen = ({ navigation }) => {
       return;
     }
 
+    let userName = 'New User';
+    let profileImage = null;
+    try {
+      const savedUserData = await AsyncStorage.getItem('userProfileData');
+      if (savedUserData) {
+        const parsedData = JSON.parse(savedUserData);
+        userName = parsedData.name || 'New User';
+        profileImage = parsedData.profileImage || null;
+      }
+    } catch (error) {
+      console.log('Error loading user data:', error);
+    }
+
+    const newPost = {
+      id: `post-${Date.now()}`,
+      user: userName,
+      profileImage: profileImage,
+      role: 'Artist', // Placeholder
+      title: commissionName,
+      description: description,
+      likes: 0,
+      type: 'home',
+      category: category || 'Custom Commission',
+      image: referencePhotos.length > 0 ? referencePhotos[0] : null,
+    };
+
     // Show success alert
     Alert.alert(
       'Commission Offer Sent!',
@@ -184,9 +213,12 @@ const OfferCommissionScreen = ({ navigation }) => {
           text: 'OK',
           onPress: () => {
             // Navigate to HomeScreen with Home tab active
-            navigation.navigate('Home', { activeTab: 'Home' });
-          }
-        }
+            navigation.navigate('Home', {
+              activeTab: 'Home',
+              newPost: newPost,
+            });
+          },
+        },
       ]
     );
   };
@@ -214,13 +246,13 @@ const OfferCommissionScreen = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={['#CFAD01', '#30204D', '#0B005F']}
-      locations={[0, 0.58, 0.84]}
+      colors={isDarkMode ? gradients.background : gradients.main}
+      locations={isDarkMode ? [0, 1] : [0, 0.58, 0.84]}
       style={styles.container}
     >
       <SafeAreaView style={{ flex: 1 }}>
         <StatusBar
-          barStyle="light-content"
+          barStyle={isDarkMode ? "light-content" : "dark-content"}
           backgroundColor="transparent"
           translucent
         />
@@ -232,11 +264,11 @@ const OfferCommissionScreen = ({ navigation }) => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Text style={styles.backButtonText}>←</Text>
+            <Text style={[styles.backButtonText, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>←</Text>
           </TouchableOpacity>
 
           {/* Screen Title in Header */}
-          <Text style={[styles.screenTitle, { fontFamily: 'Milonga' }]}>
+          <Text style={[styles.screenTitle, { fontFamily: 'Milonga', color: isDarkMode ? colors.text : '#FFFFFF' }]}>
             Offer Commission
           </Text>
 
@@ -247,28 +279,36 @@ const OfferCommissionScreen = ({ navigation }) => {
         {/* Main Content */}
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Commission Details Card */}
-          <View style={styles.detailsCard}>
+          <View style={[styles.detailsCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}>
             {/* Commission Name */}
             <View style={styles.detailSection}>
-              <Text style={styles.detailLabel}>Commission Name</Text>
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Commission Name</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, { 
+                  borderColor: colors.inputBorder,
+                  color: colors.inputText,
+                  backgroundColor: colors.inputBackground
+                }]}
                 value={commissionName}
                 onChangeText={setCommissionName}
                 placeholder="Enter Commission Name"
-                placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                placeholderTextColor={colors.inputPlaceholder}
               />
             </View>
 
             {/* Description */}
             <View style={styles.detailSection}>
-              <Text style={styles.detailLabel}>Description</Text>
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Description</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, { 
+                  borderColor: colors.inputBorder,
+                  color: colors.inputText,
+                  backgroundColor: colors.inputBackground
+                }]}
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Describe the commission details here..."
-                placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                placeholderTextColor={colors.inputPlaceholder}
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
@@ -277,40 +317,47 @@ const OfferCommissionScreen = ({ navigation }) => {
 
             {/* Date Requested */}
             <View style={styles.detailSection}>
-              <Text style={styles.detailLabel}>Date Offered</Text>
-              <View style={styles.dateInputContainer}>
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Date Offered</Text>
+              <View style={[styles.dateInputContainer, { borderColor: colors.inputBorder }]}>
                 <TextInput
-                  style={styles.dateTextInput}
+                  style={[styles.dateTextInput, { 
+                    color: colors.inputText,
+                    backgroundColor: colors.inputBackground
+                  }]}
                   value={formatDateForDisplay(dateRequested)}
                   onChangeText={setDateRequested}
                   placeholder="MM/DD/YYYY"
-                  placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                  placeholderTextColor={colors.inputPlaceholder}
                   editable={false} // Make it read-only since we're using calendar
                 />
-                <TouchableOpacity style={styles.calendarButton} onPress={handleCalendarPress}>
-                  <Ionicons name="calendar-outline" size={24} color="#FFD700" />
+                <TouchableOpacity style={[styles.calendarButton, { borderLeftColor: colors.inputBorder }]} onPress={handleCalendarPress}>
+                  <Ionicons name="calendar-outline" size={24} color={colors.primary} />
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Category */}
             <View style={styles.detailSection}>
-              <Text style={styles.detailLabel}>Category</Text>
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Category</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, { 
+                  borderColor: colors.inputBorder,
+                  color: colors.inputText,
+                  backgroundColor: colors.inputBackground
+                }]}
                 value={category}
                 onChangeText={setCategory}
                 placeholder="Custom Commission"
-                placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                placeholderTextColor={colors.inputPlaceholder}
               />
             </View>
 
             {/* Photo of the Product - Same design as RequestCommissionScreen */}
             <View style={styles.detailSection}>
-              <Text style={styles.detailLabel}>Product Photos ({referencePhotos.length})</Text>
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Product Photos ({referencePhotos.length})</Text>
               <View style={styles.photoGrid}>
                 {referencePhotos.length === 0 ? (
-                  <Text style={styles.noPhotosText}>
+                  <Text style={[styles.noPhotosText, { color: colors.textSecondary }]}>
                     No product photos yet. Add one below!
                   </Text>
                 ) : (
@@ -321,22 +368,22 @@ const OfferCommissionScreen = ({ navigation }) => {
                       onPress={() => openPhotoModal(index)}
                       onLongPress={() => deleteReferencePhoto(index)}
                     >
-                      <Image source={{ uri }} style={styles.gridPhoto} resizeMode="cover" />
+                      <Image source={{ uri }} style={[styles.gridPhoto, { borderColor: colors.border }]} resizeMode="cover" />
                       <View style={styles.deleteOverlay}>
-                        <Ionicons name="trash-outline" size={18} color="#fff" />
+                        <Ionicons name="trash-outline" size={18} color={colors.text} />
                       </View>
                     </TouchableOpacity>
                   ))
                 )}
               </View>
 
-              <TouchableOpacity style={styles.addPhotoButton} onPress={showPhotoOptions}>
-                <Ionicons name="add-circle-outline" size={28} color="#000" />
-                <Text style={styles.addPhotoText}>Add Product Photo</Text>
+              <TouchableOpacity style={[styles.addPhotoButton, { backgroundColor: colors.primary }]} onPress={showPhotoOptions}>
+                <Ionicons name="add-circle-outline" size={28} color={isDarkMode ? "#000" : "#000"} />
+                <Text style={[styles.addPhotoText, { color: isDarkMode ? "#000" : "#000" }]}>Add Product Photo</Text>
               </TouchableOpacity>
 
               {referencePhotos.length > 0 && (
-                <Text style={styles.deleteHintText}>
+                <Text style={[styles.deleteHintText, { color: colors.textMuted }]}>
                   Long press a photo to delete it
                 </Text>
               )}
@@ -344,13 +391,17 @@ const OfferCommissionScreen = ({ navigation }) => {
 
             {/* Contact Information */}
             <View style={styles.detailSection}>
-              <Text style={styles.detailLabel}>Contact Information</Text>
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Contact Information</Text>
               <TextInput
-                style={styles.textInput}
+                style={[styles.textInput, { 
+                  borderColor: colors.inputBorder,
+                  color: colors.inputText,
+                  backgroundColor: colors.inputBackground
+                }]}
                 value={contactInfo}
                 onChangeText={setContactInfo}
                 placeholder="Enter your email"
-                placeholderTextColor="rgba(255, 255, 255, 0.6)"
+                placeholderTextColor={colors.inputPlaceholder}
                 keyboardType="email-address"
               />
             </View>
@@ -359,17 +410,17 @@ const OfferCommissionScreen = ({ navigation }) => {
             <View style={styles.detailSection}>
               <View style={styles.buttonRow}>
                 <TouchableOpacity
-                  style={[styles.buttonInput, styles.primaryButton]}
+                  style={[styles.buttonInput, styles.primaryButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
                   onPress={handleConfirm}
                 >
-                  <Text style={styles.primaryButtonText}>Confirm</Text>
+                  <Text style={[styles.primaryButtonText, { color: isDarkMode ? "#000" : "#000" }]}>Confirm</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity 
-                  style={[styles.buttonInput, styles.secondaryButton]}
+                  style={[styles.buttonInput, styles.secondaryButton, { borderColor: colors.border }]}
                   onPress={handleDecline}
                 >
-                  <Text style={styles.secondaryButtonText}>Decline</Text>
+                  <Text style={[styles.secondaryButtonText, { color: colors.text }]}>Decline</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -388,7 +439,7 @@ const OfferCommissionScreen = ({ navigation }) => {
               style={styles.fullScreenCloseButton}
               onPress={closePhotoModal}
             >
-              <Ionicons name="close" size={30} color="#fff" />
+              <Ionicons name="close" size={30} color={colors.text} />
             </TouchableOpacity>
             
             {selectedPhotoIndex !== null && referencePhotos[selectedPhotoIndex] && (
@@ -409,8 +460,8 @@ const OfferCommissionScreen = ({ navigation }) => {
             display="spinner"
             onChange={handleDateChange}
             style={styles.calendarPicker}
-            textColor="#FFFFFF"
-            themeVariant="dark"
+            textColor={isDarkMode ? "#FFFFFF" : "#0B005F"}
+            themeVariant={isDarkMode ? "dark" : "light"}
           />
         )}
       </SafeAreaView>
@@ -437,12 +488,10 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 28,
-    color: '#fff',
     fontWeight: '300',
   },
   screenTitle: {
     fontSize: 24,
-    color: '#fff',
     textAlign: 'center',
     flex: 1,
   },
@@ -454,27 +503,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   detailsCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 15,
     padding: 20,
     marginBottom: 30,
     width: width * 1.0,
     alignSelf: 'center',
+    borderWidth: 1,
   },
   detailSection: {
     marginBottom: 25,
   },
   detailLabel: {
     fontSize: 16,
-    color: '#FFD700',
     fontWeight: '600',
     marginBottom: 8,
   },
   textInput: {
     fontSize: 16,
-    color: '#fff',
     borderWidth: 1,
-    borderColor: '#FFD700',
     borderRadius: 8,
     padding: 12,
     textAlignVertical: 'top',
@@ -484,13 +530,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#FFD700',
     borderRadius: 8,
-    backgroundColor: 'transparent',
   },
   dateTextInput: {
     fontSize: 16,
-    color: '#fff',
     padding: 12,
     flex: 1,
     textAlignVertical: 'top',
@@ -498,11 +541,9 @@ const styles = StyleSheet.create({
   calendarButton: {
     padding: 12,
     borderLeftWidth: 1,
-    borderLeftColor: '#FFD700',
   },
   buttonInput: {
     borderWidth: 1,
-    borderColor: '#FFD700',
     borderRadius: 8,
     padding: 12,
     alignItems: 'center',
@@ -528,19 +569,15 @@ const styles = StyleSheet.create({
     width: '100%', 
     height: '100%', 
     borderRadius: 8, 
-    borderWidth: 1, 
-    borderColor: 'rgba(255, 215, 0, 0.3)' 
+    borderWidth: 1,
   },
   noPhotosText: { 
-    color: '#FFD700', 
     textAlign: 'center', 
-    opacity: 0.7,
     width: '100%',
     paddingVertical: 20,
   },
   addPhotoButton: {
     marginTop: 15,
-    backgroundColor: '#FFD700',
     borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
@@ -550,7 +587,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   addPhotoText: { 
-    color: '#000', 
     fontSize: 14, 
     fontWeight: '600', 
     marginLeft: 5 
@@ -564,11 +600,9 @@ const styles = StyleSheet.create({
     padding: 3 
   },
   deleteHintText: { 
-    color: '#FFD700', 
     fontSize: 12, 
     textAlign: 'center', 
-    marginTop: 5, 
-    opacity: 0.6 
+    marginTop: 5,
   },
   // Full Screen Photo Modal Styles
   fullScreenModalOverlay: {
@@ -597,7 +631,6 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   primaryButton: {
-    backgroundColor: '#FFD700',
     flex: 1,
   },
   secondaryButton: {
@@ -605,12 +638,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   primaryButtonText: { 
-    color: '#000', 
     fontSize: 16, 
     fontWeight: '600' 
   },
   secondaryButtonText: {
-    color: '#FFD700',
     fontSize: 16,
     fontWeight: '600',
   },

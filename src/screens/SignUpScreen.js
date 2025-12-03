@@ -1,29 +1,52 @@
-import React, { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Image,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  Image,
-  Modal,
-  Dimensions,
+  View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../context/ThemeContext';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
+// Improved hash function for password (reduces collisions by using salt and better algorithm)
+const hashPassword = (password) => {
+  // Add a simple salt based on password length to reduce collisions
+  const salt = password.length.toString();
+  let hash = 0;
+  const combined = password + salt;
+  
+  for (let i = 0; i < combined.length; i++) {
+    const char = combined.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  
+  // Add password length and first/last chars to hash to further reduce collisions
+  const firstChar = password.length > 0 ? password.charCodeAt(0) : 0;
+  const lastChar = password.length > 0 ? password.charCodeAt(password.length - 1) : 0;
+  hash = ((hash << 3) - hash) + firstChar + lastChar;
+  
+  return Math.abs(hash).toString(16) + password.length.toString(16);
+};
+
 const SignUpScreen = ({ navigation }) => {
+  const { isDarkMode, colors, gradients } = useTheme();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -122,12 +145,24 @@ const SignUpScreen = ({ navigation }) => {
 
     setIsLoading(true);
     try {
+      // Check if email already exists
+      const existingData = await AsyncStorage.getItem('userProfileData');
+      if (existingData) {
+        const parsed = JSON.parse(existingData);
+        if (parsed.email && parsed.email.toLowerCase() === email.trim().toLowerCase()) {
+          Alert.alert('Account Exists', 'An account with this email already exists. Please sign in instead.');
+          setIsLoading(false);
+          return;
+        }
+      }
+
       await new Promise(resolve => setTimeout(resolve, 2000));
       // Persist user profile data so MyAccountScreen can load it
       try {
         const userProfile = {
           name: fullName.trim(),
-          email: email.trim(),
+          email: email.trim().toLowerCase(),
+          password: hashPassword(password), // Hash password before storing
           skills: [],
           joinedDate: new Date().toISOString(),
           description: '',
@@ -156,12 +191,12 @@ const SignUpScreen = ({ navigation }) => {
 
   return (
     <LinearGradient
-      colors={['#CFAD01', '#30204D', '#0B005F']}
-      locations={[0, 0.58, 0.84]}
+      colors={isDarkMode ? gradients.background : gradients.main}
+      locations={isDarkMode ? [0, 1] : [0, 0.58, 0.84]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor="transparent" translucent />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardAvoid}
@@ -180,30 +215,38 @@ const SignUpScreen = ({ navigation }) => {
 
             {/* Content */}
             <View style={styles.content}>
-              <Text style={styles.title}>Create Account</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.title, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Create Account</Text>
+              <Text style={[styles.subtitle, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.9)' }]}>
                 Please complete all information to create {'\n'} your account on Lumivana
               </Text>
 
               {/* Form */}
               <View style={styles.form}>
                 {/* Name */}
-                <Text style={styles.label}>Name:</Text>
+                <Text style={[styles.label, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Name:</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { 
+                    borderColor: colors.inputBorder || colors.primary, 
+                    color: colors.inputText || colors.text,
+                    backgroundColor: colors.inputBackground || colors.surface 
+                  }]}
                   placeholder="Enter your name"
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor={colors.inputPlaceholder || colors.textMuted}
                   value={fullName}
                   onChangeText={setFullName}
                   editable={!isLoading}
                 />
 
                 {/* Email */}
-                <Text style={styles.label}>Email:</Text>
+                <Text style={[styles.label, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Email:</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { 
+                    borderColor: colors.inputBorder || colors.primary, 
+                    color: colors.inputText || colors.text,
+                    backgroundColor: colors.inputBackground || colors.surface 
+                  }]}
                   placeholder="Enter your email"
-                  placeholderTextColor="#aaa"
+                  placeholderTextColor={colors.inputPlaceholder || colors.textMuted}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -216,12 +259,15 @@ const SignUpScreen = ({ navigation }) => {
                 )}
 
                 {/* Password */}
-                <Text style={styles.label}>Password:</Text>
-                <View style={styles.passwordContainer}>
+                <Text style={[styles.label, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Password:</Text>
+                <View style={[styles.passwordContainer, { 
+                  borderColor: colors.inputBorder || colors.primary,
+                  backgroundColor: colors.inputBackground || colors.surface 
+                }]}>
                   <TextInput
-                    style={styles.inputPassword}
+                    style={[styles.inputPassword, { color: colors.inputText || colors.text }]}
                     placeholder="Enter your password"
-                    placeholderTextColor="#aaa"
+                    placeholderTextColor={colors.inputPlaceholder || colors.textMuted}
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
@@ -232,7 +278,7 @@ const SignUpScreen = ({ navigation }) => {
                     <Ionicons
                       name={showPassword ? 'eye' : 'eye-off'}
                       size={22}
-                      color="#FFD700"
+                      color={colors.primary}
                     />
                   </TouchableOpacity>
                 </View>
@@ -241,12 +287,15 @@ const SignUpScreen = ({ navigation }) => {
                 )}
 
                 {/* Confirm Password */}
-                <Text style={styles.label}>Confirm Password:</Text>
-                <View style={styles.passwordContainer}>
+                <Text style={[styles.label, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Confirm Password:</Text>
+                <View style={[styles.passwordContainer, { 
+                  borderColor: colors.inputBorder || colors.primary,
+                  backgroundColor: colors.inputBackground || colors.surface 
+                }]}>
                   <TextInput
-                    style={styles.inputPassword}
+                    style={[styles.inputPassword, { color: colors.inputText || colors.text }]}
                     placeholder="Re-enter your password"
-                    placeholderTextColor="#aaa"
+                    placeholderTextColor={colors.inputPlaceholder || colors.textMuted}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     secureTextEntry={!showConfirmPassword}
@@ -257,7 +306,7 @@ const SignUpScreen = ({ navigation }) => {
                     <Ionicons
                       name={showConfirmPassword ? 'eye' : 'eye-off'}
                       size={22}
-                      color="#FFD700"
+                      color={colors.primary}
                     />
                   </TouchableOpacity>
                 </View>
@@ -267,12 +316,12 @@ const SignUpScreen = ({ navigation }) => {
 
                 {/* COR Photos Section - Same as EditProfileScreen's Add Images */}
                 <View style={styles.addImagesSection}>
-                  <Text style={styles.addImagesTitle}>Photo of COR:</Text>
+                  <Text style={[styles.addImagesTitle, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Photo of COR:</Text>
                  
                   
                   <View style={styles.imageGrid}>
                     {corPhotos.length === 0 ? (
-                      <Text style={styles.noImagesText}>
+                      <Text style={[styles.noImagesText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.8)' }]}>
                         No COR photos yet. Add one below!
                       </Text>
                     ) : (
@@ -293,11 +342,11 @@ const SignUpScreen = ({ navigation }) => {
                   </View>
 
                   <TouchableOpacity style={styles.addImageButton} onPress={pickCorPhoto}>
-                    <Ionicons name="add-circle-outline" size={28} color="#FFD700" />
+                    <Ionicons name="add-circle-outline" size={28} color={colors.primary} />
                   </TouchableOpacity>
 
                   {corPhotos.length > 0 && (
-                    <Text style={styles.deleteHintText}>
+                    <Text style={[styles.deleteHintText, { color: isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)' }]}>
                       Long press an image to delete it
                     </Text>
                   )}
@@ -305,7 +354,11 @@ const SignUpScreen = ({ navigation }) => {
 
                 {/* Create Account Button */}
                 <TouchableOpacity
-                  style={[styles.createAccountButton, isLoading && styles.buttonDisabled]}
+                  style={[
+                    styles.createAccountButton, 
+                    { backgroundColor: colors.primary },
+                    isLoading && styles.buttonDisabled
+                  ]}
                   onPress={handleSignUp}
                   disabled={isLoading}
                 >
@@ -358,35 +411,30 @@ const styles = StyleSheet.create({
   backButtonText: { fontSize: 28, color: '#fff', fontWeight: '300' },
 
   content: { flex: 1, paddingHorizontal: 24 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#ccc', textAlign: 'center', marginBottom: 32 },
+  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
+  subtitle: { fontSize: 14, textAlign: 'center', marginBottom: 32 },
 
   form: { width: '100%' },
-  label: { color: '#fff', fontSize: 14, marginBottom: 6 },
+  label: { fontSize: 14, marginBottom: 6 },
 
   input: {
     borderWidth: 1,
-    borderColor: '#FFD700',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
     marginBottom: 16,
-    color: '#fff',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
 
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#FFD700',
     borderRadius: 12,
     marginBottom: 16,
     paddingHorizontal: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
-  inputPassword: { flex: 1, paddingVertical: 14, fontSize: 16, color: '#fff' },
+  inputPassword: { flex: 1, paddingVertical: 14, fontSize: 16 },
 
   errorText: { color: '#ff6b6b', fontSize: 14, marginBottom: 10 },
 
@@ -395,8 +443,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   addImagesTitle: { 
-    fontSize: 14, 
-    color: '#fff',  
+    fontSize: 14,  
     marginBottom: 8, 
     textAlign: 'left'
   },
@@ -420,9 +467,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 215, 0, 0.3)' 
   },
   noImagesText: { 
-    color: '#FFD700', 
     textAlign: 'center', 
-    opacity: 0.7,
     width: '100%',
     paddingVertical: 20,
   },
@@ -445,7 +490,6 @@ const styles = StyleSheet.create({
     padding: 3 
   },
   deleteHintText: { 
-    color: '#FFD700', 
     fontSize: 12, 
     textAlign: 'center', 
     marginTop: 8, 
