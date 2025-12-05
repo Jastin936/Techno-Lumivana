@@ -2,16 +2,16 @@ import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Dimensions,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
@@ -289,9 +289,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     flex: 1,
   },
-  primaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600'
+  primaryButtonText: { 
+    fontSize: 16, 
+    fontWeight: '600' 
   },
   secondaryButtonText: {
     fontSize: 16,

@@ -6,19 +6,18 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  Image,
-  Modal,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Dimensions,
+    Image,
+    Modal,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
@@ -245,6 +244,7 @@ const OfferCommissionScreen = ({ navigation }) => {
       type: 'home',
       category: category,
       image: referencePhotos.length > 0 ? referencePhotos[0] : null,
+      email: contactInfo, // ✅ FIXED: Added email field here
     };
 
     // Show success alert

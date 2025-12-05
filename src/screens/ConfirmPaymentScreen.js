@@ -409,7 +409,7 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
             <View style={styles.detailSection}>
               <Text style={[styles.detailLabel, { color: colors.primary }]}>Agreed Price **\***</Text>
               <View style={[styles.priceInputContainer, { borderColor: colors.primary }]}>
-                <Text style={[styles.currencySymbol, { color: colors.primary, borderRightColor: colors.primary }]}>$</Text>
+                <Text style={[styles.currencySymbol, { color: colors.primary, borderRightColor: colors.primary }]}>₱</Text>
                 <TextInput
                   style={[styles.priceTextInput, {
                     color: isDarkMode ? colors.text : '#FFFFFF',

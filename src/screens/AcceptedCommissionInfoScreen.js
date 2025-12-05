@@ -714,7 +714,7 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
                 <Text style={[styles.detailValue, { 
                   color: colors.text, 
                   backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
-                }]}>${requestData.agreedPrice}</Text>
+                }]}>₱{requestData.agreedPrice}</Text>
               </View>
             )}
 

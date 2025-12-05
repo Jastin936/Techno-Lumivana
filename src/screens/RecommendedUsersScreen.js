@@ -4,19 +4,20 @@ import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
 import {
-    Animated,
-    Dimensions,
-    Easing,
-    Linking,
-    Modal,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    Image,
+  Animated,
+  Dimensions,
+  Easing,
+  Linking,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Alert,
+  Image,
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 

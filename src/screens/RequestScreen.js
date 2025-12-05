@@ -2,14 +2,14 @@ import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  SafeAreaView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Animated,
+    Dimensions,
+    SafeAreaView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
