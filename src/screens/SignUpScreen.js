@@ -57,6 +57,11 @@ const SignUpScreen = ({ navigation }) => {
   const [corPhotos, setCorPhotos] = useState([]);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
+  
+  // Additional profile images section
+  const [profileImages, setProfileImages] = useState([]);
+  const [selectedProfileImageIndex, setSelectedProfileImageIndex] = useState(null);
+  const [showProfileImageModal, setShowProfileImageModal] = useState(false);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailInvalid = email && !emailRegex.test(email);
@@ -103,6 +108,26 @@ const SignUpScreen = ({ navigation }) => {
     }
   };
 
+  // Pick Profile photo from gallery
+  const pickProfilePhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Please grant access to your gallery.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setProfileImages((prev) => [...prev, result.assets[0].uri]);
+    }
+  };
+
   // Delete COR photo
   const deleteCorPhoto = (index) => {
     Alert.alert(
@@ -127,16 +152,52 @@ const SignUpScreen = ({ navigation }) => {
     );
   };
 
+  // Delete Profile photo
+  const deleteProfilePhoto = (index) => {
+    Alert.alert(
+      'Delete Profile Photo',
+      'Are you sure you want to remove this profile photo?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            setProfileImages((prev) => prev.filter((_, i) => i !== index));
+            
+            // Close modal if the deleted image was currently selected
+            if (selectedProfileImageIndex === index) {
+              setShowProfileImageModal(false);
+              setSelectedProfileImageIndex(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // View COR photo in full screen
   const viewCorPhoto = (index) => {
     setSelectedImageIndex(index);
     setShowImageModal(true);
   };
 
-  // Close image modal
-  const closeImageModal = () => {
+  // View Profile photo in full screen
+  const viewProfilePhoto = (index) => {
+    setSelectedProfileImageIndex(index);
+    setShowProfileImageModal(true);
+  };
+
+  // Close COR image modal
+  const closeCorImageModal = () => {
     setShowImageModal(false);
     setSelectedImageIndex(null);
+  };
+
+  // Close Profile image modal
+  const closeProfileImageModal = () => {
+    setShowProfileImageModal(false);
+    setSelectedProfileImageIndex(null);
   };
 
   const handleSignUp = async () => {
@@ -174,6 +235,11 @@ const SignUpScreen = ({ navigation }) => {
         if (corPhotos && corPhotos.length > 0) {
           await AsyncStorage.setItem('profileImage', corPhotos[0]);
           await AsyncStorage.setItem('portfolioImages', JSON.stringify(corPhotos));
+        }
+
+        // Save profile images if any
+        if (profileImages && profileImages.length > 0) {
+          await AsyncStorage.setItem('additionalProfileImages', JSON.stringify(profileImages));
         }
       } catch (storageError) {
         console.log('Error saving signup data to storage:', storageError);
@@ -314,15 +380,14 @@ const SignUpScreen = ({ navigation }) => {
                   <Text style={styles.errorText}>Passwords do not match</Text>
                 )}
 
-                {/* COR Photos Section - Same as EditProfileScreen's Add Images */}
+                {/* Profile Photo Section */}
                 <View style={styles.addImagesSection}>
-                  <Text style={[styles.addImagesTitle, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Photo of COR:</Text>
-                 
+                  <Text style={[styles.addImagesTitle, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Profile Photo:</Text>
                   
                   <View style={styles.imageGrid}>
                     {corPhotos.length === 0 ? (
                       <Text style={[styles.noImagesText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.8)' }]}>
-                        No COR photos yet. Add one below!
+                        No profile photo yet. Add one below!
                       </Text>
                     ) : (
                       corPhotos.map((uri, index) => (
@@ -346,6 +411,43 @@ const SignUpScreen = ({ navigation }) => {
                   </TouchableOpacity>
 
                   {corPhotos.length > 0 && (
+                    <Text style={[styles.deleteHintText, { color: isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)' }]}>
+                      Long press an image to delete it
+                    </Text>
+                  )}
+                </View>
+
+                {/* Photo of COR Section */}
+                <View style={styles.addImagesSection}>
+                  <Text style={[styles.addImagesTitle, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Photo of COR:</Text>
+                  
+                  <View style={styles.imageGrid}>
+                    {profileImages.length === 0 ? (
+                      <Text style={[styles.noImagesText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.8)' }]}>
+                        No COR photo yet. Add some below!
+                      </Text>
+                    ) : (
+                      profileImages.map((uri, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          style={styles.imageItem}
+                          onPress={() => viewProfilePhoto(index)}
+                          onLongPress={() => deleteProfilePhoto(index)}
+                        >
+                          <Image source={{ uri }} style={styles.gridImage} resizeMode="cover" />
+                          <View style={styles.deleteOverlay}>
+                            <Ionicons name="trash-outline" size={18} color="#fff" />
+                          </View>
+                        </TouchableOpacity>
+                      ))
+                    )}
+                  </View>
+
+                  <TouchableOpacity style={styles.addImageButton} onPress={pickProfilePhoto}>
+                    <Ionicons name="add-circle-outline" size={28} color={colors.primary} />
+                  </TouchableOpacity>
+
+                  {profileImages.length > 0 && (
                     <Text style={[styles.deleteHintText, { color: isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)' }]}>
                       Long press an image to delete it
                     </Text>
@@ -379,12 +481,12 @@ const SignUpScreen = ({ navigation }) => {
         visible={showImageModal}
         transparent={true}
         animationType="fade"
-        onRequestClose={closeImageModal}
+        onRequestClose={closeCorImageModal}
       >
         <View style={styles.fullScreenModalOverlay}>
           <TouchableOpacity 
             style={styles.fullScreenCloseButton}
-            onPress={closeImageModal}
+            onPress={closeCorImageModal}
           >
             <Ionicons name="close" size={30} color="#fff" />
           </TouchableOpacity>
@@ -392,6 +494,31 @@ const SignUpScreen = ({ navigation }) => {
           {selectedImageIndex !== null && corPhotos[selectedImageIndex] && (
             <Image 
               source={{ uri: corPhotos[selectedImageIndex] }} 
+              style={styles.fullScreenImage} 
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
+
+      {/* Profile Image Full Screen Modal */}
+      <Modal
+        visible={showProfileImageModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeProfileImageModal}
+      >
+        <View style={styles.fullScreenModalOverlay}>
+          <TouchableOpacity 
+            style={styles.fullScreenCloseButton}
+            onPress={closeProfileImageModal}
+          >
+            <Ionicons name="close" size={30} color="#fff" />
+          </TouchableOpacity>
+          
+          {selectedProfileImageIndex !== null && profileImages[selectedProfileImageIndex] && (
+            <Image 
+              source={{ uri: profileImages[selectedProfileImageIndex] }} 
               style={styles.fullScreenImage} 
               resizeMode="contain"
             />
@@ -438,14 +565,15 @@ const styles = StyleSheet.create({
 
   errorText: { color: '#ff6b6b', fontSize: 14, marginBottom: 10 },
 
-  // COR Photos Section - Same as EditProfileScreen's Add Images
+  // Images Section
   addImagesSection: {
-    marginBottom: 20,
+    marginBottom: 25,
   },
   addImagesTitle: { 
     fontSize: 14,  
-    marginBottom: 8, 
-    textAlign: 'left'
+    marginBottom: 12, 
+    textAlign: 'left',
+    fontWeight: '600'
   },
   imageGrid: { 
     flexDirection: 'row', 
@@ -470,10 +598,10 @@ const styles = StyleSheet.create({
     textAlign: 'center', 
     width: '100%',
     paddingVertical: 20,
+    fontSize: 14,
+    fontStyle: 'italic',
   },
-  // Add Image Button - Same as EditProfileScreen
   addImageButton: {
-    borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -502,6 +630,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 10,
+    marginBottom: 30,
   },
   buttonDisabled: { backgroundColor: 'rgba(255, 215, 0, 0.5)' },
   createAccountButtonText: { color: '#000', fontSize: 16, fontWeight: '600' },

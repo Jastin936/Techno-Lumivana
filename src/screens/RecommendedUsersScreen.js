@@ -16,6 +16,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 
@@ -110,7 +111,7 @@ const RecommendedUsersScreen = ({ navigation }) => {
       bio: "Award-winning fiction writer and content creator with multiple published works and extensive blogging experience.",
       followers: 532,
       milestone: false,
-      referencePhotos: [] // FIX: Added missing referencePhotos to prevent crash
+      referencePhotos: []
     },
     {
       id: 6,
@@ -128,30 +129,70 @@ const RecommendedUsersScreen = ({ navigation }) => {
   ];
 
   const [selectedFilter, setSelectedFilter] = useState("All");
-  const [following, setFollowing] = useState({});
+  // Change from object to array to store user IDs that are followed
+  const [followingUsers, setFollowingUsers] = useState([]);
   const [blockedUsers, setBlockedUsers] = useState([]);
+  const [notInterestedUsers, setNotInterestedUsers] = useState([]);
+  const [reportedUsers, setReportedUsers] = useState([]);
   const [moreModal, setMoreModal] = useState({ visible: false, user: null });
 
   const slideAnim = useState(new Animated.Value(300))[0];
 
-  // Load following state from AsyncStorage
+  // Load states from AsyncStorage
   useEffect(() => {
-    loadFollowingState();
+    loadAllData();
   }, []);
 
-  const loadFollowingState = async () => {
+  const loadAllData = async () => {
     try {
-      const savedFollowing = await AsyncStorage.getItem('followingState');
+      await loadFollowingUsers();
+      await loadNotInterestedUsers();
+      await loadReportedUsers();
+    } catch (error) {
+      console.log('Error loading data:', error);
+    }
+  };
+
+  // Updated: Load following users from AsyncStorage
+  const loadFollowingUsers = async () => {
+    try {
+      const savedFollowing = await AsyncStorage.getItem('followingUsers');
       if (savedFollowing) {
-        // FIX: Added try-catch for JSON parsing
         try {
-          setFollowing(JSON.parse(savedFollowing));
+          setFollowingUsers(JSON.parse(savedFollowing));
         } catch (e) {
-          console.log('Error parsing following state');
+          console.log('Error parsing following users');
         }
       }
     } catch (error) {
-      console.log('Error loading following state:', error);
+      console.log('Error loading following users:', error);
+    }
+  };
+
+  // Check if a user is followed
+  const isFollowing = (userId) => {
+    return followingUsers.includes(userId);
+  };
+
+  const loadNotInterestedUsers = async () => {
+    try {
+      const savedNotInterested = await AsyncStorage.getItem('notInterestedUsers');
+      if (savedNotInterested) {
+        setNotInterestedUsers(JSON.parse(savedNotInterested));
+      }
+    } catch (error) {
+      console.log('Error loading not interested users:', error);
+    }
+  };
+
+  const loadReportedUsers = async () => {
+    try {
+      const savedReported = await AsyncStorage.getItem('reportedUsers');
+      if (savedReported) {
+        setReportedUsers(JSON.parse(savedReported));
+      }
+    } catch (error) {
+      console.log('Error loading reported users:', error);
     }
   };
 
@@ -169,7 +210,6 @@ const RecommendedUsersScreen = ({ navigation }) => {
     try {
       const savedUserData = await AsyncStorage.getItem("userProfileData");
       if (savedUserData) {
-        // FIX: Added try-catch for JSON parsing
         try {
           const parsedData = JSON.parse(savedUserData);
           setUserData((prev) => ({
@@ -192,40 +232,121 @@ const RecommendedUsersScreen = ({ navigation }) => {
 
   useEffect(() => {
     loadUserData();
-    loadFollowingState();
+    loadAllData();
   }, []);
 
   // Refresh following state when screen comes into focus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      loadFollowingState();
+      loadFollowingUsers();
     });
 
     return unsubscribe;
   }, [navigation]);
 
+  // Filter out blocked users, not interested users, and reported users
   const filteredUsers = USERS.filter(
     (u) =>
       !blockedUsers.includes(u.id) &&
+      !notInterestedUsers.includes(u.id) &&
       (selectedFilter === "All" || u.role.includes(selectedFilter))
   );
 
-  const toggleFollow = async (id) => {
-    const userName = USERS.find(u => u.id === id)?.name;
-    if (!userName) return;
+  // Updated: Toggle follow function
+  const toggleFollow = async (userId) => {
+    const user = USERS.find(u => u.id === userId);
+    if (!user) return;
     
-    const newFollowing = { ...following, [userName]: !following[userName] };
-    setFollowing(newFollowing);
+    let updatedFollowingUsers;
+    
+    if (isFollowing(userId)) {
+      // Unfollow: remove user ID from array
+      updatedFollowingUsers = followingUsers.filter(id => id !== userId);
+    } else {
+      // Follow: add user ID to array
+      updatedFollowingUsers = [...followingUsers, userId];
+    }
+    
+    setFollowingUsers(updatedFollowingUsers);
+    
     try {
-      await AsyncStorage.setItem('followingState', JSON.stringify(newFollowing));
+      // Save to AsyncStorage
+      await AsyncStorage.setItem('followingUsers', JSON.stringify(updatedFollowingUsers));
+      
+      // Show feedback
+      Alert.alert(
+        isFollowing(userId) ? "Unfollowed" : "Following",
+        isFollowing(userId) 
+          ? `You have unfollowed ${user.name}` 
+          : `You are now following ${user.name}. They will appear in your Following tab.`,
+        [{ text: "OK" }]
+      );
+      
     } catch (error) {
       console.log('Error saving following state:', error);
+      Alert.alert("Error", "Failed to update follow status. Please try again.");
     }
   };
 
   const handleBlockUser = (user) => {
     setBlockedUsers((prev) => [...prev, user.id]);
     setMoreModal({ visible: false, user: null });
+  };
+
+  const handleNotInterested = async () => {
+    if (moreModal.user) {
+      try {
+        const updatedNotInterested = [...notInterestedUsers, moreModal.user.id];
+        setNotInterestedUsers(updatedNotInterested);
+        
+        await AsyncStorage.setItem('notInterestedUsers', JSON.stringify(updatedNotInterested));
+        
+        setMoreModal({ visible: false, user: null });
+        
+        Alert.alert("Noted", "We'll show fewer users like this in your recommendations.");
+        
+      } catch (error) {
+        console.log('Error saving not interested user:', error);
+        Alert.alert("Error", "Failed to save your preference. Please try again.");
+      }
+    }
+  };
+
+  const handleReportUser = async () => {
+    if (moreModal.user) {
+      Alert.alert(
+        "Report User",
+        "Are you sure you want to report this user?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Report",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                const updatedReported = [...reportedUsers, moreModal.user.id];
+                setReportedUsers(updatedReported);
+                
+                await AsyncStorage.setItem('reportedUsers', JSON.stringify(updatedReported));
+                
+                setBlockedUsers((prev) => [...prev, moreModal.user.id]);
+                
+                setMoreModal({ visible: false, user: null });
+                
+                Alert.alert("Report Submitted", "Thank you for reporting this user. Our team will review it.");
+                
+              } catch (error) {
+                console.log('Error saving reported user:', error);
+                Alert.alert("Error", "Failed to submit report. Please try again.");
+              }
+            }
+          }
+        ]
+      );
+    }
   };
 
   const openMoreModal = (user) => {
@@ -235,7 +356,6 @@ const RecommendedUsersScreen = ({ navigation }) => {
 
   // Function to handle user card press
   const handleUserPress = (user) => {
-    // FIX: Updated navigation name to match App.js exactly
     navigation.navigate("RecommendedUsersInfoScreen", { 
       requestData: {
         title: user.title,
@@ -244,7 +364,6 @@ const RecommendedUsersScreen = ({ navigation }) => {
         skills: user.skills,
         joinedDate: user.joinedDate,
         bio: user.bio,
-        // Safe access to referencePhotos
         referencePhotos: user.referencePhotos || []
       }
     });
@@ -334,8 +453,11 @@ const RecommendedUsersScreen = ({ navigation }) => {
                   <TouchableOpacity
                     style={[
                       styles.followBtn,
-                      { backgroundColor: following[user.name] ? 'transparent' : colors.primary },
-                      following[user.name] && { borderWidth: 1.5, borderColor: colors.primary },
+                      { 
+                        backgroundColor: isFollowing(user.id) ? 'transparent' : colors.primary,
+                        borderWidth: isFollowing(user.id) ? 1.5 : 0,
+                        borderColor: isFollowing(user.id) ? colors.primary : 'transparent'
+                      },
                     ]}
                     onPress={(e) => {
                       e.stopPropagation();
@@ -345,10 +467,14 @@ const RecommendedUsersScreen = ({ navigation }) => {
                     <Text
                       style={[
                         styles.followText,
-                        { color: following[user.name] ? colors.primary : (isDarkMode ? colors.text : "#000") },
+                        { 
+                          color: isFollowing(user.id) 
+                            ? colors.primary 
+                            : (isDarkMode ? colors.text : "#000") 
+                        },
                       ]}
                     >
-                      {following[user.name] ? "Following" : "Follow"}
+                      {isFollowing(user.id) ? "Following" : "Follow"}
                     </Text>
                   </TouchableOpacity>
 
@@ -417,14 +543,23 @@ const RecommendedUsersScreen = ({ navigation }) => {
                 <Ionicons name="logo-twitter" size={28} color={colors.text} />
               </TouchableOpacity>
             </View>
-              <View style={styles.optionRow}>
+              
+              <TouchableOpacity
+                style={styles.optionRow}
+                onPress={handleNotInterested}
+              >
                 <Ionicons name="heart-dislike-outline" size={22} color="red" />
                 <Text style={[styles.optionText, { color: colors.text }]}>Not interested</Text>
-              </View>
-              <View style={styles.optionRow}>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.optionRow}
+                onPress={handleReportUser}
+              >
                 <Ionicons name="flag-outline" size={22} color="red" />
-                <Text style={[styles.optionText, { color: colors.text }]}>Report Post</Text>
-              </View>
+                <Text style={[styles.optionText, { color: colors.text }]}>Report User</Text>
+              </TouchableOpacity>
+              
               <TouchableOpacity
                 style={styles.optionRow}
                 onPress={() => handleBlockUser(moreModal.user)}
@@ -575,6 +710,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 8,
     marginLeft: 'auto',
+    marginRight: 10,
   },
   followText: { fontWeight: "600", fontSize: 14 },
   postPreviewRow: {

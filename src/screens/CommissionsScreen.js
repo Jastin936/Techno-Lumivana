@@ -35,6 +35,7 @@ const mockCommissionsData = [
     artist: 'Kreideprinz',
     email: 'erinko@gmail.com',
     referencePhotos: [],
+    agreedPrice: '1500',
   },
   {
     id: '2',
@@ -46,6 +47,7 @@ const mockCommissionsData = [
     artist: 'Chiori',
     email: 'chiori@crafts.com',
     referencePhotos: [],
+    agreedPrice: '1200',
   },
   {
     id: '3',
@@ -57,6 +59,7 @@ const mockCommissionsData = [
     artist: 'Aelric',
     email: 'aelric@design.com',
     referencePhotos: [],
+    agreedPrice: '800',
   },
   {
     id: '4',
@@ -68,6 +71,7 @@ const mockCommissionsData = [
     artist: 'DesignPro',
     email: 'contact@designpro.com',
     referencePhotos: [],
+    agreedPrice: '2500',
   },
   {
     id: '5',
@@ -79,6 +83,7 @@ const mockCommissionsData = [
     artist: 'ArtMaster',
     email: 'art@master.com',
     referencePhotos: [],
+    agreedPrice: '1800',
   },
   {
     id: '6',
@@ -90,6 +95,7 @@ const mockCommissionsData = [
     artist: 'PhotoExpert',
     email: 'photo@expert.com',
     referencePhotos: [],
+    agreedPrice: '3000',
   },
 ];
 
@@ -106,6 +112,7 @@ const CommissionItem = ({
   referencePhotos, 
   artist, 
   email, 
+  agreedPrice,
   onPress 
 }) => {
   const { isDarkMode, colors } = useTheme();
@@ -141,9 +148,14 @@ const CommissionItem = ({
         </View>
         <Text style={[styles.titleText, { color: colors.text }]}>{title}</Text>
         <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{description}</Text>
-        <View style={styles.categoryRow}>
-          <Ionicons name={FILTER_CATEGORY_MAP.find(cat => cat.name === category)?.icon || 'apps-outline'} size={14} color={colors.primary} />
-          <Text style={[styles.categoryText, { color: colors.primary }]}>{category}</Text>
+        <View style={styles.infoRow}>
+          <View style={styles.categoryRow}>
+            <Ionicons name={FILTER_CATEGORY_MAP.find(cat => cat.name === category)?.icon || 'apps-outline'} size={14} color={colors.primary} />
+            <Text style={[styles.categoryText, { color: colors.primary }]}>{category}</Text>
+          </View>
+          {agreedPrice && (
+            <Text style={[styles.priceText, { color: colors.primary }]}>₱{agreedPrice}</Text>
+          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -171,6 +183,33 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory
           
           <Text style={[modalStyles.categoryHeader, { color: colors.text }]}>Category</Text>
           <ScrollView style={modalStyles.categoryList}>
+            <TouchableOpacity
+              style={[modalStyles.categoryItem, { borderBottomColor: colors.border }]}
+              onPress={() => {
+                setSelectedCategory('All');
+                onClose();
+              }}
+            >
+              <View style={modalStyles.categoryTextContainer}>
+                <Ionicons 
+                  name="apps-outline" 
+                  size={25} 
+                  color={colors.primary}
+                  style={modalStyles.categoryIcon}
+                />
+                <Text style={[modalStyles.categoryText, { color: colors.textSecondary }]}>All Categories</Text>
+              </View>
+
+              <View style={[modalStyles.checkbox(selectedCategory === 'All'), { 
+                borderColor: selectedCategory === 'All' ? colors.primary : colors.border,
+                backgroundColor: selectedCategory === 'All' ? colors.primary : 'transparent'
+              }]}>
+                {selectedCategory === 'All' && (
+                  <Ionicons name="checkmark-sharp" size={16} color={isDarkMode ? "#000000ff" : "#000"} />
+                )}
+              </View>
+            </TouchableOpacity>
+            
             {FILTER_CATEGORY_MAP.map((item) => (
               <TouchableOpacity
                 key={item.name}
@@ -214,7 +253,7 @@ const CommissionsScreen = ({ navigation, route }) => {
   const [filterVisible, setFilterVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   
-  // UPDATED: Start with empty state, load mock only if storage is empty
+  // UPDATED: State for commissions
   const [commissions, setCommissions] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -244,160 +283,230 @@ const CommissionsScreen = ({ navigation, route }) => {
     return Array.from(unique.values());
   };
 
-  // UPDATED: Load commissions from Storage on mount
-  useEffect(() => {
-    const loadCommissions = async () => {
-      try {
-        const savedData = await AsyncStorage.getItem('savedCommissions');
-        if (savedData) {
-          console.log('Loaded commissions from storage');
-          setCommissions(JSON.parse(savedData));
-        } else {
-          console.log('No saved commissions, loading mock data');
-          setCommissions(mockCommissionsData);
-        }
-      } catch (error) {
-        console.log('Error loading commissions:', error);
+  // UPDATED: Load commissions from AsyncStorage on mount
+  const loadCommissionsFromStorage = async () => {
+    try {
+      const savedData = await AsyncStorage.getItem('savedCommissions');
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        console.log('Loaded commissions from storage:', parsedData.length);
+        setCommissions(parsedData);
+      } else {
+        console.log('No saved commissions, loading mock data');
+        // Save mock data to storage for first time
+        await AsyncStorage.setItem('savedCommissions', JSON.stringify(mockCommissionsData));
         setCommissions(mockCommissionsData);
-      } finally {
-        setIsLoaded(true);
       }
-    };
-    loadCommissions();
+    } catch (error) {
+      console.log('Error loading commissions:', error);
+      setCommissions(mockCommissionsData);
+    } finally {
+      setIsLoaded(true);
+    }
+  };
+
+  // Load commissions on component mount
+  useEffect(() => {
+    loadCommissionsFromStorage();
   }, []);
 
-  // UPDATED: Save commissions to Storage whenever they change
-  useEffect(() => {
-    if (isLoaded) {
-      const saveCommissions = async () => {
-        try {
-          await AsyncStorage.setItem('savedCommissions', JSON.stringify(commissions));
-          console.log('Commissions saved to storage');
-        } catch (error) {
-          console.log('Error saving commissions:', error);
-        }
-      };
-      saveCommissions();
-    }
-  }, [commissions, isLoaded]);
-
-  // Handle Updates (New, Complete, Cancel)
-  useEffect(() => {
-    if (!isLoaded) return; // Wait until loaded
-
-    // New Commission
-    if (route.params?.newCommission) {
-      const newCommission = {
-        ...route.params.newCommission,
-        id: route.params.newCommission.id || `commission-${Date.now()}`,
-        date: route.params.newCommission.date || new Date().toLocaleDateString('en-US', {
-          year: 'numeric', month: 'long', day: 'numeric'
-        }),
-        status: route.params.newCommission.status || 'On Going',
-        category: route.params.newCommission.category || 'Custom Commission',
-        artist: route.params.newCommission.artist || 'Pending Artist',
-        email: route.params.newCommission.email || route.params.newCommission.contact || 'No email provided',
-        referencePhotos: route.params.newCommission.referencePhotos || []
-      };
-      
-      setCommissions(prevCommissions => {
-        const exists = prevCommissions.some(c => c.id === newCommission.id);
-        if (exists) return prevCommissions;
-        return [newCommission, ...prevCommissions];
-      });
-      navigation.setParams({ newCommission: null });
-    }
-
-    // Completed Commission
-    if (route.params?.completedCommission) {
-      const completedCommission = route.params.completedCommission;
-      setCommissions(prevCommissions => {
-        const exists = prevCommissions.some(c => c.id === completedCommission.id);
-        if (exists) {
-          return prevCommissions.map(commission => {
-            if (commission.id === completedCommission.id) {
-              return { 
-                ...commission, 
-                status: 'Complete',
-                completedAt: completedCommission.completedAt,
-                agreedPrice: completedCommission.agreedPrice
-              };
-            }
-            return commission;
-          });
-        } else {
-          return [{
-            ...completedCommission,
-            status: 'Complete',
-            date: completedCommission.date || new Date().toLocaleDateString()
-          }, ...prevCommissions];
-        }
-      });
-      navigation.setParams({ completedCommission: null });
-    }
-
-    // Cancelled Commission
-    if (route.params?.cancelledCommission) {
-      const cancelledCommission = route.params.cancelledCommission;
-      setCommissions(prevCommissions => {
-        return prevCommissions.map(commission => {
-          if (commission.id === cancelledCommission.id) {
-            return { 
-              ...commission, 
-              status: 'Canceled',
-              cancellationReason: cancelledCommission.cancellationReason,
-              cancelledAt: cancelledCommission.cancelledAt
-            };
-          }
-          return commission;
-        });
-      });
-      navigation.setParams({ cancelledCommission: null });
-    }
-
-    // General Update
-    if (route.params?.updatedCommission) {
-      const updatedCommission = route.params.updatedCommission;
-      setCommissions(prevCommissions => 
-        prevCommissions.map(commission => {
-          if (commission.id === updatedCommission.id) {
-            return { ...commission, ...updatedCommission };
-          }
-          return commission;
-        })
-      );
-      navigation.setParams({ updatedCommission: null });
-    }
-  }, [route.params, navigation, isLoaded]);
-
-  // Load User Data
+  // Refresh commissions when screen comes into focus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      const loadUserData = async () => {
-        try {
-          const savedUserData = await AsyncStorage.getItem('userProfileData');
-          if (savedUserData) {
-            const parsedData = JSON.parse(savedUserData);
-            setUserData(prevData => ({
-              ...prevData,
-              name: parsedData.name || 'Lumivana Vivistera',
-              profileImage: parsedData.profileImage || null
-            }));
-          }
-          const savedProfileImage = await AsyncStorage.getItem('profileImage');
-          if (savedProfileImage) {
-            setUserData(prevData => ({
-              ...prevData,
-              profileImage: savedProfileImage
-            }));
-          }
-        } catch (error) { console.log(error); }
-      };
-      loadUserData();
+      console.log('Commissions screen focused, refreshing...');
+      loadCommissionsFromStorage();
     });
+    
     return unsubscribe;
   }, [navigation]);
 
+  // Handle route parameters for new/updated commissions
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    console.log('Checking route params:', route.params);
+
+    // Handle new commission from AgreementFormScreen
+    if (route.params?.newCommission) {
+      console.log('Processing new commission:', route.params.newCommission);
+      handleNewCommission(route.params.newCommission);
+      navigation.setParams({ newCommission: null });
+    }
+
+    // Handle updated commission
+    if (route.params?.updatedCommission) {
+      console.log('Processing updated commission:', route.params.updatedCommission);
+      handleUpdatedCommission(route.params.updatedCommission);
+      navigation.setParams({ updatedCommission: null });
+    }
+
+    // Handle completed commission
+    if (route.params?.completedCommission) {
+      console.log('Processing completed commission:', route.params.completedCommission);
+      handleCompletedCommission(route.params.completedCommission);
+      navigation.setParams({ completedCommission: null });
+    }
+
+    // Handle cancelled commission
+    if (route.params?.cancelledCommission) {
+      console.log('Processing cancelled commission:', route.params.cancelledCommission);
+      handleCancelledCommission(route.params.cancelledCommission);
+      navigation.setParams({ cancelledCommission: null });
+    }
+  }, [route.params, isLoaded]);
+
+  // Function to handle new commission
+  const handleNewCommission = async (newCommission) => {
+    try {
+      // Format the commission with proper data
+      const formattedCommission = {
+        ...newCommission,
+        id: newCommission.id || `commission-${Date.now()}`,
+        date: newCommission.date || new Date().toLocaleDateString('en-US', {
+          year: 'numeric', month: 'long', day: 'numeric'
+        }),
+        status: newCommission.status || 'On Going',
+        category: newCommission.category || 'Custom Commission',
+        artist: newCommission.artist || 'Pending Artist',
+        email: newCommission.email || newCommission.contact || 'No email provided',
+        referencePhotos: newCommission.referencePhotos || [],
+        agreedPrice: newCommission.agreedPrice || '0',
+        description: newCommission.description || 'No description provided',
+        title: newCommission.title || 'Untitled Commission'
+      };
+
+      console.log('Formatted new commission:', formattedCommission);
+
+      // Get current commissions from storage
+      const savedData = await AsyncStorage.getItem('savedCommissions');
+      let currentCommissions = savedData ? JSON.parse(savedData) : [];
+      
+      // Check if commission already exists
+      const existingIndex = currentCommissions.findIndex(c => c.id === formattedCommission.id);
+      
+      if (existingIndex !== -1) {
+        // Update existing commission
+        currentCommissions[existingIndex] = formattedCommission;
+      } else {
+        // Add new commission at the beginning
+        currentCommissions.unshift(formattedCommission);
+      }
+      
+      // Save to AsyncStorage
+      await AsyncStorage.setItem('savedCommissions', JSON.stringify(currentCommissions));
+      
+      // Update state
+      setCommissions(currentCommissions);
+      
+      console.log('New commission saved successfully');
+      
+    } catch (error) {
+      console.log('Error handling new commission:', error);
+    }
+  };
+
+  // Function to handle updated commission
+  const handleUpdatedCommission = async (updatedCommission) => {
+    try {
+      const savedData = await AsyncStorage.getItem('savedCommissions');
+      if (!savedData) return;
+      
+      let commissionsArray = JSON.parse(savedData);
+      const index = commissionsArray.findIndex(c => c.id === updatedCommission.id);
+      
+      if (index !== -1) {
+        commissionsArray[index] = {
+          ...commissionsArray[index],
+          ...updatedCommission
+        };
+        
+        await AsyncStorage.setItem('savedCommissions', JSON.stringify(commissionsArray));
+        setCommissions(commissionsArray);
+      }
+    } catch (error) {
+      console.log('Error updating commission:', error);
+    }
+  };
+
+  // Function to handle completed commission
+  const handleCompletedCommission = async (completedCommission) => {
+    try {
+      const savedData = await AsyncStorage.getItem('savedCommissions');
+      if (!savedData) return;
+      
+      let commissionsArray = JSON.parse(savedData);
+      const index = commissionsArray.findIndex(c => c.id === completedCommission.id);
+      
+      if (index !== -1) {
+        commissionsArray[index] = {
+          ...commissionsArray[index],
+          status: 'Complete',
+          completedAt: completedCommission.completedAt || new Date().toISOString()
+        };
+        
+        await AsyncStorage.setItem('savedCommissions', JSON.stringify(commissionsArray));
+        setCommissions(commissionsArray);
+      }
+    } catch (error) {
+      console.log('Error completing commission:', error);
+    }
+  };
+
+  // Function to handle cancelled commission
+  const handleCancelledCommission = async (cancelledCommission) => {
+    try {
+      const savedData = await AsyncStorage.getItem('savedCommissions');
+      if (!savedData) return;
+      
+      let commissionsArray = JSON.parse(savedData);
+      const index = commissionsArray.findIndex(c => c.id === cancelledCommission.id);
+      
+      if (index !== -1) {
+        commissionsArray[index] = {
+          ...commissionsArray[index],
+          status: 'Canceled',
+          cancellationReason: cancelledCommission.cancellationReason,
+          cancelledAt: cancelledCommission.cancelledAt || new Date().toISOString()
+        };
+        
+        await AsyncStorage.setItem('savedCommissions', JSON.stringify(commissionsArray));
+        setCommissions(commissionsArray);
+      }
+    } catch (error) {
+      console.log('Error cancelling commission:', error);
+    }
+  };
+
+  // Load User Data
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const savedUserData = await AsyncStorage.getItem('userProfileData');
+        if (savedUserData) {
+          const parsedData = JSON.parse(savedUserData);
+          setUserData(prevData => ({
+            ...prevData,
+            name: parsedData.name || 'Lumivana Vivistera',
+            profileImage: parsedData.profileImage || null
+          }));
+        }
+        const savedProfileImage = await AsyncStorage.getItem('profileImage');
+        if (savedProfileImage) {
+          setUserData(prevData => ({
+            ...prevData,
+            profileImage: savedProfileImage
+          }));
+        }
+      } catch (error) { console.log(error); }
+    };
+    
+    loadUserData();
+    
+    const unsubscribe = navigation.addListener('focus', loadUserData);
+    return unsubscribe;
+  }, [navigation]);
+
+  // Logo rotation animation
   useEffect(() => {
     const startRotation = () => {
       rotateValue.setValue(0);
@@ -450,8 +559,8 @@ const CommissionsScreen = ({ navigation, route }) => {
 
   const filteredCommissions = getUniqueCommissions(commissions).filter((commission) => {
     const matchesSearch = 
-      commission.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      commission.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (commission.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (commission.description?.toLowerCase() || '').includes(searchQuery.toLowerCase());
     
     const matchesCategory = 
       selectedCategory === 'All' || commission.category === selectedCategory;
@@ -538,6 +647,15 @@ const CommissionsScreen = ({ navigation, route }) => {
           </View>
         )}
 
+        {/* Debug Info */}
+        {commissions.length > 0 && (
+          <View style={styles.debugContainer}>
+            <Text style={styles.debugText}>
+              Showing {filteredCommissions.length} of {commissions.length} commissions
+            </Text>
+          </View>
+        )}
+
         {/* Main Content: Commission List */}
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.commissionsList}>
@@ -547,12 +665,23 @@ const CommissionsScreen = ({ navigation, route }) => {
                 <Text style={[styles.noResultsText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.9)' }]}>
                   {searchQuery.length > 0 
                     ? `No results found for "${searchQuery}"`
-                    : `No ${selectedCategory} commissions found`
+                    : `No ${selectedCategory !== 'All' ? selectedCategory + ' ' : ''}commissions found`
                   }
                 </Text>
                 <Text style={[styles.noResultsSubText, { color: isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)' }]}>
                   Try adjusting your search or filters
                 </Text>
+                {commissions.length === 0 && (
+                  <TouchableOpacity 
+                    style={[styles.createButton, { backgroundColor: colors.primary }]}
+                    onPress={() => navigation.navigate('Request')}
+                  >
+                    <Ionicons name="add-circle-outline" size={20} color={isDarkMode ? colors.text : colors.buttonText} />
+                    <Text style={[styles.createButtonText, { color: isDarkMode ? colors.text : colors.buttonText }]}>
+                      Create Your First Commission
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ) : (
               filteredCommissions.map((item, index) => (
@@ -566,6 +695,7 @@ const CommissionsScreen = ({ navigation, route }) => {
                   referencePhotos={item.referencePhotos}
                   artist={item.artist}
                   email={item.email}
+                  agreedPrice={item.agreedPrice}
                   onPress={() => handleCommissionPress(item)}
                 />
               ))
@@ -792,6 +922,17 @@ const styles = StyleSheet.create({
     padding: 4,
   },
 
+  // Debug Info
+  debugContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  debugText: {
+    fontSize: 12,
+    color: '#888',
+    textAlign: 'center',
+  },
+
   // --- Main Content & List Styles ---
   content: { 
     flexGrow: 1,
@@ -858,14 +999,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 4,
   },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
   categoryRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
   },
   categoryText: {
     fontSize: 12,
     marginLeft: 4,
+  },
+  priceText: {
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   
   // No Results Styles
@@ -885,6 +1035,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     paddingHorizontal: 20,
+  },
+  createButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+  },
+  createButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 5,
   },
   
   // --- Footer Styles ---
@@ -913,7 +1076,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 10,
   },
-   plusSquareContainer: {
+  plusSquareContainer: {
     width: 45,
     height: 45,
     borderWidth: 2,

@@ -23,6 +23,17 @@ import { useTheme } from '../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
+// Category options for dropdown with icons (same as AgreementFormScreen and OfferCommissionScreen)
+const CATEGORY_OPTIONS = [
+  { name: 'Graphic Design', icon: 'color-palette-outline' },
+  { name: 'Illustration', icon: 'brush-outline' },
+  { name: 'Crafting', icon: 'construct-outline' },
+  { name: 'Writing', icon: 'document-text-outline' },
+  { name: 'Photography', icon: 'camera-outline' },
+  { name: 'Tutoring', icon: 'school-outline' },
+  { name: 'Accessories', icon: 'diamond-outline' }
+];
+
 const RequestCommissionScreen = ({ navigation, route }) => {
   const { isDarkMode, colors, gradients } = useTheme();
   const [fontsLoaded] = useFonts({
@@ -39,6 +50,9 @@ const RequestCommissionScreen = ({ navigation, route }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  // ✅ NEW: State for dropdown
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
   if (!fontsLoaded) return null;
 
@@ -167,6 +181,18 @@ const RequestCommissionScreen = ({ navigation, route }) => {
     return dateString;
   };
 
+  // ✅ NEW: Handle category selection from dropdown
+  const handleCategorySelect = (selectedCategory) => {
+    setCategory(selectedCategory);
+    setShowCategoryDropdown(false);
+  };
+
+  // ✅ NEW: Get icon for selected category
+  const getSelectedCategoryIcon = () => {
+    const selectedOption = CATEGORY_OPTIONS.find(option => option.name === category);
+    return selectedOption ? selectedOption.icon : 'grid-outline';
+  };
+
   const handleConfirm = () => {
     // Validate required fields
     if (!commissionName.trim()) {
@@ -181,6 +207,10 @@ const RequestCommissionScreen = ({ navigation, route }) => {
       Alert.alert('Missing Information', 'Please select a date.');
       return;
     }
+    if (!category.trim()) {
+      Alert.alert('Missing Information', 'Please select a category.');
+      return;
+    }
     if (!contactInfo.trim()) {
       Alert.alert('Missing Information', 'Please enter your contact information.');
       return;
@@ -191,7 +221,7 @@ const RequestCommissionScreen = ({ navigation, route }) => {
       title: commissionName,
       description: description,
       date: dateRequested,
-      category: category || 'Custom Commission',
+      category: category,
       contact: contactInfo,
       referencePhotos: referencePhotos,
       status: 'pending',
@@ -313,20 +343,87 @@ const RequestCommissionScreen = ({ navigation, route }) => {
               </View>
             </View>
 
-            {/* Category */}
+            {/* Category - UPDATED to Dropdown with Icons */}
             <View style={styles.detailSection}>
               <Text style={[styles.detailLabel, { color: colors.primary }]}>Category</Text>
-              <TextInput
-                style={[styles.textInput, { 
-                  borderColor: colors.inputBorder,
-                  color: colors.inputText,
+              
+              {/* Category Dropdown Button */}
+              <TouchableOpacity 
+                style={[styles.categoryDropdownButton, { 
+                  borderColor: colors.primary,
                   backgroundColor: colors.inputBackground
                 }]}
-                value={category}
-                onChangeText={setCategory}
-                placeholder="Custom Commission"
-                placeholderTextColor={colors.inputPlaceholder}
-              />
+                onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+              >
+                <View style={styles.categoryButtonContent}>
+                  {/* Icon on the left */}
+                  <Ionicons 
+                    name={getSelectedCategoryIcon()} 
+                    size={20} 
+                    color={colors.primary}
+                    style={styles.categoryButtonIcon}
+                  />
+                  <Text style={[styles.categorySelectedText, { 
+                    color: category ? colors.inputText : colors.inputPlaceholder
+                  }]}>
+                    {category || 'Select a category'}
+                  </Text>
+                </View>
+                <Ionicons 
+                  name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color={colors.primary} 
+                />
+              </TouchableOpacity>
+
+              {/* Category Dropdown Options */}
+              {showCategoryDropdown && (
+                <View style={[styles.categoryDropdownOptions, { 
+                  backgroundColor: colors.card,
+                  borderColor: colors.primary,
+                  shadowColor: isDarkMode ? '#000' : colors.primary
+                }]}>
+                  <ScrollView style={styles.categoryScrollView} nestedScrollEnabled={true}>
+                    {CATEGORY_OPTIONS.map((option, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.categoryOption,
+                          { 
+                            borderBottomColor: colors.border,
+                            backgroundColor: option.name === category 
+                              ? (isDarkMode ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 215, 0, 0.1)')
+                              : 'transparent'
+                          }
+                        ]}
+                        onPress={() => handleCategorySelect(option.name)}
+                      >
+                        {/* Icon on the left of each option */}
+                        <View style={styles.categoryOptionContent}>
+                          <Ionicons 
+                            name={option.icon} 
+                            size={18} 
+                            color={colors.primary}
+                            style={styles.categoryOptionIcon}
+                          />
+                          <Text style={[
+                            styles.categoryOptionText,
+                            { 
+                              color: colors.text,
+                              fontWeight: option.name === category ? '600' : '400'
+                            }
+                          ]}>
+                            {option.name}
+                          </Text>
+                        </View>
+                        {option.name === category && (
+                          <Ionicons name="checkmark" size={18} color={colors.primary} />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
             </View>
 
             {/* Reference Photos */}
@@ -523,6 +620,65 @@ const styles = StyleSheet.create({
     padding: 12,
     textAlignVertical: 'top',
   },
+  
+  // ✅ NEW: Category Dropdown Styles with Icons
+  categoryDropdownButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+  },
+  categoryButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  categoryButtonIcon: {
+    marginRight: 10,
+  },
+  categorySelectedText: {
+    fontSize: 16,
+    flex: 1,
+  },
+  categoryDropdownOptions: {
+    position: 'absolute',
+    top: 70,
+    left: 0,
+    right: 0,
+    borderWidth: 1,
+    borderRadius: 8,
+    maxHeight: 200,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  categoryScrollView: {
+    maxHeight: 200,
+  },
+  categoryOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+  },
+  categoryOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  categoryOptionIcon: {
+    marginRight: 10,
+  },
+  categoryOptionText: {
+    fontSize: 16,
+    flex: 1,
+  },
+
   dateInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',

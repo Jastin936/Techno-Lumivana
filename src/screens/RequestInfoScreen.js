@@ -1,8 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // ✅ Added Import
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useEffect, useState } from 'react'; // ✅ Added useEffect
+import { useEffect, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -16,6 +16,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
@@ -32,13 +33,21 @@ const RequestInfoScreen = ({ navigation, route }) => {
   const [imageModal, setImageModal] = useState({ visible: false, imageUri: null });
   const [blockedRequests, setBlockedRequests] = useState([]);
   
+  // ✅ State for not interested requests
+  const [notInterestedRequests, setNotInterestedRequests] = useState([]);
+  // ✅ State for reported requests
+  const [reportedRequests, setReportedRequests] = useState([]);
+  
   // ✅ State to track if the current user is the owner of the request
   const [isOwner, setIsOwner] = useState(false);
+  // ✅ State to track if user is following
+  const [isFollowing, setIsFollowing] = useState(false);
 
   const slideAnim = useState(new Animated.Value(300))[0];
 
   // Get request data from navigation parameters or use default data
   const requestData = route.params?.requestData || {
+    id: 'default-request-id',
     title: 'Poster/Banner Design',
     type: 'Creative',
     artist: 'Kreideprinz',
@@ -47,6 +56,49 @@ const RequestInfoScreen = ({ navigation, route }) => {
     referencePhotos: [],
     category: 'Graphic Design'
   };
+
+  // ✅ LOAD NOT INTERESTED AND REPORTED REQUESTS FROM ASYNCSTORAGE
+  useEffect(() => {
+    const loadNotInterestedRequests = async () => {
+      try {
+        const savedNotInterested = await AsyncStorage.getItem('notInterestedRequests');
+        if (savedNotInterested) {
+          setNotInterestedRequests(JSON.parse(savedNotInterested));
+        }
+      } catch (error) {
+        console.log('Error loading not interested requests:', error);
+      }
+    };
+
+    const loadReportedRequests = async () => {
+      try {
+        const savedReported = await AsyncStorage.getItem('reportedRequests');
+        if (savedReported) {
+          setReportedRequests(JSON.parse(savedReported));
+        }
+      } catch (error) {
+        console.log('Error loading reported requests:', error);
+      }
+    };
+
+    const loadFollowingState = async () => {
+      try {
+        const savedFollowing = await AsyncStorage.getItem('followingState');
+        if (savedFollowing) {
+          const followingState = JSON.parse(savedFollowing);
+          if (followingState[requestData.artist]) {
+            setIsFollowing(true);
+          }
+        }
+      } catch (error) {
+        console.log('Error loading following state:', error);
+      }
+    };
+
+    loadNotInterestedRequests();
+    loadReportedRequests();
+    loadFollowingState();
+  }, [requestData.artist]);
 
   // ✅ CHECK OWNER ON LOAD
   useEffect(() => {
@@ -96,9 +148,29 @@ const RequestInfoScreen = ({ navigation, route }) => {
 
   const handleProceed = () => {
     setModalVisible(false);
+    
+    // ✅ UPDATED: Create a proper commission object from request data
+    const commissionData = {
+      // Map request data to commission form fields
+      title: requestData.title || '',
+      description: requestData.description || '',
+      category: requestData.category || '',
+      contact: requestData.email || '',
+      referencePhotos: requestData.referencePhotos || [],
+      
+      // Additional fields that might be needed
+      artist: requestData.artist || '',
+      date: new Date().toLocaleDateString(), // Current date as default
+      
+      // Pass the original request data for reference
+      originalRequest: requestData
+    };
+    
+    console.log('Navigating to AgreementForm with data:', commissionData);
+    
     // Navigate to the Agreement Form screen with the request data
     navigation.navigate('AgreementForm', { 
-      requestData: requestData 
+      commissionData: commissionData 
     });
     console.log('Proceed pressed, navigating to AgreementForm');
   };
@@ -112,6 +184,102 @@ const RequestInfoScreen = ({ navigation, route }) => {
     setBlockedRequests((prev) => [...prev, requestData.id]);
     setMoreModal({ visible: false, request: null });
     navigation.goBack(); // Go back to previous screen after blocking
+  };
+
+  // ✅ Handle Follow button press
+  const handleFollowPress = async () => {
+    try {
+      const savedFollowing = await AsyncStorage.getItem('followingState');
+      let followingState = savedFollowing ? JSON.parse(savedFollowing) : {};
+      
+      followingState[requestData.artist] = !isFollowing;
+      setIsFollowing(!isFollowing);
+      
+      await AsyncStorage.setItem('followingState', JSON.stringify(followingState));
+    } catch (error) {
+      console.log('Error updating follow state:', error);
+    }
+  };
+
+  // ✅ UPDATED: Handle Not Interested with AsyncStorage persistence
+  const handleNotInterested = async () => {
+    if (moreModal.request) {
+      try {
+        // Add to not interested list
+        const updatedNotInterested = [...notInterestedRequests, moreModal.request.id];
+        setNotInterestedRequests(updatedNotInterested);
+        
+        // Save to AsyncStorage
+        await AsyncStorage.setItem('notInterestedRequests', JSON.stringify(updatedNotInterested));
+        
+        // Close modal
+        setMoreModal({ visible: false, request: null });
+        
+        // Go back to previous screen
+        navigation.goBack();
+        
+        // Show success message
+        Alert.alert("Noted", "We'll show fewer requests like this in your feed.");
+        
+        console.log('Marked request as not interested:', moreModal.request.id);
+      } catch (error) {
+        console.log('Error saving not interested request:', error);
+        Alert.alert("Error", "Failed to save your preference. Please try again.");
+      }
+    }
+  };
+
+  // ✅ UPDATED: Handle Report Request with AsyncStorage persistence and confirmation
+  const handleReportRequest = async () => {
+    if (moreModal.request) {
+      // Show confirmation dialog
+      Alert.alert(
+        "Report Request",
+        "Are you sure you want to report this request?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Report",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // Add to reported list
+                const updatedReported = [...reportedRequests, moreModal.request.id];
+                setReportedRequests(updatedReported);
+                
+                // Save to AsyncStorage
+                await AsyncStorage.setItem('reportedRequests', JSON.stringify(updatedReported));
+                
+                // Also block the request immediately
+                setBlockedRequests((prev) => [...prev, moreModal.request.id]);
+                
+                // Close modal
+                setMoreModal({ visible: false, request: null });
+                
+                // Go back to previous screen
+                navigation.goBack();
+                
+                // Show success message
+                Alert.alert("Report Submitted", "Thank you for reporting this request. Our team will review it.");
+                
+                console.log('Reported request:', {
+                  id: moreModal.request.id,
+                  title: moreModal.request.title,
+                  artist: moreModal.request.artist,
+                  timestamp: new Date().toISOString()
+                });
+              } catch (error) {
+                console.log('Error saving reported request:', error);
+                Alert.alert("Error", "Failed to submit report. Please try again.");
+              }
+            }
+          }
+        ]
+      );
+    }
   };
 
   // Handle image click to open modal
@@ -131,14 +299,12 @@ const RequestInfoScreen = ({ navigation, route }) => {
       style={styles.container}
     >
       <SafeAreaView style={{ flex: 1 }}>
-        {/* FIX: Use light-content so status bar text is WHITE */}
         <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-              {/* FIX: Force WHITE color for Back Arrow */}
               <Text style={[styles.backButtonText, { color: '#FFFFFF' }]}>←</Text>
             </TouchableOpacity>
           </View>
@@ -168,33 +334,48 @@ const RequestInfoScreen = ({ navigation, route }) => {
 
           {/* Info Section */}
           <View style={styles.infoSection}>
-            {/* FIX: Force WHITE color for Title */}
             <Text style={[styles.requestTitle, { color: '#FFFFFF' }]}>{requestData.title}</Text>
-            {/* FIX: Force WHITE color for Type */}
             <Text style={[styles.requestType, { color: '#FFFFFF' }]}>{requestData.category || requestData.type}</Text>
 
             {/* Artist Row */}
             <View style={styles.artistRow}>
               <View style={styles.leftSide}>
                 <View style={styles.profileCircle}>
-                  {/* FIX: Force WHITE color for Icon */}
                   <Ionicons name="person-circle-outline" size={40} color="#FFFFFF" />
                 </View>
-                {/* FIX: Force WHITE color for Artist Name */}
-                <Text style={[styles.artistName, { color: '#FFFFFF' }]}>{requestData.artist}</Text>
+                <View>
+                  <Text style={[styles.artistName, { color: '#FFFFFF' }]}>{requestData.artist}</Text>
+                  {/* ✅ Show "You" indicator separately */}
+                  {isOwner && (
+                    <Text style={[styles.youIndicator, { color: colors.primary }]}>You</Text>
+                  )}
+                </View>
               </View>
 
               {/* Right Side Actions */}
               <View style={styles.rightSideActions}>
                 
-                {/* ✅ HIDE FOLLOW BUTTON IF OWNER, SHOW "YOU" */}
-                {isOwner ? (
-                  <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16, marginRight: 8 }}>You</Text>
-                ) : (
-                  <TouchableOpacity style={[styles.followButton, { borderColor: '#FFFFFF' }]}>
-                    <Text style={[styles.followButtonText, { color: '#FFFFFF' }]}>Follow</Text>
-                  </TouchableOpacity>
-                )}
+                {/* ✅ ALWAYS SHOW FOLLOW BUTTON (even if owner) */}
+                <TouchableOpacity 
+                  style={[
+                    styles.followButton, 
+                    { 
+                      borderColor: '#FFFFFF',
+                      backgroundColor: isFollowing ? 'rgba(255, 255, 255, 0.2)' : 'transparent'
+                    }
+                  ]}
+                  onPress={handleFollowPress}
+                >
+                  <Text style={[
+                    styles.followButtonText, 
+                    { 
+                      color: '#FFFFFF',
+                      fontWeight: isFollowing ? 'bold' : 'normal'
+                    }
+                  ]}>
+                    {isFollowing ? "Following" : "Follow"}
+                  </Text>
+                </TouchableOpacity>
 
                 <TouchableOpacity
                   style={styles.menuButton}
@@ -208,12 +389,10 @@ const RequestInfoScreen = ({ navigation, route }) => {
 
           {/* Commission Details Section */}
           <View style={styles.section}>
-            {/* FIX: Force WHITE color for Section Title to be readable */}
             <Text style={[styles.sectionTitle, { color: '#FFFFFF' }]}>Commission Details</Text>
 
             {/* Description */}
             <View style={styles.detailItem}>
-              {/* FIX: Force WHITE color for Labels */}
               <Text style={[styles.detailLabel, { color: '#FFFFFF' }]}>Description</Text>
               
               <Text style={[styles.detailValue, { 
@@ -232,14 +411,29 @@ const RequestInfoScreen = ({ navigation, route }) => {
               }]}>{requestData.email}</Text>
             </View>
 
-            {/* Accept Button - Only show if NOT owner */}
-            {!isOwner && (
-              <View style={{ alignItems: 'flex-end' }}>
-                <TouchableOpacity style={[styles.acceptButton, { borderColor: '#FF4136' }]} onPress={handleAcceptPress}>
-                  <Text style={[styles.acceptButtonText, { color: '#FF4136' }]}>Accept</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            {/* ✅ ALWAYS SHOW ACCEPT BUTTON (even if owner) */}
+            <View style={{ alignItems: 'flex-end' }}>
+              <TouchableOpacity 
+                style={[
+                  styles.acceptButton, 
+                  { 
+                    borderColor: '#FF4136',
+                    backgroundColor: isOwner ? 'rgba(255, 65, 54, 0.1)' : 'transparent'
+                  }
+                ]} 
+                onPress={handleAcceptPress}
+              >
+                <Text style={[
+                  styles.acceptButtonText, 
+                  { 
+                    color: '#FF4136',
+                    opacity: isOwner ? 0.7 : 1
+                  }
+                ]}>
+                  Accept {/* ✅ REMOVED: Always shows "Accept" */}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Image Grid Section */}
@@ -311,24 +505,56 @@ const RequestInfoScreen = ({ navigation, route }) => {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalTitle}>Send an inquiry</Text>
-            <View style={styles.modalTitleUnderline} />
-            <Text style={styles.modalDescription}>
+          <View style={[
+            styles.modalView,
+            { backgroundColor: isDarkMode ? colors.card : '#FFFFFF' }
+          ]}>
+            <Text style={[
+              styles.modalTitle,
+              { color: isDarkMode ? colors.text : '#000000' }
+            ]}>Send an inquiry</Text>
+            <View style={[
+              styles.modalTitleUnderline,
+              { backgroundColor: isDarkMode ? colors.primary : '#000000' }
+            ]} />
+            <Text style={[
+              styles.modalDescription,
+              { color: isDarkMode ? colors.textSecondary : '#666666' }
+            ]}>
               Let's coordinate and start the agreement process together.
             </Text>
             <View style={styles.modalButtonContainer}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.buttonHoldOff]}
+                style={[
+                  styles.modalButton,
+                  styles.buttonHoldOff,
+                  {
+                    backgroundColor: isDarkMode ? colors.surface : '#F0F0F0',
+                    borderColor: isDarkMode ? colors.border : '#CCCCCC'
+                  }
+                ]}
                 onPress={handleHoldOff}
               >
-                <Text style={styles.textHoldOff}>Hold off</Text>
+                <Text style={[
+                  styles.textHoldOff,
+                  { color: isDarkMode ? colors.text : '#000000' }
+                ]}>Hold off</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.buttonProceed]}
+                style={[
+                  styles.modalButton,
+                  styles.buttonProceed,
+                  {
+                    backgroundColor: colors.primary,
+                    borderColor: colors.primary
+                  }
+                ]}
                 onPress={handleProceed}
               >
-                <Text style={styles.textProceed}>Proceed</Text>
+                <Text style={[
+                  styles.textProceed,
+                  { color: isDarkMode ? '#000000' : '#000000' }
+                ]}>Proceed</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -386,14 +612,26 @@ const RequestInfoScreen = ({ navigation, route }) => {
               <Ionicons name="send-outline" size={28} color="#1DA1F2" />
               <Ionicons name="logo-twitter" size={28} color={colors.text} />
             </View>
-            <View style={styles.optionRow}>
+            
+            {/* ✅ UPDATED: Not Interested with onPress handler */}
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleNotInterested}
+            >
               <Ionicons name="heart-dislike-outline" size={22} color="red" />
               <Text style={[styles.optionText, { color: colors.text }]}>Not interested</Text>
-            </View>
-            <View style={styles.optionRow}>
+            </TouchableOpacity>
+            
+            {/* ✅ UPDATED: Report Post with onPress handler */}
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleReportRequest}
+            >
               <Ionicons name="flag-outline" size={22} color="red" />
               <Text style={[styles.optionText, { color: colors.text }]}>Report Post</Text>
-            </View>
+            </TouchableOpacity>
+            
+            {/* Block User option */}
             <TouchableOpacity
               style={styles.optionRow}
               onPress={handleBlockRequest}
@@ -415,6 +653,7 @@ const RequestInfoScreen = ({ navigation, route }) => {
   );
 };
 
+// Updated Styles
 const styles = StyleSheet.create({
   container: { flex: 1 },
 
@@ -485,8 +724,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  youIndicator: {
+    fontSize: 12,
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
 
-  // Follow button (Transparent with blue border)
+  // Follow button (Transparent with white border)
   followButton: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
@@ -603,7 +847,7 @@ const styles = StyleSheet.create({
   },
   modalTitleUnderline: {
     width: '100%',
-    height: 1,
+    height: 2,
     marginBottom: 15,
   },
   modalDescription: {
@@ -624,18 +868,17 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
   },
   buttonHoldOff: {
-    backgroundColor: 'transparent', 
-    borderWidth: 1.5,
+    // backgroundColor will be set dynamically based on theme
   },
   textHoldOff: {
     fontWeight: 'bold',
     fontSize: 16,
   },
   buttonProceed: {
-    backgroundColor: 'transparent', 
-    borderWidth: 1.5,
+    // backgroundColor will be set dynamically based on theme
   },
   textProceed: {
     fontWeight: 'bold',

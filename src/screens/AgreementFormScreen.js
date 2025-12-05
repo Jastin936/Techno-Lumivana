@@ -1,15 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Alert,
   Dimensions,
   Image,
   Modal,
-  Platform, // FIX: Added Platform import for iOS specific logic
+  Platform,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -23,23 +24,63 @@ import { useTheme } from '../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
+// Category options for dropdown with icons
+const CATEGORY_OPTIONS = [
+  { name: 'Graphic Design', icon: 'color-palette-outline' },
+  { name: 'Illustration', icon: 'brush-outline' },
+  { name: 'Crafting', icon: 'construct-outline' },
+  { name: 'Writing', icon: 'document-text-outline' },
+  { name: 'Photography', icon: 'camera-outline' },
+  { name: 'Tutoring', icon: 'school-outline' },
+  { name: 'Accessories', icon: 'diamond-outline' }
+];
+
 const AgreementFormScreen = ({ navigation, route }) => {
   const { isDarkMode, colors, gradients } = useTheme();
   const [fontsLoaded] = useFonts({
     Milonga: require('../../assets/fonts/Milonga-Regular.ttf'),
   });
 
-  const [commissionName, setCommissionName] = useState('');
-  const [description, setDescription] = useState('');
+  // Get commission data from navigation parameters
+  const commissionData = route.params?.commissionData || {};
+
+  // Initialize form fields with commission data if available
+  const [commissionName, setCommissionName] = useState(commissionData.title || '');
+  const [description, setDescription] = useState(commissionData.description || '');
   const [dateRequested, setDateRequested] = useState('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState(commissionData.category || '');
   const [agreedPrice, setAgreedPrice] = useState('');
-  const [contactInfo, setContactInfo] = useState('');
-  const [referencePhotos, setReferencePhotos] = useState([]);
+  const [contactInfo, setContactInfo] = useState(commissionData.contact || '');
+  const [referencePhotos, setReferencePhotos] = useState(commissionData.referencePhotos || []);
+  
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  // State for dropdown
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+
+  // Set form data from commissionData on component mount
+  useEffect(() => {
+    if (commissionData.agreedPrice) {
+      setAgreedPrice(commissionData.agreedPrice.toString());
+    }
+    if (commissionData.date) {
+      setDateRequested(commissionData.date);
+      // Also set the selectedDate for the date picker
+      if (commissionData.date) {
+        const dateParts = commissionData.date.split('/');
+        if (dateParts.length === 3) {
+          const [month, day, year] = dateParts;
+          const parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+          if (!isNaN(parsedDate.getTime())) {
+            setSelectedDate(parsedDate);
+          }
+        }
+      }
+    }
+  }, [commissionData]);
 
   if (!fontsLoaded) return null;
 
@@ -145,20 +186,17 @@ const AgreementFormScreen = ({ navigation, route }) => {
   };
 
   const handleDateChange = (event, date) => {
-    // FIX: For Android, we close immediately. For iOS, logic is in "Done" button
     if (Platform.OS === 'android') {
       setShowCalendar(false);
     }
     
     if (date) {
       setSelectedDate(date);
-      // Format date as MM/DD/YYYY
       const formattedDate = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`;
       setDateRequested(formattedDate);
     }
   };
 
-  // FIX: Added function for iOS Done button
   const confirmIOSDate = () => {
     setShowCalendar(false);
     const date = selectedDate;
@@ -171,22 +209,66 @@ const AgreementFormScreen = ({ navigation, route }) => {
     return dateString;
   };
 
-  // Format price input
+  // Format price input with peso sign
   const handlePriceChange = (text) => {
-    // Remove any non-numeric characters except decimal point
     const cleanedText = text.replace(/[^0-9.]/g, '');
     
-    // Ensure only one decimal point
     const parts = cleanedText.split('.');
     if (parts.length > 2) {
-      return; // Invalid input, don't update
+      return;
     }
     
     setAgreedPrice(cleanedText);
   };
 
-  const handleConfirm = () => {
-    // Validate required fields
+  // Handle category selection from dropdown
+  const handleCategorySelect = (selectedCategory) => {
+    setCategory(selectedCategory);
+    setShowCategoryDropdown(false);
+  };
+
+  // Get icon for selected category
+  const getSelectedCategoryIcon = () => {
+    const selectedOption = CATEGORY_OPTIONS.find(option => option.name === category);
+    return selectedOption ? selectedOption.icon : 'grid-outline';
+  };
+
+  // Save commission to AsyncStorage and navigate to CommissionScreen
+  const saveCommissionToStorage = async (commission) => {
+    try {
+      // Get existing commissions from AsyncStorage
+      const existingCommissions = await AsyncStorage.getItem('userCommissions');
+      let commissionsArray = [];
+      
+      if (existingCommissions) {
+        commissionsArray = JSON.parse(existingCommissions);
+      }
+      
+      // Check if we're editing an existing commission
+      if (commissionData.id) {
+        // Update existing commission
+        const index = commissionsArray.findIndex(c => c.id === commissionData.id);
+        if (index !== -1) {
+          commissionsArray[index] = commission;
+        }
+      } else {
+        // Add new commission
+        commissionsArray.unshift(commission); // Add to beginning for newest first
+      }
+      
+      // Save updated commissions array
+      await AsyncStorage.setItem('userCommissions', JSON.stringify(commissionsArray));
+      
+      console.log('Commission saved:', commission);
+      return true;
+    } catch (error) {
+      console.error('Error saving commission:', error);
+      return false;
+    }
+  };
+
+  // UPDATED: Handle Confirm button with simpler navigation
+  const handleConfirm = async () => {
     if (!commissionName.trim()) {
       Alert.alert('Missing Information', 'Please enter a commission name.');
       return;
@@ -203,7 +285,7 @@ const AgreementFormScreen = ({ navigation, route }) => {
     }
 
     if (!category.trim()) {
-      Alert.alert('Missing Information', 'Please enter a category.');
+      Alert.alert('Missing Information', 'Please select a category.');
       return;
     }
 
@@ -217,16 +299,14 @@ const AgreementFormScreen = ({ navigation, route }) => {
       return;
     }
 
-    // Validate price format
     const priceValue = parseFloat(agreedPrice);
     if (isNaN(priceValue) || priceValue <= 0) {
       Alert.alert('Invalid Price', 'Please enter a valid price amount.');
       return;
     }
 
-    // Create commission data object
     const newCommission = {
-      id: Date.now().toString(), // Generate unique ID
+      id: commissionData.id || Date.now().toString(),
       title: commissionName,
       description: description,
       date: dateRequested,
@@ -234,39 +314,59 @@ const AgreementFormScreen = ({ navigation, route }) => {
       agreedPrice: agreedPrice,
       contact: contactInfo,
       referencePhotos: referencePhotos,
-      status: 'pending', // Default status
-      createdAt: new Date().toISOString(),
+      status: commissionData.status || 'ongoing',
+      createdAt: commissionData.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
-    // Show success alert
-    Alert.alert(
-      'Commission Request Sent!',
-      'Your commission request has been submitted successfully. You will be notified when an artist accepts your request.',
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            // Navigate to CommissionsScreen and pass the new commission data
-            navigation.navigate('Commissions', { 
-              newCommission: newCommission 
-            });
+    // Save commission to AsyncStorage
+    const saved = await saveCommissionToStorage(newCommission);
+    
+    if (saved) {
+      const alertMessage = commissionData.id 
+        ? 'Your commission request has been updated successfully.'
+        : 'Your commission request has been submitted successfully. You will be notified when an artist accepts your request.';
+
+      Alert.alert(
+        commissionData.id ? 'Commission Updated!' : 'Commission Request Sent!',
+        alertMessage,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // SIMPLIFIED NAVIGATION - Navigate to CommissionScreen with the new commission data
+              navigation.navigate('Commissions', {
+                newCommission: newCommission,
+                refresh: true
+              });
+            }
           }
-        }
-      ]
-    );
+        ]
+      );
+    } else {
+      Alert.alert('Error', 'Failed to save commission. Please try again.');
+    }
   };
 
+  // Remove the handleConfirmSimple function since we're using handleConfirm
+
   const handleDecline = () => {
+    const isEditing = !!commissionData.id;
+    const alertTitle = isEditing ? 'Discard Changes' : 'Cancel Commission Request';
+    const alertMessage = isEditing 
+      ? 'Are you sure you want to discard your changes?'
+      : 'Are you sure you want to cancel this commission request? All entered information will be lost.';
+
     Alert.alert(
-      'Cancel Commission Request',
-      'Are you sure you want to cancel this commission request? All entered information will be lost.',
+      alertTitle,
+      alertMessage,
       [
         {
           text: 'No, Keep Editing',
           style: 'cancel',
         },
         {
-          text: 'Yes, Cancel',
+          text: 'Yes, Discard',
           style: 'destructive',
           onPress: () => {
             navigation.goBack();
@@ -348,7 +448,7 @@ const AgreementFormScreen = ({ navigation, route }) => {
 
             {/* Date Requested */}
             <View style={styles.detailSection}>
-              <Text style={[styles.detailLabel, { color: colors.primary }]}>Date Requested **\***</Text>
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Date Accepted **\***</Text>
               <View style={[styles.dateInputContainer, { borderColor: colors.primary }]}>
                 <TextInput
                   style={[styles.dateTextInput, {
@@ -366,27 +466,94 @@ const AgreementFormScreen = ({ navigation, route }) => {
               </View>
             </View>
 
-            {/* Category */}
+            {/* Category - UPDATED to Dropdown with Icons */}
             <View style={styles.detailSection}>
               <Text style={[styles.detailLabel, { color: colors.primary }]}>Category **\***</Text>
-              <TextInput
-                style={[styles.textInput, {
+              
+              {/* Category Dropdown Button */}
+              <TouchableOpacity 
+                style={[styles.categoryDropdownButton, { 
                   borderColor: colors.primary,
-                  color: isDarkMode ? colors.text : '#FFFFFF',
                   backgroundColor: isDarkMode ? colors.inputBackground : 'transparent'
                 }]}
-                value={category}
-                onChangeText={setCategory}
-                placeholder="Custom Commission"
-                placeholderTextColor={isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)'}
-              />
+                onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+              >
+                <View style={styles.categoryButtonContent}>
+                  {/* Icon on the left */}
+                  <Ionicons 
+                    name={getSelectedCategoryIcon()} 
+                    size={20} 
+                    color={colors.primary}
+                    style={styles.categoryButtonIcon}
+                  />
+                  <Text style={[styles.categorySelectedText, { 
+                    color: category ? (isDarkMode ? colors.text : '#FFFFFF') : (isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)')
+                  }]}>
+                    {category || 'Select a category'}
+                  </Text>
+                </View>
+                <Ionicons 
+                  name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color={colors.primary} 
+                />
+              </TouchableOpacity>
+
+              {/* Category Dropdown Options */}
+              {showCategoryDropdown && (
+                <View style={[styles.categoryDropdownOptions, { 
+                  backgroundColor: isDarkMode ? colors.card : '#FFFFFF',
+                  borderColor: colors.primary,
+                  shadowColor: isDarkMode ? '#000' : colors.primary
+                }]}>
+                  <ScrollView style={styles.categoryScrollView} nestedScrollEnabled={true}>
+                    {CATEGORY_OPTIONS.map((option, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.categoryOption,
+                          { 
+                            borderBottomColor: colors.border,
+                            backgroundColor: option.name === category 
+                              ? (isDarkMode ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 215, 0, 0.1)')
+                              : 'transparent'
+                          }
+                        ]}
+                        onPress={() => handleCategorySelect(option.name)}
+                      >
+                        {/* Icon on the left of each option */}
+                        <View style={styles.categoryOptionContent}>
+                          <Ionicons 
+                            name={option.icon} 
+                            size={18} 
+                            color={colors.primary}
+                            style={styles.categoryOptionIcon}
+                          />
+                          <Text style={[
+                            styles.categoryOptionText,
+                            { 
+                              color: isDarkMode ? colors.text : '#000000',
+                              fontWeight: option.name === category ? '600' : '400'
+                            }
+                          ]}>
+                            {option.name}
+                          </Text>
+                        </View>
+                        {option.name === category && (
+                          <Ionicons name="checkmark" size={18} color={colors.primary} />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
             </View>
 
             {/* Agreed Price */}
             <View style={styles.detailSection}>
               <Text style={[styles.detailLabel, { color: colors.primary }]}>Agreed Price **\***</Text>
               <View style={[styles.priceInputContainer, { borderColor: colors.primary }]}>
-                <Text style={[styles.currencySymbol, { color: colors.primary, borderRightColor: colors.primary }]}>$</Text>
+                <Text style={[styles.currencySymbol, { color: colors.primary, borderRightColor: colors.primary }]}>₱</Text>
                 <TextInput
                   style={[styles.priceTextInput, {
                     color: isDarkMode ? colors.text : '#FFFFFF',
@@ -465,14 +632,14 @@ const AgreementFormScreen = ({ navigation, route }) => {
                   }]}
                   onPress={handleConfirm}
                 >
-                  <Text style={[styles.primaryButtonText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Confirm</Text>
+                  <Text style={[styles.primaryButtonText, { color: isDarkMode ? colors.text : colors.buttonText }]}>{commissionData.id ? 'Update' : 'Confirm'}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity 
                   style={[styles.buttonInput, styles.secondaryButton, { borderColor: colors.border }]}
                   onPress={handleDecline}
                 >
-                  <Text style={[styles.secondaryButtonText, { color: colors.primary }]}>Cancel</Text>
+                  <Text style={[styles.secondaryButtonText, { color: colors.primary }]}>{commissionData.id ? 'Cancel' : 'Decline'}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -596,6 +763,65 @@ const styles = StyleSheet.create({
     padding: 12,
     textAlignVertical: 'top',
   },
+  
+  // Category Dropdown Styles with Icons
+  categoryDropdownButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+  },
+  categoryButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  categoryButtonIcon: {
+    marginRight: 10,
+  },
+  categorySelectedText: {
+    fontSize: 16,
+    flex: 1,
+  },
+  categoryDropdownOptions: {
+    position: 'absolute',
+    top: 70,
+    left: 0,
+    right: 0,
+    borderWidth: 1,
+    borderRadius: 8,
+    maxHeight: 200,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  categoryScrollView: {
+    maxHeight: 200,
+  },
+  categoryOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+  },
+  categoryOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  categoryOptionIcon: {
+    marginRight: 10,
+  },
+  categoryOptionText: {
+    fontSize: 16,
+    flex: 1,
+  },
+
   // Price Input Styles
   priceInputContainer: {
     flexDirection: 'row',
@@ -737,7 +963,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  // FIX: Added iOS DatePicker Styles
   iosModalOverlay: {
     flex: 1,
     justifyContent: 'center',
