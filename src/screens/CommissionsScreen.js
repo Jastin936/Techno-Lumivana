@@ -4,18 +4,18 @@ import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  Image,
-  Modal,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    Image,
+    Modal,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { CATEGORY_LIST } from '../constants/categories';
 import { useTheme } from '../context/ThemeContext';
@@ -23,7 +23,6 @@ import { useTheme } from '../context/ThemeContext';
 const rotateValue = new Animated.Value(0);
 const { width, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-// --- Mock Data for Commission List ---
 const mockCommissionsData = [
   {
     id: '1',
@@ -47,56 +46,10 @@ const mockCommissionsData = [
     email: 'chiori@crafts.com',
     referencePhotos: [],
   },
-  {
-    id: '3',
-    date: 'August 5, 2025',
-    title: 'Red Bracelet',
-    description: 'Red bracelet with a gold flower ornament',
-    status: 'On Going',
-    category: 'Crafting',
-    artist: 'Aelric',
-    email: 'aelric@design.com',
-    referencePhotos: [],
-  },
-  {
-    id: '4',
-    date: 'July 29, 2025',
-    title: 'Logo Design',
-    description: 'A modern logo for a tech startup',
-    status: 'Canceled',
-    category: 'Graphic Design',
-    artist: 'DesignPro',
-    email: 'contact@designpro.com',
-    referencePhotos: [],
-  },
-  {
-    id: '5',
-    date: 'July 28, 2025',
-    title: 'Portrait Illustration',
-    description: 'Digital portrait illustration in watercolor style',
-    status: 'Complete',
-    category: 'Illustration',
-    artist: 'ArtMaster',
-    email: 'art@master.com',
-    referencePhotos: [],
-  },
-  {
-    id: '6',
-    date: 'July 25, 2025',
-    title: 'Product Photography',
-    description: 'Professional product photos for e-commerce',
-    status: 'Complete',
-    category: 'Photography',
-    artist: 'PhotoExpert',
-    email: 'photo@expert.com',
-    referencePhotos: [],
-  },
 ];
 
-// Filter categories
 const FILTER_CATEGORY_MAP = CATEGORY_LIST;
 
-// --- Helper Component for List Item ---
 const CommissionItem = ({ 
   date, 
   title, 
@@ -111,11 +64,9 @@ const CommissionItem = ({
   const { isDarkMode, colors } = useTheme();
   const getStatusColor = (status) => {
     const normalizedStatus = status ? status.toLowerCase() : '';
-    
     if (normalizedStatus === 'on going' || normalizedStatus === 'ongoing') return '#4CAF50';
     if (normalizedStatus === 'canceled' || normalizedStatus === 'cancelled') return '#F44336';
     if (normalizedStatus === 'complete' || normalizedStatus === 'completed') return '#2196F3';
-    
     return colors.textMuted;
   };
 
@@ -150,7 +101,6 @@ const CommissionItem = ({
   );
 };
 
-// Filter Modal Component
 const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory }) => {
   const { isDarkMode, colors } = useTheme();
   return (
@@ -168,7 +118,6 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory
               <Ionicons name="close" size={24} color={colors.primary} /> 
             </TouchableOpacity>
           </View>
-          
           <Text style={[modalStyles.categoryHeader, { color: colors.text }]}>Category</Text>
           <ScrollView style={modalStyles.categoryList}>
             {FILTER_CATEGORY_MAP.map((item) => (
@@ -189,7 +138,6 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory
                   />
                   <Text style={[modalStyles.categoryText, { color: colors.textSecondary }]}>{item.name}</Text>
                 </View>
-
                 <View style={[modalStyles.checkbox(selectedCategory === item.name), { 
                   borderColor: selectedCategory === item.name ? colors.primary : colors.border,
                   backgroundColor: selectedCategory === item.name ? colors.primary : 'transparent'
@@ -209,12 +157,10 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory
 
 const CommissionsScreen = ({ navigation, route }) => {
   const { isDarkMode, colors, gradients } = useTheme();
-  const [activeCategory, setActiveCategory] = useState('all'); 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterVisible, setFilterVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   
-  // UPDATED: Start with empty state, load mock only if storage is empty
   const [commissions, setCommissions] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -223,7 +169,7 @@ const CommissionsScreen = ({ navigation, route }) => {
   });
 
   const [userData, setUserData] = useState({
-    name: 'Lumivana Vivistera',
+    name: '',
     profileImage: null
   });
 
@@ -232,7 +178,6 @@ const CommissionsScreen = ({ navigation, route }) => {
     return currentColors.length === 3 ? [0, 0.58, 0.84] : [0, 1];
   };
 
-  // Helper function to remove duplicates
   const getUniqueCommissions = (list) => {
     const unique = new Map();
     list.forEach(item => {
@@ -244,35 +189,48 @@ const CommissionsScreen = ({ navigation, route }) => {
     return Array.from(unique.values());
   };
 
-  // UPDATED: Load commissions from Storage on mount
-  useEffect(() => {
-    const loadCommissions = async () => {
-      try {
-        const savedData = await AsyncStorage.getItem('savedCommissions');
-        if (savedData) {
-          console.log('Loaded commissions from storage');
-          setCommissions(JSON.parse(savedData));
-        } else {
-          console.log('No saved commissions, loading mock data');
-          setCommissions(mockCommissionsData);
-        }
-      } catch (error) {
-        console.log('Error loading commissions:', error);
+  const loadCommissions = async () => {
+    try {
+      const savedData = await AsyncStorage.getItem('savedCommissions');
+      if (savedData) {
+        setCommissions(JSON.parse(savedData));
+      } else {
         setCommissions(mockCommissionsData);
-      } finally {
-        setIsLoaded(true);
       }
-    };
-    loadCommissions();
-  }, []);
+    } catch (error) {
+      console.log('Error loading commissions:', error);
+      setCommissions(mockCommissionsData);
+    } finally {
+      setIsLoaded(true);
+    }
+  };
 
-  // UPDATED: Save commissions to Storage whenever they change
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadCommissions();
+      const loadUser = async () => {
+        try {
+          const savedUserData = await AsyncStorage.getItem('userProfileData');
+          if (savedUserData) {
+            const parsedData = JSON.parse(savedUserData);
+            setUserData(prev => ({ ...prev, name: parsedData.name || 'Student' }));
+          }
+          const savedProfileImage = await AsyncStorage.getItem('profileImage');
+          if (savedProfileImage) {
+            setUserData(prev => ({ ...prev, profileImage: savedProfileImage }));
+          }
+        } catch (e) {}
+      };
+      loadUser();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   useEffect(() => {
     if (isLoaded) {
       const saveCommissions = async () => {
         try {
           await AsyncStorage.setItem('savedCommissions', JSON.stringify(commissions));
-          console.log('Commissions saved to storage');
         } catch (error) {
           console.log('Error saving commissions:', error);
         }
@@ -281,34 +239,37 @@ const CommissionsScreen = ({ navigation, route }) => {
     }
   }, [commissions, isLoaded]);
 
-  // Handle Updates (New, Complete, Cancel)
   useEffect(() => {
-    if (!isLoaded) return; // Wait until loaded
+    if (!isLoaded) return;
 
-    // New Commission
     if (route.params?.newCommission) {
-      const newCommission = {
-        ...route.params.newCommission,
-        id: route.params.newCommission.id || `commission-${Date.now()}`,
-        date: route.params.newCommission.date || new Date().toLocaleDateString('en-US', {
+      const newComm = route.params.newCommission;
+      // ✅ FIXED: Name logic to prioritize newComm artist
+      const finalArtistName = newComm.artist && newComm.artist !== 'Pending Artist' 
+        ? newComm.artist 
+        : (userData.name || 'Pending Artist');
+
+      const newCommissionObj = {
+        ...newComm,
+        id: newComm.id || `commission-${Date.now()}`,
+        date: newComm.date || new Date().toLocaleDateString('en-US', {
           year: 'numeric', month: 'long', day: 'numeric'
         }),
-        status: route.params.newCommission.status || 'On Going',
-        category: route.params.newCommission.category || 'Custom Commission',
-        artist: route.params.newCommission.artist || 'Pending Artist',
-        email: route.params.newCommission.email || route.params.newCommission.contact || 'No email provided',
-        referencePhotos: route.params.newCommission.referencePhotos || []
+        status: newComm.status || 'On Going',
+        category: newComm.category || 'Custom Commission',
+        artist: finalArtistName,
+        email: newComm.email || newComm.contact || 'No email provided',
+        referencePhotos: newComm.referencePhotos || []
       };
       
       setCommissions(prevCommissions => {
-        const exists = prevCommissions.some(c => c.id === newCommission.id);
+        const exists = prevCommissions.some(c => c.id === newCommissionObj.id);
         if (exists) return prevCommissions;
-        return [newCommission, ...prevCommissions];
+        return [newCommissionObj, ...prevCommissions];
       });
       navigation.setParams({ newCommission: null });
     }
 
-    // Completed Commission
     if (route.params?.completedCommission) {
       const completedCommission = route.params.completedCommission;
       setCommissions(prevCommissions => {
@@ -325,18 +286,12 @@ const CommissionsScreen = ({ navigation, route }) => {
             }
             return commission;
           });
-        } else {
-          return [{
-            ...completedCommission,
-            status: 'Complete',
-            date: completedCommission.date || new Date().toLocaleDateString()
-          }, ...prevCommissions];
         }
+        return prevCommissions; 
       });
       navigation.setParams({ completedCommission: null });
     }
 
-    // Cancelled Commission
     if (route.params?.cancelledCommission) {
       const cancelledCommission = route.params.cancelledCommission;
       setCommissions(prevCommissions => {
@@ -354,49 +309,20 @@ const CommissionsScreen = ({ navigation, route }) => {
       });
       navigation.setParams({ cancelledCommission: null });
     }
-
-    // General Update
-    if (route.params?.updatedCommission) {
-      const updatedCommission = route.params.updatedCommission;
-      setCommissions(prevCommissions => 
-        prevCommissions.map(commission => {
-          if (commission.id === updatedCommission.id) {
-            return { ...commission, ...updatedCommission };
-          }
-          return commission;
-        })
-      );
-      navigation.setParams({ updatedCommission: null });
+    
+    if (route.params?.refresh) {
+        loadCommissions();
+        navigation.setParams({ refresh: null });
     }
-  }, [route.params, navigation, isLoaded]);
 
-  // Load User Data
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      const loadUserData = async () => {
-        try {
-          const savedUserData = await AsyncStorage.getItem('userProfileData');
-          if (savedUserData) {
-            const parsedData = JSON.parse(savedUserData);
-            setUserData(prevData => ({
-              ...prevData,
-              name: parsedData.name || 'Lumivana Vivistera',
-              profileImage: parsedData.profileImage || null
-            }));
-          }
-          const savedProfileImage = await AsyncStorage.getItem('profileImage');
-          if (savedProfileImage) {
-            setUserData(prevData => ({
-              ...prevData,
-              profileImage: savedProfileImage
-            }));
-          }
-        } catch (error) { console.log(error); }
-      };
-      loadUserData();
-    });
-    return unsubscribe;
-  }, [navigation]);
+    // ✅ FIXED: Listener for commission removal ID
+    if (route.params?.removedCommissionId) {
+        const idToRemove = route.params.removedCommissionId;
+        setCommissions(prev => prev.filter(c => c.id !== idToRemove));
+        navigation.setParams({ removedCommissionId: null });
+    }
+
+  }, [route.params, navigation, isLoaded, userData.name]);
 
   useEffect(() => {
     const startRotation = () => {
@@ -459,13 +385,7 @@ const CommissionsScreen = ({ navigation, route }) => {
     return matchesSearch && matchesCategory;
   });
 
-  if (!fontsLoaded) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: '#fff' }}>Loading...</Text>
-      </View>
-    );
-  }
+  if (!fontsLoaded) return null;
 
   return (
     <LinearGradient
@@ -476,7 +396,6 @@ const CommissionsScreen = ({ navigation, route }) => {
       <SafeAreaView style={{ flex: 1 }}>
         <StatusBar barStyle={isDarkMode ? "light-content" : "light-content"} translucent backgroundColor="transparent" />
 
-        {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
@@ -504,7 +423,6 @@ const CommissionsScreen = ({ navigation, route }) => {
           </View>
         </View>
 
-        {/* 🔍 SEARCH BAR AND FILTER */}
         <View style={styles.searchBarContainer}>
           <View style={[styles.searchBar, { backgroundColor: isDarkMode ? colors.surface : 'rgba(255, 255, 255, 0.15)' }]}>
             <Ionicons name="search-outline" size={20} color={colors.primary} />
@@ -521,7 +439,6 @@ const CommissionsScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Active Filter Indicator */}
         {selectedCategory !== 'All' && (
           <View style={[styles.activeFilterContainer, { 
             backgroundColor: isDarkMode ? 'rgba(255, 215, 0, 0.1)' : 'rgba(207, 173, 1, 0.2)' 
@@ -538,7 +455,6 @@ const CommissionsScreen = ({ navigation, route }) => {
           </View>
         )}
 
-        {/* Main Content: Commission List */}
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.commissionsList}>
             {filteredCommissions.length === 0 ? (
@@ -573,7 +489,6 @@ const CommissionsScreen = ({ navigation, route }) => {
           </View>
         </ScrollView>
 
-        {/* Footer */}
         <View style={[styles.footer, { 
           backgroundColor: isDarkMode ? colors.surface : 'rgba(255, 255, 255, 0.15)' 
         }]}>
@@ -593,7 +508,6 @@ const CommissionsScreen = ({ navigation, route }) => {
             <Text style={[styles.footerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>Search</Text>
           </TouchableOpacity>
 
-          {/* Plus Square Icon in Center */}
           <TouchableOpacity 
             style={styles.plusSquareButton}
             onPress={() => navigation.navigate('Request')}
@@ -617,7 +531,6 @@ const CommissionsScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
 
-        {/* 🧩 FILTER MODAL */}
         <FilterModal 
           isVisible={filterVisible} 
           onClose={() => setFilterVisible(false)}
@@ -629,7 +542,6 @@ const CommissionsScreen = ({ navigation, route }) => {
   );
 };
 
-// Modal Styles (same as HomeScreen)
 const modalStyles = StyleSheet.create({
   centeredView: {
     flex: 1,
@@ -700,7 +612,6 @@ const modalStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  // --- General Styles ---
   container: { 
     flex: 1 
   },
@@ -743,8 +654,6 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1,
   },
-  
-  // 🔍 SEARCH BAR STYLES
   searchBarContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -770,8 +679,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
   },
-
-  // Active Filter Indicator
   activeFilterContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -791,8 +698,6 @@ const styles = StyleSheet.create({
   clearFilterButton: {
     padding: 4,
   },
-
-  // --- Main Content & List Styles ---
   content: { 
     flexGrow: 1,
     paddingHorizontal: 24, 
@@ -800,10 +705,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   commissionsList: {
-    // List container
   },
-  
-  // Commission Item Card Styles
   commissionItemCard: {
     flexDirection: 'row',
     borderRadius: 12,
@@ -867,8 +769,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 4,
   },
-  
-  // No Results Styles
   noResultsContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -886,8 +786,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingHorizontal: 20,
   },
-  
-  // --- Footer Styles ---
   footer: { 
     flexDirection: 'row', 
     justifyContent: 'space-around', 

@@ -5,18 +5,18 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  Image,
-  Modal,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Dimensions,
+    Image,
+    Modal,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
@@ -317,11 +317,11 @@ const MyAccountScreen = ({ navigation, route }) => {
     setEditDescriptionModal(true);
   };
 
-  // Handle logout - clears stored user data and resets UI
+  // Handle logout - FIX: Do NOT clear persistent data, just navigate
   const handleLogout = () => {
     Alert.alert(
       'Log out',
-      'Are you sure you want to log out? This will clear saved account data on this device.',
+      'Are you sure you want to log out?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -329,28 +329,11 @@ const MyAccountScreen = ({ navigation, route }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.removeItem('userProfileData');
-              await AsyncStorage.removeItem('profileImage');
-              await AsyncStorage.removeItem('portfolioImages');
-
-              // Reset local state to defaults
-              const emptyUserData = {
-                name: 'Kreideprinz',
-                email: 'alberlin@gnail.com',
-                skills: [],
-                joinedDate: '',
-                description: 'Custom teams do not award consecutive additional title, and/or advanced format, including at followout advice in some aligas.',
-                profileImage: null,
-              };
-
-              setUserData(emptyUserData);
-              setPortfolioImages([]);
-              setRefreshKey(prev => prev + 1);
-
+              // Removed AsyncStorage.multiRemove to persist data for re-login
               // Navigate back to SignIn
               navigation.navigate('SignIn');
             } catch (error) {
-              console.log('Error clearing storage on logout:', error);
+              console.log('Error during logout:', error);
               Alert.alert('Error', 'Failed to log out. Please try again.');
             }
           },
@@ -523,6 +506,14 @@ const MyAccountScreen = ({ navigation, route }) => {
             {/* Edit Profile Button */}
             <TouchableOpacity style={[styles.editButton, { backgroundColor: colors.primary }]} onPress={handleEditProfile}>
               <Text style={[styles.editButtonText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Edit Profile</Text>
+            </TouchableOpacity>
+
+            {/* Logout Button (moved inside Student Info card or keep outside as preference, here below Edit Profile for easy access) */}
+            <TouchableOpacity 
+              style={[styles.logoutButton, { borderColor: colors.error || '#FF6B6B', marginTop: 15 }]} 
+              onPress={handleLogout}
+            >
+              <Text style={[styles.logoutButtonText, { color: colors.error || '#FF6B6B' }]}>Log Out</Text>
             </TouchableOpacity>
           </View>
 

@@ -5,19 +5,19 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  Image,
-  Modal,
-  Platform, // Added Platform import
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Dimensions,
+    Image,
+    Modal,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
@@ -36,20 +36,40 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
   const [agreedPrice, setAgreedPrice] = useState('');
   const [contactInfo, setContactInfo] = useState('');
   const [referencePhotos, setReferencePhotos] = useState([]);
+  
+  // Proof of Payment State
+  const [proofPhotos, setProofPhotos] = useState([]);
+  
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
+  const [isViewingProof, setIsViewingProof] = useState(false);
+
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Get requestData from route params if available
   const requestData = route.params?.requestData || {};
+
+  // Pre-fill form
+  React.useEffect(() => {
+    if (requestData) {
+      setCommissionName(requestData.title || '');
+      setDescription(requestData.description || '');
+      setCategory(requestData.category || requestData.type || '');
+      setAgreedPrice(requestData.agreedPrice || '');
+      setContactInfo(requestData.email || requestData.contact || '');
+      setReferencePhotos(requestData.referencePhotos || []);
+      
+      if (requestData.date) {
+        setDateRequested(requestData.date);
+      }
+    }
+  }, [requestData]);
 
   if (!fontsLoaded) return null;
 
-  // Image Picker Functions
-  const pickReferencePhoto = async () => {
+  // --- Image Picker Logic ---
+  const handlePickImage = async (isProof) => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
     if (status !== 'granted') {
       Alert.alert('Permission required', 'Please grant access to your gallery.');
       return;
@@ -63,16 +83,19 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
     });
 
     if (!result.canceled) {
-      const updatedPhotos = [...referencePhotos, result.assets[0].uri];
-      setReferencePhotos(updatedPhotos);
+      const newUri = result.assets[0].uri;
+      if (isProof) {
+        setProofPhotos(prev => [...prev, newUri]);
+      } else {
+        setReferencePhotos(prev => [...prev, newUri]);
+      }
     }
   };
 
-  const takeReferencePhoto = async () => {
+  const handleTakeImage = async (isProof) => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    
     if (status !== 'granted') {
-      Alert.alert('Permission required', 'Please grant camera permissions to take photos.');
+      Alert.alert('Permission required', 'Please grant camera permissions.');
       return;
     }
 
@@ -83,48 +106,45 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
     });
 
     if (!result.canceled) {
-      const updatedPhotos = [...referencePhotos, result.assets[0].uri];
-      setReferencePhotos(updatedPhotos);
+      const newUri = result.assets[0].uri;
+      if (isProof) {
+        setProofPhotos(prev => [...prev, newUri]);
+      } else {
+        setReferencePhotos(prev => [...prev, newUri]);
+      }
     }
   };
 
-  const showPhotoOptions = () => {
+  const showPhotoOptions = (isProof = false) => {
     Alert.alert(
-      'Add Reference Photo',
+      // ✅ FIXED: Changed 'Reference Photo' to 'Product Photo'
+      isProof ? 'Add Proof of Payment' : 'Add Product Photo',
       'Choose an option',
       [
-        {
-          text: 'Choose from Gallery',
-          onPress: pickReferencePhoto,
-        },
-        {
-          text: 'Take Photo',
-          onPress: takeReferencePhoto,
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        { text: 'Choose from Gallery', onPress: () => handlePickImage(isProof) },
+        { text: 'Take Photo', onPress: () => handleTakeImage(isProof) },
+        { text: 'Cancel', style: 'cancel' },
       ]
     );
   };
 
-  const deleteReferencePhoto = (index) => {
+  const deletePhoto = (index, isProof) => {
     Alert.alert(
       'Delete Photo',
-      'Are you sure you want to remove this reference photo?',
+      'Are you sure you want to remove this photo?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            const updatedPhotos = referencePhotos.filter((_, i) => i !== index);
-            setReferencePhotos(updatedPhotos);
-            
-            if (selectedPhotoIndex === index) {
+            if (isProof) {
+              setProofPhotos(prev => prev.filter((_, i) => i !== index));
+            } else {
+              setReferencePhotos(prev => prev.filter((_, i) => i !== index));
+            }
+            if (showPhotoModal && selectedPhotoIndex === index && isViewingProof === isProof) {
               setShowPhotoModal(false);
-              setSelectedPhotoIndex(null);
             }
           },
         },
@@ -132,8 +152,9 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
     );
   };
 
-  const openPhotoModal = (index) => {
+  const openPhotoModal = (index, isProof) => {
     setSelectedPhotoIndex(index);
+    setIsViewingProof(isProof);
     setShowPhotoModal(true);
   };
 
@@ -142,20 +163,13 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
     setSelectedPhotoIndex(null);
   };
 
-  // Date Picker Functions
-  const handleCalendarPress = () => {
-    setShowCalendar(true);
-  };
+  // --- Date Picker Logic ---
+  const handleCalendarPress = () => setShowCalendar(true);
 
   const handleDateChange = (event, date) => {
-    // For Android, we close immediately. For iOS, this logic is handled in the "Done" button
-    if (Platform.OS === 'android') {
-      setShowCalendar(false);
-    }
-    
+    if (Platform.OS === 'android') setShowCalendar(false);
     if (date) {
       setSelectedDate(date);
-      // Format date as MM/DD/YYYY
       const formattedDate = `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}/${date.getFullYear()}`;
       setDateRequested(formattedDate);
     }
@@ -168,67 +182,24 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
     setDateRequested(formattedDate);
   };
 
-  const formatDateForDisplay = (dateString) => {
-    if (!dateString) return '';
-    return dateString;
-  };
-
-  // Format price input
-  const handlePriceChange = (text) => {
-    // Remove any non-numeric characters except decimal point
-    const cleanedText = text.replace(/[^0-9.]/g, '');
-    
-    // Ensure only one decimal point
-    const parts = cleanedText.split('.');
-    if (parts.length > 2) {
-      return; // Invalid input, don't update
-    }
-    
-    setAgreedPrice(cleanedText);
-  };
-
+  // --- Submission Logic ---
   const handleConfirm = () => {
-    // Validate required fields
-    if (!commissionName.trim()) {
-      Alert.alert('Missing Information', 'Please enter a commission name.');
+    if (proofPhotos.length === 0) {
+      Alert.alert(
+        'Missing Proof', 
+        'You cannot proceed without uploading a Proof of Payment image.'
+      );
+      return; 
+    }
+
+    if (!commissionName.trim() || !description.trim() || !dateRequested.trim() || !category.trim() || !agreedPrice.trim() || !contactInfo.trim()) {
+      Alert.alert('Missing Information', 'Please fill in all required fields.');
       return;
     }
 
-    if (!description.trim()) {
-      Alert.alert('Missing Information', 'Please enter a description.');
-      return;
-    }
-
-    if (!dateRequested.trim()) {
-      Alert.alert('Missing Information', 'Please select a date.');
-      return;
-    }
-
-    if (!category.trim()) {
-      Alert.alert('Missing Information', 'Please enter a category.');
-      return;
-    }
-
-    if (!agreedPrice.trim()) {
-      Alert.alert('Missing Information', 'Please enter the agreed price.');
-      return;
-    }
-
-    if (!contactInfo.trim()) {
-      Alert.alert('Missing Information', 'Please enter your contact information.');
-      return;
-    }
-
-    // Validate price format
-    const priceValue = parseFloat(agreedPrice);
-    if (isNaN(priceValue) || priceValue <= 0) {
-      Alert.alert('Invalid Price', 'Please enter a valid price amount.');
-      return;
-    }
-
-    // Create commission data object with "Complete" status
     const completedCommission = {
-      id: requestData.id || Date.now().toString(), // Use existing ID if available
+      ...requestData,
+      id: requestData.id || Date.now().toString(),
       title: commissionName,
       description: description,
       date: dateRequested,
@@ -236,23 +207,20 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
       agreedPrice: agreedPrice,
       contact: contactInfo,
       referencePhotos: referencePhotos,
-      status: 'Complete', // Set status to Complete (capitalized to match other statuses)
+      proofPhotos: proofPhotos,
+      status: 'Complete',
       completedAt: new Date().toISOString(),
       artist: requestData.artist || 'Unknown Artist',
       email: requestData.email || contactInfo,
-      // Include any other data from the original request
-      ...requestData
     };
 
-    // Show success alert
     Alert.alert(
       'Payment Confirmed!',
-      'Your commission has been marked as complete. Thank you for your business!',
+      'Your commission has been marked as complete.',
       [
         {
           text: 'OK',
           onPress: () => {
-            // Navigate to CommissionsScreen and pass the completed commission data
             navigation.navigate('Commissions', { 
               completedCommission: completedCommission
             });
@@ -262,43 +230,6 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
     );
   };
 
-  const handleDecline = () => {
-    Alert.alert(
-      'Cancel Payment',
-      'Are you sure you want to cancel this payment? All entered information will be lost.',
-      [
-        {
-          text: 'No, Keep Editing',
-          style: 'cancel',
-        },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: () => {
-            navigation.goBack();
-          },
-        },
-      ]
-    );
-  };
-
-  // Pre-fill form with requestData if available
-  React.useEffect(() => {
-    if (requestData) {
-      setCommissionName(requestData.title || '');
-      setDescription(requestData.description || '');
-      setCategory(requestData.category || requestData.type || '');
-      setAgreedPrice(requestData.agreedPrice || '');
-      setContactInfo(requestData.email || requestData.contact || '');
-      setReferencePhotos(requestData.referencePhotos || []);
-      
-      // Pre-fill date if available in requestData
-      if (requestData.date) {
-        setDateRequested(requestData.date);
-      }
-    }
-  }, [requestData]);
-
   return (
     <LinearGradient
       colors={isDarkMode ? gradients.background : gradients.main}
@@ -306,82 +237,53 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
       style={styles.container}
     >
       <SafeAreaView style={{ flex: 1 }}>
-        <StatusBar
-          barStyle={isDarkMode ? "light-content" : "light-content"}
-          backgroundColor="transparent"
-          translucent
-        />
+        <StatusBar barStyle={isDarkMode ? "light-content" : "light-content"} backgroundColor="transparent" translucent />
 
-        {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => navigation.goBack()}
-          >
+          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
             <Text style={[styles.backButtonText, { color: isDarkMode ? colors.primary : '#FFFFFF' }]}>←</Text>
           </TouchableOpacity>
-
-          <Text style={[styles.screenTitle, { fontFamily: 'Milonga', color: isDarkMode ? colors.text : '#FFFFFF' }]}>
-            Confirm Payment
-          </Text>
-
+          <Text style={[styles.screenTitle, { fontFamily: 'Milonga', color: isDarkMode ? colors.text : '#FFFFFF' }]}>Confirm Payment</Text>
           <View style={styles.placeholder} />
         </View>
 
-        {/* Main Content */}
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <View style={[styles.detailsCard, { 
             backgroundColor: isDarkMode ? colors.card : 'rgba(255, 255, 255, 0.15)',
             borderColor: isDarkMode ? colors.border : colors.cardBorder
           }]}>
-            {/* Commission Name */}
+            
             <View style={styles.detailSection}>
               <Text style={[styles.detailLabel, { color: colors.primary }]}>Commission Name **\***</Text>
               <TextInput
-                style={[styles.textInput, {
-                  borderColor: colors.primary,
-                  color: isDarkMode ? colors.text : '#FFFFFF',
-                  backgroundColor: isDarkMode ? colors.inputBackground : 'transparent'
-                }]}
+                style={[styles.textInput, { borderColor: colors.primary, color: isDarkMode ? colors.text : '#FFFFFF' }]}
                 value={commissionName}
                 onChangeText={setCommissionName}
-                placeholder="Enter Commission Name"
                 placeholderTextColor={isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)'}
               />
             </View>
 
-            {/* Description */}
             <View style={styles.detailSection}>
               <Text style={[styles.detailLabel, { color: colors.primary }]}>Description **\***</Text>
               <TextInput
-                style={[styles.textInput, {
-                  borderColor: colors.primary,
-                  color: isDarkMode ? colors.text : '#FFFFFF',
-                  backgroundColor: isDarkMode ? colors.inputBackground : 'transparent'
-                }]}
+                style={[styles.textInput, { borderColor: colors.primary, color: isDarkMode ? colors.text : '#FFFFFF' }]}
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Describe the commission details here..."
-                placeholderTextColor={isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)'}
                 multiline
                 numberOfLines={3}
-                textAlignVertical="top"
+                placeholderTextColor={isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)'}
               />
             </View>
 
-            {/* Date Requested */}
             <View style={styles.detailSection}>
-              <Text style={[styles.detailLabel, { color: colors.primary }]}>Date Requested **\***</Text>
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Date Accepted **\***</Text>
               <View style={[styles.dateInputContainer, { borderColor: colors.primary }]}>
                 <TextInput
-                  style={[styles.dateTextInput, {
-                    color: isDarkMode ? colors.text : '#FFFFFF',
-                    backgroundColor: isDarkMode ? colors.inputBackground : 'transparent'
-                  }]}
-                  value={formatDateForDisplay(dateRequested)}
+                  style={[styles.dateTextInput, { color: isDarkMode ? colors.text : '#FFFFFF' }]}
+                  value={dateRequested}
+                  editable={false}
                   placeholder="MM/DD/YYYY"
                   placeholderTextColor={isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)'}
-                  editable={false}
                 />
                 <TouchableOpacity style={[styles.calendarButton, { borderLeftColor: colors.primary }]} onPress={handleCalendarPress}>
                   <Ionicons name="calendar-outline" size={24} color={colors.primary} />
@@ -389,175 +291,133 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
               </View>
             </View>
 
-            {/* Category */}
             <View style={styles.detailSection}>
               <Text style={[styles.detailLabel, { color: colors.primary }]}>Category **\***</Text>
               <TextInput
-                style={[styles.textInput, {
-                  borderColor: colors.primary,
-                  color: isDarkMode ? colors.text : '#FFFFFF',
-                  backgroundColor: isDarkMode ? colors.inputBackground : 'transparent'
-                }]}
+                style={[styles.textInput, { borderColor: colors.primary, color: isDarkMode ? colors.text : '#FFFFFF' }]}
                 value={category}
                 onChangeText={setCategory}
-                placeholder="Custom Commission"
                 placeholderTextColor={isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)'}
               />
             </View>
 
-            {/* Agreed Price */}
             <View style={styles.detailSection}>
               <Text style={[styles.detailLabel, { color: colors.primary }]}>Agreed Price **\***</Text>
               <View style={[styles.priceInputContainer, { borderColor: colors.primary }]}>
-                <Text style={[styles.currencySymbol, { color: colors.primary, borderRightColor: colors.primary }]}>$</Text>
+                <Text style={[styles.currencySymbol, { color: colors.primary, borderRightColor: colors.primary }]}>₱</Text>
                 <TextInput
-                  style={[styles.priceTextInput, {
-                    color: isDarkMode ? colors.text : '#FFFFFF',
-                    backgroundColor: isDarkMode ? colors.inputBackground : 'transparent'
-                  }]}
+                  style={[styles.priceTextInput, { color: isDarkMode ? colors.text : '#FFFFFF' }]}
                   value={agreedPrice}
-                  onChangeText={handlePriceChange}
+                  onChangeText={setAgreedPrice}
+                  keyboardType="decimal-pad"
                   placeholder="0.00"
                   placeholderTextColor={isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)'}
-                  keyboardType="decimal-pad"
                 />
               </View>
             </View>
 
-            {/* Reference Photos */}
             <View style={styles.detailSection}>
-              <Text style={[styles.detailLabel, { color: colors.primary }]}>Reference Photos ({referencePhotos.length})</Text>
+              {/* ✅ FIXED: Changed 'Reference Photos' to 'Product Photos' */}
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Product Photos</Text>
               <View style={styles.photoGrid}>
-                {referencePhotos.length === 0 ? (
-                  <Text style={[styles.noPhotosText, { color: colors.primary }]}>
-                    No reference photos yet. Add one below!
+                {referencePhotos.map((uri, index) => (
+                  <TouchableOpacity
+                    key={`ref-${index}`}
+                    style={styles.photoItem}
+                    onPress={() => openPhotoModal(index, false)}
+                    onLongPress={() => deletePhoto(index, false)}
+                  >
+                    <Image source={{ uri }} style={[styles.gridPhoto, { borderColor: colors.primary }]} />
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity style={[styles.addPhotoButton, { borderColor: colors.primary }]} onPress={() => showPhotoOptions(false)}>
+                  <Ionicons name="add" size={30} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Proof of Payment Section */}
+            <View style={styles.detailSection}>
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Proof of Payment (Required) **\***</Text>
+              <View style={styles.photoGrid}>
+                {proofPhotos.length === 0 ? (
+                  <Text style={[styles.noPhotosText, { color: isDarkMode ? colors.textSecondary : 'rgba(255,255,255,0.7)' }]}>
+                    Please upload proof of payment
                   </Text>
                 ) : (
-                  referencePhotos.map((uri, index) => (
+                  proofPhotos.map((uri, index) => (
                     <TouchableOpacity
-                      key={`photo-${index}-${uri}`}
+                      key={`proof-${index}`}
                       style={styles.photoItem}
-                      onPress={() => openPhotoModal(index)}
-                      onLongPress={() => deleteReferencePhoto(index)}
+                      onPress={() => openPhotoModal(index, true)}
+                      onLongPress={() => deletePhoto(index, true)}
                     >
-                      <Image source={{ uri }} style={[styles.gridPhoto, { borderColor: colors.primary }]} resizeMode="cover" />
-                      <View style={styles.deleteOverlay}>
-                        <Ionicons name="trash-outline" size={18} color={colors.text} />
-                      </View>
+                      <Image source={{ uri }} style={[styles.gridPhoto, { borderColor: colors.primary }]} />
+                      <View style={styles.deleteOverlay}><Ionicons name="trash" size={14} color="#fff" /></View>
                     </TouchableOpacity>
                   ))
                 )}
               </View>
-
-              <TouchableOpacity style={[styles.addPhotoButton, { backgroundColor: colors.primary }]} onPress={showPhotoOptions}>
-                <Ionicons name="add-circle-outline" size={28} color={isDarkMode ? colors.text : colors.buttonText} />
-                <Text style={[styles.addPhotoText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Add Reference Photo</Text>
+              <TouchableOpacity style={[styles.addPhotoButton, { backgroundColor: colors.primary, marginTop: 10, alignSelf: 'flex-start', width: 'auto', paddingHorizontal: 15, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }]} onPress={() => showPhotoOptions(true)}>
+                <Ionicons name="cloud-upload-outline" size={20} color={isDarkMode ? colors.text : '#fff'} />
+                <Text style={{ marginLeft: 8, fontWeight: '600', color: isDarkMode ? colors.text : '#fff' }}>Upload Proof</Text>
               </TouchableOpacity>
-
-              {referencePhotos.length > 0 && (
-                <Text style={[styles.deleteHintText, { color: colors.primary }]}>
-                  Long press a photo to delete it
-                </Text>
-              )}
             </View>
 
-            {/* Contact Information */}
             <View style={styles.detailSection}>
               <Text style={[styles.detailLabel, { color: colors.primary }]}>Contact Information **\***</Text>
               <TextInput
-                style={[styles.textInput, {
-                  borderColor: colors.primary,
-                  color: isDarkMode ? colors.text : '#FFFFFF',
-                  backgroundColor: isDarkMode ? colors.inputBackground : 'transparent'
-                }]}
+                style={[styles.textInput, { borderColor: colors.primary, color: isDarkMode ? colors.text : '#FFFFFF' }]}
                 value={contactInfo}
                 onChangeText={setContactInfo}
-                placeholder="Enter your email"
-                placeholderTextColor={isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)'}
                 keyboardType="email-address"
+                placeholderTextColor={isDarkMode ? colors.inputPlaceholder : 'rgba(255, 255, 255, 0.6)'}
               />
             </View>
 
-            {/* Action Buttons */}
-            <View style={styles.detailSection}>
-              <View style={styles.buttonRow}>
-                <TouchableOpacity
-                  style={[styles.buttonInput, styles.primaryButton, { 
-                    backgroundColor: colors.primary,
-                    borderColor: colors.primary
-                  }]}
-                  onPress={handleConfirm}
-                >
-                  <Text style={[styles.primaryButtonText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Confirm Payment</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={[styles.buttonInput, styles.secondaryButton, { borderColor: colors.border }]}
-                  onPress={handleDecline}
-                >
-                  <Text style={[styles.secondaryButtonText, { color: colors.primary }]}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity style={[styles.buttonInput, { backgroundColor: colors.primary, borderColor: colors.primary, flex: 1 }]} onPress={handleConfirm}>
+                <Text style={{ fontWeight: 'bold', color: isDarkMode ? colors.text : '#fff' }}>Confirm Payment</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.buttonInput, { borderColor: colors.border, flex: 1, backgroundColor: 'transparent' }]} onPress={() => navigation.goBack()}>
+                <Text style={{ fontWeight: 'bold', color: colors.primary }}>Cancel</Text>
+              </TouchableOpacity>
             </View>
+
           </View>
         </ScrollView>
 
-        {/* Reference Photo Full Screen Modal */}
-        <Modal
-          visible={showPhotoModal}
-          transparent={true}
-          animationType="fade"
-          onRequestClose={closePhotoModal}
-        >
+        {/* Full Screen Modal */}
+        <Modal visible={showPhotoModal} transparent={true} animationType="fade" onRequestClose={closePhotoModal}>
           <View style={styles.fullScreenModalOverlay}>
-            <TouchableOpacity 
-              style={styles.fullScreenCloseButton}
-              onPress={closePhotoModal}
-            >
-              <Ionicons name="close" size={30} color={colors.text} />
+            <TouchableOpacity style={styles.fullScreenCloseButton} onPress={closePhotoModal}>
+              <Ionicons name="close" size={30} color="#fff" />
             </TouchableOpacity>
-            
-            {selectedPhotoIndex !== null && referencePhotos[selectedPhotoIndex] && (
+            {selectedPhotoIndex !== null && (
               <Image 
-                source={{ uri: referencePhotos[selectedPhotoIndex] }} 
+                source={{ uri: isViewingProof ? proofPhotos[selectedPhotoIndex] : referencePhotos[selectedPhotoIndex] }} 
                 style={styles.fullScreenPhoto} 
-                resizeMode="contain"
+                resizeMode="contain" 
               />
             )}
           </View>
         </Modal>
 
-        {/* DateTimePicker - Platform Specific */}
-        {showCalendar && (
-          Platform.OS === 'ios' ? (
-            <Modal transparent={true} animationType="fade" visible={showCalendar} onRequestClose={() => setShowCalendar(false)}>
-              <View style={styles.iosModalOverlay}>
-                <View style={[styles.iosModalContent, { backgroundColor: isDarkMode ? '#30204D' : 'white' }]}>
-                  <DateTimePicker
-                    value={selectedDate}
-                    mode="date"
-                    display="spinner"
-                    onChange={handleDateChange}
-                    textColor={isDarkMode ? 'white' : 'black'}
-                    themeVariant={isDarkMode ? "dark" : "light"}
-                  />
-                  <TouchableOpacity 
-                    onPress={confirmIOSDate}
-                    style={[styles.iosDoneButton, { backgroundColor: colors.primary }]}
-                  >
-                    <Text style={[styles.iosDoneText, { color: isDarkMode ? colors.text : '#fff' }]}>Done</Text>
-                  </TouchableOpacity>
-                </View>
+        {/* Date Picker Modal (iOS) */}
+        {showCalendar && Platform.OS === 'ios' && (
+          <Modal transparent={true} animationType="fade" visible={showCalendar} onRequestClose={() => setShowCalendar(false)}>
+            <View style={styles.iosModalOverlay}>
+              <View style={[styles.iosModalContent, { backgroundColor: isDarkMode ? '#333' : 'white' }]}>
+                <DateTimePicker value={selectedDate} mode="date" display="spinner" onChange={handleDateChange} themeVariant={isDarkMode ? 'dark' : 'light'} />
+                <TouchableOpacity onPress={confirmIOSDate} style={[styles.iosDoneButton, { backgroundColor: colors.primary }]}>
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Done</Text>
+                </TouchableOpacity>
               </View>
-            </Modal>
-          ) : (
-            <DateTimePicker
-              value={selectedDate}
-              mode="date"
-              display="default"
-              onChange={handleDateChange}
-            />
-          )
+            </View>
+          </Modal>
+        )}
+        {showCalendar && Platform.OS !== 'ios' && (
+          <DateTimePicker value={selectedDate} mode="date" display="default" onChange={handleDateChange} />
         )}
       </SafeAreaView>
     </LinearGradient>
@@ -566,222 +426,36 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 50,
-    paddingHorizontal: 24,
-    paddingBottom: 16,
-    backgroundColor: 'transparent',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backButtonText: {
-    fontSize: 28,
-    fontWeight: '300',
-  },
-  screenTitle: {
-    fontSize: 24,
-    textAlign: 'center',
-    flex: 1,
-  },
-  placeholder: {
-    width: 40,
-  },
-  content: { 
-    flex: 1, 
-    paddingHorizontal: 24,
-  },
-  detailsCard: {
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 30,
-    width: width * 1.0,
-    alignSelf: 'center',
-  },
-  detailSection: {
-    marginBottom: 25,
-  },
-  detailLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  textInput: {
-    fontSize: 16,
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    textAlignVertical: 'top',
-  },
-  // Price Input Styles
-  priceInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
-    backgroundColor: 'transparent',
-  },
-  currencySymbol: {
-    fontSize: 16,
-    fontWeight: '600',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRightWidth: 1,
-  },
-  priceTextInput: {
-    fontSize: 16,
-    padding: 12,
-    flex: 1,
-    textAlignVertical: 'top',
-  },
-  dateInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
-    backgroundColor: 'transparent',
-  },
-  dateTextInput: {
-    fontSize: 16,
-    padding: 12,
-    flex: 1,
-    textAlignVertical: 'top',
-  },
-  calendarButton: {
-    padding: 12,
-    borderLeftWidth: 1,
-  },
-  buttonInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 50,
-  },
-  // Removed calendarPicker style as it's not used in Android default and handled in iOS modal
-  photoGrid: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
-    justifyContent: 'space-between' 
-  },
-  photoItem: { 
-    width: '48%', 
-    aspectRatio: 1, 
-    marginBottom: 10,
-    position: 'relative',
-  },
-  gridPhoto: { 
-    width: '100%', 
-    height: '100%', 
-    borderRadius: 8, 
-    borderWidth: 1
-  },
-  noPhotosText: { 
-    textAlign: 'center', 
-    opacity: 0.7,
-    width: '100%',
-    paddingVertical: 20,
-  },
-  addPhotoButton: {
-    marginTop: 15,
-    borderRadius: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-  },
-  addPhotoText: { 
-    fontSize: 14, 
-    fontWeight: '600', 
-    marginLeft: 5 
-  },
-  deleteOverlay: { 
-    position: 'absolute', 
-    top: 6, 
-    right: 6, 
-    backgroundColor: 'rgba(0,0,0,0.6)', 
-    borderRadius: 12, 
-    padding: 3 
-  },
-  deleteHintText: { 
-    fontSize: 12, 
-    textAlign: 'center', 
-    marginTop: 5, 
-    opacity: 0.6 
-  },
-  fullScreenModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  fullScreenCloseButton: {
-    position: 'absolute',
-    top: 60,
-    right: 20,
-    zIndex: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    borderRadius: 20,
-    padding: 5,
-  },
-  fullScreenPhoto: {
-    width: width * 0.9,
-    height: width * 0.9,
-    borderRadius: 10,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 15,
-  },
-  primaryButton: {
-    flex: 1,
-  },
-  secondaryButton: {
-    backgroundColor: 'transparent',
-    flex: 1,
-  },
-  primaryButtonText: { 
-    fontSize: 16, 
-    fontWeight: '600' 
-  },
-  secondaryButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  // iOS DatePicker Styles
-  iosModalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    padding: 20,
-  },
-  iosModalContent: {
-    width: '100%',
-    borderRadius: 15,
-    padding: 20,
-    alignItems: 'center',
-  },
-  iosDoneButton: {
-    marginTop: 15,
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    borderRadius: 10,
-  },
-  iosDoneText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  }
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 50, paddingHorizontal: 24, paddingBottom: 16 },
+  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
+  backButtonText: { fontSize: 28, fontWeight: '300' },
+  screenTitle: { fontSize: 24, flex: 1, textAlign: 'center' },
+  placeholder: { width: 40 },
+  content: { flex: 1, paddingHorizontal: 24 },
+  detailsCard: { borderRadius: 15, padding: 20, marginBottom: 30, borderWidth: 1 },
+  detailSection: { marginBottom: 20 },
+  detailLabel: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
+  textInput: { borderWidth: 1, borderRadius: 8, padding: 12, fontSize: 16 },
+  dateInputContainer: { flexDirection: 'row', borderWidth: 1, borderRadius: 8, alignItems: 'center' },
+  dateTextInput: { flex: 1, padding: 12, fontSize: 16 },
+  calendarButton: { padding: 12, borderLeftWidth: 1 },
+  priceInputContainer: { flexDirection: 'row', borderWidth: 1, borderRadius: 8, alignItems: 'center' },
+  currencySymbol: { padding: 12, borderRightWidth: 1, fontWeight: 'bold', fontSize: 16 },
+  priceTextInput: { flex: 1, padding: 12, fontSize: 16 },
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  photoItem: { width: 70, height: 70, position: 'relative' },
+  gridPhoto: { width: '100%', height: '100%', borderRadius: 8, borderWidth: 1 },
+  addPhotoButton: { width: 70, height: 70, borderRadius: 8, borderWidth: 1, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
+  noPhotosText: { fontSize: 14, fontStyle: 'italic', marginBottom: 10 },
+  deleteOverlay: { position: 'absolute', top: 2, right: 2, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10, padding: 2 },
+  buttonRow: { flexDirection: 'row', gap: 15, marginTop: 20 },
+  buttonInput: { padding: 15, borderRadius: 10, alignItems: 'center', borderWidth: 1 },
+  fullScreenModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  fullScreenCloseButton: { position: 'absolute', top: 50, right: 20, padding: 10 },
+  fullScreenPhoto: { width: '90%', height: '80%' },
+  iosModalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
+  iosModalContent: { width: '80%', borderRadius: 15, padding: 20 },
+  iosDoneButton: { marginTop: 10, padding: 10, borderRadius: 8, alignItems: 'center' },
 });
 
 export default ConfirmPaymentScreen;

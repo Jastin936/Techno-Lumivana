@@ -125,7 +125,8 @@ const HomeScreen = ({ navigation, route }) => {
       likes: 707,
       type: "home",
       category: "Graphic Design",
-      image: null
+      image: null,
+      email: "kreideprinz@example.com" 
     },
     {
       id: 'post-2',
@@ -136,7 +137,8 @@ const HomeScreen = ({ navigation, route }) => {
       likes: 542,
       type: "home",
       category: "Tutoring",
-      image: null
+      image: null,
+      email: "timaeus@example.com"
     },
     {
       id: 'post-3',
@@ -147,7 +149,8 @@ const HomeScreen = ({ navigation, route }) => {
       likes: 430,
       type: "request",
       category: "Graphic Design",
-      image: null
+      image: null,
+      email: "pierro@example.com"
     },
     {
       id: 'post-4',
@@ -158,7 +161,8 @@ const HomeScreen = ({ navigation, route }) => {
       likes: 320,
       type: "home",
       category: "Writing",
-      image: null
+      image: null,
+      email: "aelric@example.com"
     },
     {
       id: 'post-5',
@@ -169,7 +173,8 @@ const HomeScreen = ({ navigation, route }) => {
       likes: 280,
       type: "home",
       category: "Crafting",
-      image: null
+      image: null,
+      email: "chiori@example.com"
     },
   ];
 
@@ -179,11 +184,57 @@ const HomeScreen = ({ navigation, route }) => {
     return CATEGORY_ICON_MAP[category] || 'create-outline';
   };
 
+  // ✅ FIXED: Added full profile details (bio, email, skills, joinedDate)
+  // This ensures the RecommendedUsersInfoScreen displays data correctly instead of blank spaces.
   const recommendedUsers = [
-    { id: 1, name: "Kreideprinz", role: "Illustrator", followers: 707, category: "Illustration" },
-    { id: 2, name: "Chiori", role: "Crafter, Graphic Designer", followers: 680, category: "Crafting" },
-    { id: 3, name: "Aelric", role: "Writer", followers: 423, category: "Writing" },
-    { id: 4, name: "Timaeus", role: "Tutor", followers: 520, category: "Tutoring" },
+    { 
+      id: 1, 
+      name: "Kreideprinz", 
+      role: "Illustrator", 
+      followers: 707, 
+      category: "Illustration",
+      email: "kreideprinz@example.com",
+      skills: "Digital Art, Character Design, Vector Illustration",
+      joinedDate: "January 15, 2023",
+      bio: "Professional illustrator specializing in anime style art and character design. Open for commissions.",
+      referencePhotos: []
+    },
+    { 
+      id: 2, 
+      name: "Chiori", 
+      role: "Crafter, Graphic Designer", 
+      followers: 680, 
+      category: "Crafting",
+      email: "chiori@designs.com",
+      skills: "Fabric Crafts, Fashion Design, Logo Design",
+      joinedDate: "March 10, 2023",
+      bio: "Fashion designer and crafter. I create unique handmade items and custom clothing designs.",
+      referencePhotos: []
+    },
+    { 
+      id: 3, 
+      name: "Aelric", 
+      role: "Writer", 
+      followers: 423, 
+      category: "Writing",
+      email: "aelric@writer.com",
+      skills: "Creative Writing, Copywriting, Editing",
+      joinedDate: "February 22, 2023",
+      bio: "Experienced writer with a passion for storytelling. I can help with essays, stories, and articles.",
+      referencePhotos: []
+    },
+    { 
+      id: 4, 
+      name: "Timaeus", 
+      role: "Tutor", 
+      followers: 520, 
+      category: "Tutoring",
+      email: "timaeus@academy.com",
+      skills: "Chemistry, Academic Writing, Research",
+      joinedDate: "April 05, 2023",
+      bio: "Academic tutor specializing in sciences and research papers. Helping students achieve their best.",
+      referencePhotos: []
+    },
   ];
 
   const loadPosts = async () => {
@@ -248,7 +299,6 @@ const HomeScreen = ({ navigation, route }) => {
     }
   }, [route.params?.newPost, navigation]);
 
-  // ✅ UPDATED: Fixed Name Loading
   useEffect(() => {
     if (route.params?.newCommission) {
       const handleNewRequest = async () => {
@@ -366,13 +416,15 @@ const HomeScreen = ({ navigation, route }) => {
     loadAllData();
   }, []);
 
+  // Refresh follow status on screen focus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadLikesState();
       loadLikeCounts();
       loadRequests();
       loadPosts();
-      loadUserData(); 
+      loadUserData();
+      loadFollowingState(); 
     });
     return unsubscribe;
   }, [navigation]);
@@ -673,7 +725,7 @@ const HomeScreen = ({ navigation, route }) => {
             ...item,
             artist: item.user,
             referencePhotos: item.image ? [item.image] : [],
-            email: "email@example.com"
+            email: item.email || "email@example.com" 
           } 
         })}
       >
@@ -828,7 +880,14 @@ const HomeScreen = ({ navigation, route }) => {
     <TouchableOpacity 
       key={user.id} 
       style={[styles.recommendedCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
-      onPress={() => navigation.navigate("RecommendedUsersInfoScreen", { user: user })}
+      // FIX: Passing the full user object (including bio/email) so the profile page works correctly
+      onPress={() => navigation.navigate("RecommendedUsersInfoScreen", { 
+        requestData: {
+          artist: user.name,
+          title: "Student Information", 
+          ...user
+        }
+      })}
     >
       <Ionicons name="person-circle-outline" size={60} color={colors.primary} style={styles.avatarLarge} />
       <Text style={[styles.recUserName, { color: colors.text }]}>{user.name}</Text>

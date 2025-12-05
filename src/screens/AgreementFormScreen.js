@@ -5,19 +5,19 @@ import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import {
-  Alert,
-  Dimensions,
-  Image,
-  Modal,
-  Platform, // FIX: Added Platform import for iOS specific logic
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Dimensions,
+    Image,
+    Modal,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
@@ -346,9 +346,10 @@ const AgreementFormScreen = ({ navigation, route }) => {
               />
             </View>
 
-            {/* Date Requested */}
+            {/* Date Accepted */}
             <View style={styles.detailSection}>
-              <Text style={[styles.detailLabel, { color: colors.primary }]}>Date Requested **\***</Text>
+              {/* ✅ FIXED: Changed label from "Date Requested" to "Date Accepted" */}
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Date Accepted **\***</Text>
               <View style={[styles.dateInputContainer, { borderColor: colors.primary }]}>
                 <TextInput
                   style={[styles.dateTextInput, {
@@ -386,7 +387,8 @@ const AgreementFormScreen = ({ navigation, route }) => {
             <View style={styles.detailSection}>
               <Text style={[styles.detailLabel, { color: colors.primary }]}>Agreed Price **\***</Text>
               <View style={[styles.priceInputContainer, { borderColor: colors.primary }]}>
-                <Text style={[styles.currencySymbol, { color: colors.primary, borderRightColor: colors.primary }]}>$</Text>
+                {/* ✅ FIXED: Changed from $ to ₱ */}
+                <Text style={[styles.currencySymbol, { color: colors.primary, borderRightColor: colors.primary }]}>₱</Text>
                 <TextInput
                   style={[styles.priceTextInput, {
                     color: isDarkMode ? colors.text : '#FFFFFF',
@@ -428,14 +430,8 @@ const AgreementFormScreen = ({ navigation, route }) => {
 
               <TouchableOpacity style={[styles.addPhotoButton, { backgroundColor: colors.primary }]} onPress={showPhotoOptions}>
                 <Ionicons name="add-circle-outline" size={28} color={isDarkMode ? colors.text : colors.buttonText} />
-                <Text style={[styles.addPhotoText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Add Reference Photo</Text>
+                <Text style={[styles.addPhotoText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Add Photo</Text>
               </TouchableOpacity>
-
-              {referencePhotos.length > 0 && (
-                <Text style={[styles.deleteHintText, { color: colors.primary }]}>
-                  Long press a photo to delete it
-                </Text>
-              )}
             </View>
 
             {/* Contact Information */}

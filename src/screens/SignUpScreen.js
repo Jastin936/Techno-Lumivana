@@ -24,9 +24,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-// Improved hash function for password (reduces collisions by using salt and better algorithm)
 const hashPassword = (password) => {
-  // Add a simple salt based on password length to reduce collisions
   const salt = password.length.toString();
   let hash = 0;
   const combined = password + salt;
@@ -34,10 +32,9 @@ const hashPassword = (password) => {
   for (let i = 0; i < combined.length; i++) {
     const char = combined.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+    hash = hash & hash;
   }
   
-  // Add password length and first/last chars to hash to further reduce collisions
   const firstChar = password.length > 0 ? password.charCodeAt(0) : 0;
   const lastChar = password.length > 0 ? password.charCodeAt(password.length - 1) : 0;
   hash = ((hash << 3) - hash) + firstChar + lastChar;
@@ -83,7 +80,6 @@ const SignUpScreen = ({ navigation }) => {
     return true;
   };
 
-  // Pick COR photo from gallery
   const pickCorPhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -103,7 +99,6 @@ const SignUpScreen = ({ navigation }) => {
     }
   };
 
-  // Delete COR photo
   const deleteCorPhoto = (index) => {
     Alert.alert(
       'Delete COR Photo',
@@ -115,8 +110,6 @@ const SignUpScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: () => {
             setCorPhotos((prev) => prev.filter((_, i) => i !== index));
-            
-            // Close modal if the deleted image was currently selected
             if (selectedImageIndex === index) {
               setShowImageModal(false);
               setSelectedImageIndex(null);
@@ -127,13 +120,11 @@ const SignUpScreen = ({ navigation }) => {
     );
   };
 
-  // View COR photo in full screen
   const viewCorPhoto = (index) => {
     setSelectedImageIndex(index);
     setShowImageModal(true);
   };
 
-  // Close image modal
   const closeImageModal = () => {
     setShowImageModal(false);
     setSelectedImageIndex(null);
@@ -145,44 +136,78 @@ const SignUpScreen = ({ navigation }) => {
 
     setIsLoading(true);
     try {
-      // Check if email already exists
-      const existingData = await AsyncStorage.getItem('userProfileData');
-      if (existingData) {
-        const parsed = JSON.parse(existingData);
-        if (parsed.email && parsed.email.toLowerCase() === email.trim().toLowerCase()) {
-          Alert.alert('Account Exists', 'An account with this email already exists. Please sign in instead.');
-          setIsLoading(false);
-          return;
+      // 1. Load existing accounts first
+      const registeredAccountsJson = await AsyncStorage.getItem('registeredAccounts');
+      let registeredAccounts = registeredAccountsJson ? JSON.parse(registeredAccountsJson) : [];
+
+      // 2. Save the CURRENT user to the list before doing anything else
+      const currentUserJson = await AsyncStorage.getItem('userProfileData');
+      if (currentUserJson) {
+        const currentUser = JSON.parse(currentUserJson);
+        if (currentUser.email) {
+          const existingIndex = registeredAccounts.findIndex(
+            u => u.email && u.email.toLowerCase() === currentUser.email.toLowerCase()
+          );
+          
+          if (existingIndex >= 0) {
+            registeredAccounts[existingIndex] = currentUser;
+          } else {
+            registeredAccounts.push(currentUser);
+          }
+          await AsyncStorage.setItem('registeredAccounts', JSON.stringify(registeredAccounts));
         }
+      }
+
+      // 3. Check if the NEW email is already taken
+      const emailExists = registeredAccounts.some(
+        u => u.email && u.email.toLowerCase() === email.trim().toLowerCase()
+      );
+      
+      if (emailExists) {
+        Alert.alert('Account Exists', 'An account with this email already exists. Please sign in instead.');
+        setIsLoading(false);
+        return;
       }
 
       await new Promise(resolve => setTimeout(resolve, 2000));
-      // Persist user profile data so MyAccountScreen can load it
-      try {
-        const userProfile = {
-          name: fullName.trim(),
-          email: email.trim().toLowerCase(),
-          password: hashPassword(password), // Hash password before storing
-          skills: [],
-          joinedDate: new Date().toISOString(),
-          description: '',
-        };
 
-        await AsyncStorage.setItem('userProfileData', JSON.stringify(userProfile));
+      // 4. Create the NEW user profile
+      const newUserProfile = {
+        name: fullName.trim(),
+        email: email.trim().toLowerCase(),
+        password: hashPassword(password),
+        skills: [],
+        joinedDate: new Date().toISOString(),
+        description: '',
+      };
 
-        // Save first COR photo as profileImage and all COR photos as portfolio
-        if (corPhotos && corPhotos.length > 0) {
-          await AsyncStorage.setItem('profileImage', corPhotos[0]);
-          await AsyncStorage.setItem('portfolioImages', JSON.stringify(corPhotos));
-        }
-      } catch (storageError) {
-        console.log('Error saving signup data to storage:', storageError);
+      // 5. Add NEW user to the list and save
+      registeredAccounts.push(newUserProfile);
+      await AsyncStorage.setItem('registeredAccounts', JSON.stringify(registeredAccounts));
+
+      // 6. Set the NEW user as the active user
+      await AsyncStorage.setItem('userProfileData', JSON.stringify(newUserProfile));
+
+      // 7. Handle images for the NEW user
+      // ✅ FIXED: Explicitly remove profileImage so it doesn't default to the COR photo
+      await AsyncStorage.removeItem('profileImage'); 
+
+      if (corPhotos && corPhotos.length > 0) {
+        // We still save the COR photos to portfolioImages (or a separate key if you prefer)
+        // But we DO NOT set 'profileImage' here anymore.
+        await AsyncStorage.setItem('portfolioImages', JSON.stringify(corPhotos));
+      } else {
+        await AsyncStorage.removeItem('portfolioImages');
       }
+
+      // 8. Clear activity data so the new user starts fresh
+      await AsyncStorage.multiRemove(['followingState', 'likesState', 'savedCommissions']);
 
       Alert.alert('Success!', 'Your account has been created successfully.', [
         { text: 'OK', onPress: () => navigation.navigate('SignIn') },
       ]);
     } catch (error) {
+      console.log('Signup error:', error);
       Alert.alert('Error', 'Failed to create account. Please try again.');
     } finally {
       setIsLoading(false);
@@ -202,7 +227,6 @@ const SignUpScreen = ({ navigation }) => {
           style={styles.keyboardAvoid}
         >
           <ScrollView contentContainerStyle={styles.scrollContent}>
-            {/* Header */}
             <View style={styles.header}>
               <TouchableOpacity
                 style={styles.backButton}
@@ -213,16 +237,13 @@ const SignUpScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
-            {/* Content */}
             <View style={styles.content}>
               <Text style={[styles.title, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Create Account</Text>
               <Text style={[styles.subtitle, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.9)' }]}>
                 Please complete all information to create {'\n'} your account on Lumivana
               </Text>
 
-              {/* Form */}
               <View style={styles.form}>
-                {/* Name */}
                 <Text style={[styles.label, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Name:</Text>
                 <TextInput
                   style={[styles.input, { 
@@ -237,7 +258,6 @@ const SignUpScreen = ({ navigation }) => {
                   editable={!isLoading}
                 />
 
-                {/* Email */}
                 <Text style={[styles.label, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Email:</Text>
                 <TextInput
                   style={[styles.input, { 
@@ -258,7 +278,6 @@ const SignUpScreen = ({ navigation }) => {
                   <Text style={styles.errorText}>Please enter a valid email address</Text>
                 )}
 
-                {/* Password */}
                 <Text style={[styles.label, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Password:</Text>
                 <View style={[styles.passwordContainer, { 
                   borderColor: colors.inputBorder || colors.primary,
@@ -286,7 +305,6 @@ const SignUpScreen = ({ navigation }) => {
                   <Text style={styles.errorText}>Password must be at least 6 characters</Text>
                 )}
 
-                {/* Confirm Password */}
                 <Text style={[styles.label, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Confirm Password:</Text>
                 <View style={[styles.passwordContainer, { 
                   borderColor: colors.inputBorder || colors.primary,
@@ -314,11 +332,9 @@ const SignUpScreen = ({ navigation }) => {
                   <Text style={styles.errorText}>Passwords do not match</Text>
                 )}
 
-                {/* COR Photos Section - Same as EditProfileScreen's Add Images */}
                 <View style={styles.addImagesSection}>
                   <Text style={[styles.addImagesTitle, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Photo of COR:</Text>
                  
-                  
                   <View style={styles.imageGrid}>
                     {corPhotos.length === 0 ? (
                       <Text style={[styles.noImagesText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.8)' }]}>
@@ -352,7 +368,6 @@ const SignUpScreen = ({ navigation }) => {
                   )}
                 </View>
 
-                {/* Create Account Button */}
                 <TouchableOpacity
                   style={[
                     styles.createAccountButton, 
@@ -374,7 +389,6 @@ const SignUpScreen = ({ navigation }) => {
         </KeyboardAvoidingView>
       </SafeAreaView>
 
-      {/* COR Photo Full Screen Modal */}
       <Modal
         visible={showImageModal}
         transparent={true}
@@ -438,7 +452,6 @@ const styles = StyleSheet.create({
 
   errorText: { color: '#ff6b6b', fontSize: 14, marginBottom: 10 },
 
-  // COR Photos Section - Same as EditProfileScreen's Add Images
   addImagesSection: {
     marginBottom: 20,
   },
@@ -471,7 +484,6 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingVertical: 20,
   },
-  // Add Image Button - Same as EditProfileScreen
   addImageButton: {
     borderRadius: 20,
     flexDirection: 'row',
@@ -506,7 +518,6 @@ const styles = StyleSheet.create({
   buttonDisabled: { backgroundColor: 'rgba(255, 215, 0, 0.5)' },
   createAccountButtonText: { color: '#000', fontSize: 16, fontWeight: '600' },
 
-  // Full Screen Image Modal Styles
   fullScreenModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.9)',

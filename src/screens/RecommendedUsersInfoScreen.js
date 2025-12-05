@@ -1,24 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // ✅ Added Import
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  Easing,
-  Image,
-  Linking // ✅ Added Linking import if it was missing or needed for social icons
-  ,
-
-  Modal,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Animated,
+    Dimensions,
+    Easing,
+    Image,
+    Linking,
+    Modal,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
@@ -35,7 +33,6 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
   const [imageModal, setImageModal] = useState({ visible: false, imageUri: null });
   const [blockedRequests, setBlockedRequests] = useState([]);
   
-  // ✅ Changed initial state to false, will load true state from storage
   const [isFollowing, setIsFollowing] = useState(false);
 
   const slideAnim = useState(new Animated.Value(300))[0];
@@ -51,7 +48,7 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
     referencePhotos: []
   };
 
-  // ✅ LOAD FOLLOWING STATE ON MOUNT
+  // LOAD FOLLOWING STATE ON MOUNT
   useEffect(() => {
     loadFollowingStatus();
   }, []);
@@ -61,7 +58,6 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
       const savedFollowing = await AsyncStorage.getItem('followingState');
       if (savedFollowing) {
         const followingData = JSON.parse(savedFollowing);
-        // Check if this specific artist is being followed
         if (followingData[userData.artist] === true) {
           setIsFollowing(true);
         } else {
@@ -102,18 +98,6 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
     navigation.goBack();
   };
 
-  const handleReportRequest = () => {
-    console.log('Report request:', userData.title);
-    setMoreModal({ visible: false, request: null });
-  };
-
-  const handleNotInterested = () => {
-    console.log('Not interested in:', userData.title);
-    setMoreModal({ visible: false, request: null });
-    navigation.goBack();
-  };
-
-  // ✅ UPDATED TOGGLE FOLLOW FUNCTION TO SAVE TO ASYNCSTORAGE
   const toggleFollow = async () => {
     const newStatus = !isFollowing;
     setIsFollowing(newStatus);
@@ -122,7 +106,6 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
       const savedFollowing = await AsyncStorage.getItem('followingState');
       let followingData = savedFollowing ? JSON.parse(savedFollowing) : {};
       
-      // Update the status for this specific artist
       followingData[userData.artist] = newStatus;
       
       await AsyncStorage.setItem('followingState', JSON.stringify(followingData));
@@ -131,20 +114,16 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
     }
   };
 
-  // Handle image click to open modal
   const handleImagePress = (imageUri) => {
     setImageModal({ visible: true, imageUri });
   };
 
-  // Handle closing image modal
   const closeImageModal = () => {
     setImageModal({ visible: false, imageUri: null });
   };
 
-  // Handle social media icon press
   const handleSocialMediaPress = (platform) => {
     console.log(`Pressed ${platform} icon`);
-    // You can add navigation or linking logic here
   };
 
   return (
@@ -154,22 +133,21 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
       style={styles.container}
     >
       <SafeAreaView style={{ flex: 1 }}>
-        {/* FIX: Set status bar to dark-content in light mode for visibility on yellow */}
-        <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
+        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-              {/* FIX: Force Black color for Back Arrow in Light Mode */}
-              <Text style={[styles.backButtonText, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>←</Text>
+              {/* FIX: Force White color for Back Arrow */}
+              <Text style={[styles.backButtonText, { color: '#FFFFFF' }]}>←</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Main Content */}
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Top Image Placeholder - Show first reference photo if available */}
+          {/* Top Image Placeholder */}
           <TouchableOpacity 
             style={[styles.topImagePlaceholder, { 
               backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight,
@@ -178,7 +156,6 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
             onPress={() => userData.referencePhotos?.length > 0 && 
               handleImagePress(userData.referencePhotos[0])}
           >
-            {/* FIX: Use optional chaining to prevent crash if referencePhotos is missing */}
             {userData.referencePhotos?.length > 0 ? (
               <Image 
                 source={{ uri: userData.referencePhotos[0] }} 
@@ -190,15 +167,13 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
             )}
           </TouchableOpacity>
 
-          {/* Info Section (below image) */}
+          {/* Info Section */}
           <View style={styles.infoSection}>
-            {/* Title Row with Profile Icon on the right */}
             <View style={styles.titleRow}>
               <View style={styles.titleContainer}>
-                {/* FIX: Use White in Dark Mode, Black in Light Mode */}
-                <Text style={[styles.requestTitle, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>{userData.title}</Text>
+                {/* FIX: Force White color for Title */}
+                <Text style={[styles.requestTitle, { color: '#FFFFFF', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: {width: 1, height: 1}, textShadowRadius: 2 }]}>{userData.title}</Text>
                 
-                {/* Social Media Icons - Below the title */}
                 <View style={styles.socialMediaContainer}>
                   <TouchableOpacity 
                     style={styles.socialIcon}
@@ -235,45 +210,43 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
                 </View>
               </View>
               
-              {/* Profile Icon moved to the right side - Made bigger */}
               <View style={styles.profileIconContainer}>
                 <View style={styles.profileCircle}>
-                   {/* FIX: Profile Icon Color White/Black */}
-                  <Ionicons name="person-circle-outline" size={80} color={isDarkMode ? '#FFFFFF' : '#000000'} />
+                   {/* FIX: Force White color for Profile Icon */}
+                  <Ionicons name="person-circle-outline" size={80} color="#FFFFFF" />
                 </View>
               </View>
             </View>
 
-            {/* Artist Name and Actions Row */}
             <View style={styles.artistRow}>
-               {/* FIX: Artist Name Color White/Black */}
-              <Text style={[styles.artistName, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>{userData.artist}</Text>
+               {/* FIX: Force White color for Artist Name */}
+              <Text style={[styles.artistName, { color: '#FFFFFF', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: {width: 1, height: 1}, textShadowRadius: 2 }]}>{userData.artist}</Text>
               
-              {/* Right Side Actions: Follow + Menu */}
               <View style={styles.rightSideActions}>
                 <TouchableOpacity 
                   style={[
                     styles.followButton,
-                    { borderColor: isDarkMode ? '#FFFFFF' : '#000000' },
-                    isFollowing && { backgroundColor: colors.surface }
+                    // FIX: Force White Border
+                    { borderColor: '#FFFFFF' },
+                    isFollowing && { backgroundColor: 'rgba(255,255,255,0.2)' }
                   ]}
                   onPress={toggleFollow}
                 >
                   <Text style={[
                     styles.followButtonText,
-                    { color: isDarkMode ? '#FFFFFF' : '#000000' }
+                    // FIX: Force White Text
+                    { color: '#FFFFFF' }
                   ]}>
                     {isFollowing ? "Following" : "Follow"}
                   </Text>
                 </TouchableOpacity>
 
-                {/* Menu Button */}
                 <TouchableOpacity
                   style={styles.menuButton}
                   onPress={openMoreModal}
                 >
-                   {/* FIX: Menu Icon Color White/Black */}
-                  <Ionicons name="ellipsis-vertical" size={24} color={isDarkMode ? '#FFFFFF' : '#000000'} />
+                   {/* FIX: Force White color for Menu Icon */}
+                  <Ionicons name="ellipsis-vertical" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -281,42 +254,45 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
 
           {/* Contact Information Section */}
             <View style={styles.detailItem}>
-              <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Contact Information</Text>
+              {/* FIX: Force White Label (Outside Box) */}
+              <Text style={[styles.detailLabel, { color: '#FFFFFF' }]}>Contact Information</Text>
+              {/* FIX: Box content styles (Inside Box) */}
               <Text style={[styles.detailValue, { 
-                color: isDarkMode ? '#FFFFFF' : '#000000', 
-                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+                color: '#000000', 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.9)' : '#FFFFFF' 
               }]}>{userData.email}</Text>
             </View>
 
           {/* Skills Section */}
             <View style={styles.detailItem}>
-              <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Skills & Specializations</Text>
+              {/* FIX: Force White Label (Outside Box) */}
+              <Text style={[styles.detailLabel, { color: '#FFFFFF' }]}>Skills & Specializations</Text>
               <Text style={[styles.detailValue, { 
-                color: isDarkMode ? '#FFFFFF' : '#000000', 
-                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+                color: '#000000', 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.9)' : '#FFFFFF' 
               }]}>{userData.skills}</Text>
             </View>
 
           {/* Joined Date Section */}
             <View style={styles.detailItem}>
-              <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Joined Date</Text>
+              {/* FIX: Force White Label (Outside Box) */}
+              <Text style={[styles.detailLabel, { color: '#FFFFFF' }]}>Joined Date</Text>
               <Text style={[styles.detailValue, { 
-                color: isDarkMode ? '#FFFFFF' : '#000000', 
-                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+                color: '#000000', 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.9)' : '#FFFFFF' 
               }]}>{userData.joinedDate}</Text>
             </View>
 
           {/* Bio Section */}
             <View style={styles.detailItem}>
               <Text style={[styles.detailValue, { 
-                color: isDarkMode ? '#FFFFFF' : '#000000', 
-                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+                color: '#000000', 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.9)' : '#FFFFFF' 
               }]}>{userData.bio}</Text>
             </View>
 
-          {/* Image Grid Section - Show all reference photos */}
+          {/* Image Grid Section */}
           <View style={styles.imageGrid}>
-            {/* FIX: Use optional chaining to prevent crash */}
             {userData.referencePhotos?.length > 0 ? (
               userData.referencePhotos.map((photoUri, index) => (
                 <TouchableOpacity 
@@ -334,7 +310,6 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
                 </TouchableOpacity>
               ))
             ) : (
-              // Show placeholder images if no reference photos
               [1, 2, 3, 4].map((_, index) => (
                 <View key={`placeholder-${index}`} style={[styles.gridImage, { 
                   backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
@@ -398,7 +373,6 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
                 />
               )}
               
-              {/* Close Button */}
               <TouchableOpacity 
                 style={styles.imageModalCloseButton}
                 onPress={closeImageModal}
@@ -563,6 +537,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     lineHeight: 20,
+    overflow: 'hidden', // Ensure background radius works
   },
   socialMediaContainer: {
     flexDirection: 'row',
