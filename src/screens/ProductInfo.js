@@ -17,6 +17,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
@@ -32,6 +33,8 @@ const ProductInfoScreen = ({ navigation, route }) => {
   const [moreModal, setMoreModal] = useState({ visible: false, request: null });
   const [imageModal, setImageModal] = useState({ visible: false, imageUri: null });
   const [blockedRequests, setBlockedRequests] = useState([]);
+  const [notInterestedRequests, setNotInterestedRequests] = useState([]);
+  const [reportedRequests, setReportedRequests] = useState([]);
   
   const [isFollowing, setIsFollowing] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
@@ -44,8 +47,22 @@ const ProductInfoScreen = ({ navigation, route }) => {
     artist: 'Kreideprinz',
     description: 'Unique logos for student organizations.',
     email: 'email@example.com',
-    referencePhotos: [],
-    category: 'Graphic Design'
+    referencePhotos: [  `https://picsum.photos/seed/Kreideprinz1/600/600`,
+  `https://picsum.photos/seed/Kreideprinz2/600/600`,
+  `https://picsum.photos/seed/Kreideprinz3/600/600`,],
+    category: 'Graphic Design',
+    id: 'default-id',
+  };
+
+  // ADDED: Function to prepare commission data for AgreementFormScreen
+  const prepareCommissionData = () => {
+    return {
+      title: requestData.title,
+      description: requestData.description,
+      category: requestData.category || requestData.type,
+      contact: requestData.email,
+      referencePhotos: requestData.referencePhotos || [],
+    };
   };
 
   useEffect(() => {
@@ -69,6 +86,17 @@ const ProductInfoScreen = ({ navigation, route }) => {
             setIsFollowing(true);
           }
         }
+
+        const savedNotInterested = await AsyncStorage.getItem('notInterestedRequests');
+        if (savedNotInterested) {
+          setNotInterestedRequests(JSON.parse(savedNotInterested));
+        }
+
+        const savedReported = await AsyncStorage.getItem('reportedRequests');
+        if (savedReported) {
+          setReportedRequests(JSON.parse(savedReported));
+        }
+
       } catch (error) {
         console.log('Error loading data:', error);
       }
@@ -88,6 +116,81 @@ const ProductInfoScreen = ({ navigation, route }) => {
     } catch (error) {
       console.log('Error saving following status:', error);
     }
+  };
+
+  const handleNotInterested = async () => {
+    if (moreModal.request) {
+      try {
+        const updatedNotInterested = [...notInterestedRequests, moreModal.request.id];
+        setNotInterestedRequests(updatedNotInterested);
+        
+        await AsyncStorage.setItem('notInterestedRequests', JSON.stringify(updatedNotInterested));
+        
+        setMoreModal({ visible: false, request: null });
+        
+        Alert.alert("Noted", "We'll show fewer requests like this in your feed.");
+        
+        console.log('Marked request as not interested:', moreModal.request.id);
+        
+        navigation.goBack();
+        
+      } catch (error) {
+        console.log('Error saving not interested request:', error);
+        Alert.alert("Error", "Failed to save your preference. Please try again.");
+      }
+    }
+  };
+
+  const handleReportPost = async () => {
+    if (moreModal.request) {
+      Alert.alert(
+        "Report Request",
+        "Are you sure you want to report this request?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Report",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                const updatedReported = [...reportedRequests, moreModal.request.id];
+                setReportedRequests(updatedReported);
+                
+                await AsyncStorage.setItem('reportedRequests', JSON.stringify(updatedReported));
+                
+                setBlockedRequests((prev) => [...prev, moreModal.request.id]);
+                
+                setMoreModal({ visible: false, request: null });
+                
+                Alert.alert("Report Submitted", "Thank you for reporting this request. Our team will review it.");
+                
+                console.log('Reported request:', {
+                  id: moreModal.request.id,
+                  title: moreModal.request.title,
+                  artist: moreModal.request.artist,
+                  timestamp: new Date().toISOString()
+                });
+                
+                navigation.goBack();
+                
+              } catch (error) {
+                console.log('Error saving reported request:', error);
+                Alert.alert("Error", "Failed to submit report. Please try again.");
+              }
+            }
+          }
+        ]
+      );
+    }
+  };
+
+  const handleBlockRequest = () => {
+    setBlockedRequests((prev) => [...prev, requestData.id]);
+    setMoreModal({ visible: false, request: null });
+    navigation.goBack();
   };
 
   if (!fontsLoaded) {
@@ -116,22 +219,22 @@ const ProductInfoScreen = ({ navigation, route }) => {
     setModalVisible(false);
   };
 
+  // UPDATED: Handle Proceed to pass commission data
   const handleProceed = () => {
     setModalVisible(false);
+    
+    // Prepare the commission data from ProductInfoScreen
+    const commissionData = prepareCommissionData();
+    
+    // Navigate to AgreementFormScreen with the commission data
     navigation.navigate('AgreementForm', { 
-      requestData: requestData 
+      commissionData: commissionData 
     });
   };
 
   const openMoreModal = () => {
     setMoreModal({ visible: true, request: requestData });
     slideUp();
-  };
-
-  const handleBlockRequest = () => {
-    setBlockedRequests((prev) => [...prev, requestData.id]);
-    setMoreModal({ visible: false, request: null });
-    navigation.goBack();
   };
 
   const handleImagePress = (imageUri) => {
@@ -186,7 +289,6 @@ const ProductInfoScreen = ({ navigation, route }) => {
             <View style={styles.artistRow}>
               <View style={styles.leftSide}>
                 <View style={styles.profileCircle}>
-                  {/* ✅ FIXED: Yellow Icon */}
                   <Ionicons name="person-circle-outline" size={40} color={colors.primary} />
                 </View>
                 <Text style={[styles.artistName, { color: '#FFFFFF' }]}>{requestData.artist}</Text>
@@ -200,7 +302,6 @@ const ProductInfoScreen = ({ navigation, route }) => {
                     style={[
                       styles.followButton, 
                       { 
-                        // ✅ FIXED: Yellow Border
                         borderColor: colors.primary,
                         backgroundColor: isFollowing ? 'rgba(255,255,255,0.2)' : 'transparent' 
                       }
@@ -209,7 +310,6 @@ const ProductInfoScreen = ({ navigation, route }) => {
                   >
                     <Text style={[
                       styles.followButtonText, 
-                      // ✅ FIXED: Yellow Text
                       { color: colors.primary }
                     ]}>
                       {isFollowing ? "Following" : "Follow"}
@@ -233,7 +333,6 @@ const ProductInfoScreen = ({ navigation, route }) => {
             padding: 0 
           }]}>
             <View style={styles.sectionHeader}>
-              {/* ✅ FIXED: Yellow Title */}
               <Text style={[styles.sectionTitle, { color: colors.primary }]}>Commission Details</Text>
               
               {!isOwner && (
@@ -244,24 +343,22 @@ const ProductInfoScreen = ({ navigation, route }) => {
               )}
             </View>
 
-            {/* ✅ FIXED: SOLID WHITE BOX with BLACK TEXT */}
             <View style={styles.detailItem}>
               <Text style={[styles.detailLabel, { color: '#FFFFFF' }]}>Description</Text>
               <Text style={[styles.detailValue, { 
-                color: '#000000', // Black Text
-                backgroundColor: '#FFFFFF', // White Background
+                color: '#000000',
+                backgroundColor: '#FFFFFF',
                 borderRadius: 12,
                 padding: 12,
                 overflow: 'hidden'
               }]}>{requestData.description}</Text>
             </View>
 
-            {/* ✅ FIXED: SOLID WHITE BOX with BLACK TEXT */}
             <View style={styles.detailItem}>
               <Text style={[styles.detailLabel, { color: '#FFFFFF' }]}>Contact Information</Text>
               <Text style={[styles.detailValue, { 
-                color: '#000000', // Black Text
-                backgroundColor: '#FFFFFF', // White Background
+                color: '#000000',
+                backgroundColor: '#FFFFFF',
                 borderRadius: 12,
                 padding: 12,
                 overflow: 'hidden'
@@ -339,6 +436,7 @@ const ProductInfoScreen = ({ navigation, route }) => {
             <View style={[styles.modalTitleUnderline, { backgroundColor: colors.primary }]} />
             <Text style={[styles.modalDescription, { color: colors.text }]}>
               Let's coordinate and start the agreement process together.
+              {"\n\n"}The commission information will be automatically filled in the agreement form.
             </Text>
             <View style={styles.modalButtonContainer}>
               <TouchableOpacity
@@ -416,14 +514,23 @@ const ProductInfoScreen = ({ navigation, route }) => {
                 <Ionicons name="logo-twitter" size={28} color={colors.text} />
               </TouchableOpacity>
             </View>
-            <View style={styles.optionRow}>
+            
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleNotInterested}
+            >
               <Ionicons name="heart-dislike-outline" size={22} color="red" />
               <Text style={[styles.optionText, { color: colors.text }]}>Not interested</Text>
-            </View>
-            <View style={styles.optionRow}>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleReportPost}
+            >
               <Ionicons name="flag-outline" size={22} color="red" />
               <Text style={[styles.optionText, { color: colors.text }]}>Report Post</Text>
-            </View>
+            </TouchableOpacity>
+            
             <TouchableOpacity
               style={styles.optionRow}
               onPress={handleBlockRequest}
@@ -516,7 +623,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  // Follow button
   followButton: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,

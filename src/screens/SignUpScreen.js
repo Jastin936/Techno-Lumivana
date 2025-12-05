@@ -25,6 +25,10 @@ import { useTheme } from '../context/ThemeContext';
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const hashPassword = (password) => {
+<<<<<<< HEAD
+=======
+  
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
   const salt = password.length.toString();
   let hash = 0;
   const combined = password + salt;
@@ -32,9 +36,16 @@ const hashPassword = (password) => {
   for (let i = 0; i < combined.length; i++) {
     const char = combined.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
+<<<<<<< HEAD
     hash = hash & hash;
   }
   
+=======
+    hash = hash & hash; 
+  }
+  
+  
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
   const firstChar = password.length > 0 ? password.charCodeAt(0) : 0;
   const lastChar = password.length > 0 ? password.charCodeAt(password.length - 1) : 0;
   hash = ((hash << 3) - hash) + firstChar + lastChar;
@@ -54,6 +65,11 @@ const SignUpScreen = ({ navigation }) => {
   const [corPhotos, setCorPhotos] = useState([]);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(null);
+  
+  // Additional profile images section
+  const [profileImages, setProfileImages] = useState([]);
+  const [selectedProfileImageIndex, setSelectedProfileImageIndex] = useState(null);
+  const [showProfileImageModal, setShowProfileImageModal] = useState(false);
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isEmailInvalid = email && !emailRegex.test(email);
@@ -80,6 +96,10 @@ const SignUpScreen = ({ navigation }) => {
     return true;
   };
 
+<<<<<<< HEAD
+=======
+  
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
   const pickCorPhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -99,6 +119,30 @@ const SignUpScreen = ({ navigation }) => {
     }
   };
 
+<<<<<<< HEAD
+=======
+  // Pick Profile photo from gallery
+  const pickProfilePhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Please grant access to your gallery.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setProfileImages((prev) => [...prev, result.assets[0].uri]);
+    }
+  };
+
+  // Delete COR photo
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
   const deleteCorPhoto = (index) => {
     Alert.alert(
       'Delete COR Photo',
@@ -110,6 +154,11 @@ const SignUpScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: () => {
             setCorPhotos((prev) => prev.filter((_, i) => i !== index));
+<<<<<<< HEAD
+=======
+            
+            
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
             if (selectedImageIndex === index) {
               setShowImageModal(false);
               setSelectedImageIndex(null);
@@ -120,14 +169,59 @@ const SignUpScreen = ({ navigation }) => {
     );
   };
 
+<<<<<<< HEAD
+=======
+  // Delete Profile photo
+  const deleteProfilePhoto = (index) => {
+    Alert.alert(
+      'Delete Profile Photo',
+      'Are you sure you want to remove this profile photo?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            setProfileImages((prev) => prev.filter((_, i) => i !== index));
+            
+            // Close modal if the deleted image was currently selected
+            if (selectedProfileImageIndex === index) {
+              setShowProfileImageModal(false);
+              setSelectedProfileImageIndex(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // View COR photo in full screen
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
   const viewCorPhoto = (index) => {
     setSelectedImageIndex(index);
     setShowImageModal(true);
   };
 
+<<<<<<< HEAD
   const closeImageModal = () => {
+=======
+  // View Profile photo in full screen
+  const viewProfilePhoto = (index) => {
+    setSelectedProfileImageIndex(index);
+    setShowProfileImageModal(true);
+  };
+
+  // Close COR image modal
+  const closeCorImageModal = () => {
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
     setShowImageModal(false);
     setSelectedImageIndex(null);
+  };
+
+  // Close Profile image modal
+  const closeProfileImageModal = () => {
+    setShowProfileImageModal(false);
+    setSelectedProfileImageIndex(null);
   };
 
   const handleSignUp = async () => {
@@ -136,6 +230,7 @@ const SignUpScreen = ({ navigation }) => {
 
     setIsLoading(true);
     try {
+<<<<<<< HEAD
       // 1. Load existing accounts first
       const registeredAccountsJson = await AsyncStorage.getItem('registeredAccounts');
       let registeredAccounts = registeredAccountsJson ? JSON.parse(registeredAccountsJson) : [];
@@ -155,6 +250,16 @@ const SignUpScreen = ({ navigation }) => {
             registeredAccounts.push(currentUser);
           }
           await AsyncStorage.setItem('registeredAccounts', JSON.stringify(registeredAccounts));
+=======
+      
+      const existingData = await AsyncStorage.getItem('userProfileData');
+      if (existingData) {
+        const parsed = JSON.parse(existingData);
+        if (parsed.email && parsed.email.toLowerCase() === email.trim().toLowerCase()) {
+          Alert.alert('Account Exists', 'An account with this email already exists. Please sign in instead.');
+          setIsLoading(false);
+          return;
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
         }
       }
 
@@ -170,6 +275,19 @@ const SignUpScreen = ({ navigation }) => {
       }
 
       await new Promise(resolve => setTimeout(resolve, 2000));
+<<<<<<< HEAD
+=======
+      
+      try {
+        const userProfile = {
+          name: fullName.trim(),
+          email: email.trim().toLowerCase(),
+          password: hashPassword(password), 
+          skills: [],
+          joinedDate: new Date().toISOString(),
+          description: '',
+        };
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
 
       // 4. Create the NEW user profile
       const newUserProfile = {
@@ -181,6 +299,7 @@ const SignUpScreen = ({ navigation }) => {
         description: '',
       };
 
+<<<<<<< HEAD
       // 5. Add NEW user to the list and save
       registeredAccounts.push(newUserProfile);
       await AsyncStorage.setItem('registeredAccounts', JSON.stringify(registeredAccounts));
@@ -198,6 +317,20 @@ const SignUpScreen = ({ navigation }) => {
         await AsyncStorage.setItem('portfolioImages', JSON.stringify(corPhotos));
       } else {
         await AsyncStorage.removeItem('portfolioImages');
+=======
+        
+        if (corPhotos && corPhotos.length > 0) {
+          await AsyncStorage.setItem('profileImage', corPhotos[0]);
+          await AsyncStorage.setItem('portfolioImages', JSON.stringify(corPhotos));
+        }
+
+        // Save profile images if any
+        if (profileImages && profileImages.length > 0) {
+          await AsyncStorage.setItem('additionalProfileImages', JSON.stringify(profileImages));
+        }
+      } catch (storageError) {
+        console.log('Error saving signup data to storage:', storageError);
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
       }
 
       // 8. Clear activity data so the new user starts fresh
@@ -332,13 +465,20 @@ const SignUpScreen = ({ navigation }) => {
                   <Text style={styles.errorText}>Passwords do not match</Text>
                 )}
 
+<<<<<<< HEAD
                 <View style={styles.addImagesSection}>
                   <Text style={[styles.addImagesTitle, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Photo of COR:</Text>
                  
+=======
+                {/* Profile Photo Section */}
+                <View style={styles.addImagesSection}>
+                  <Text style={[styles.addImagesTitle, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Profile Photo:</Text>
+                  
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
                   <View style={styles.imageGrid}>
                     {corPhotos.length === 0 ? (
                       <Text style={[styles.noImagesText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.8)' }]}>
-                        No COR photos yet. Add one below!
+                        No profile photo yet. Add one below!
                       </Text>
                     ) : (
                       corPhotos.map((uri, index) => (
@@ -368,6 +508,47 @@ const SignUpScreen = ({ navigation }) => {
                   )}
                 </View>
 
+<<<<<<< HEAD
+=======
+                {/* Photo of COR Section */}
+                <View style={styles.addImagesSection}>
+                  <Text style={[styles.addImagesTitle, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Photo of COR:</Text>
+                  
+                  <View style={styles.imageGrid}>
+                    {profileImages.length === 0 ? (
+                      <Text style={[styles.noImagesText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.8)' }]}>
+                        No COR photo yet. Add some below!
+                      </Text>
+                    ) : (
+                      profileImages.map((uri, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          style={styles.imageItem}
+                          onPress={() => viewProfilePhoto(index)}
+                          onLongPress={() => deleteProfilePhoto(index)}
+                        >
+                          <Image source={{ uri }} style={styles.gridImage} resizeMode="cover" />
+                          <View style={styles.deleteOverlay}>
+                            <Ionicons name="trash-outline" size={18} color="#fff" />
+                          </View>
+                        </TouchableOpacity>
+                      ))
+                    )}
+                  </View>
+
+                  <TouchableOpacity style={styles.addImageButton} onPress={pickProfilePhoto}>
+                    <Ionicons name="add-circle-outline" size={28} color={colors.primary} />
+                  </TouchableOpacity>
+
+                  {profileImages.length > 0 && (
+                    <Text style={[styles.deleteHintText, { color: isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)' }]}>
+                      Long press an image to delete it
+                    </Text>
+                  )}
+                </View>
+
+                {/* Create Account Button */}
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
                 <TouchableOpacity
                   style={[
                     styles.createAccountButton, 
@@ -393,12 +574,12 @@ const SignUpScreen = ({ navigation }) => {
         visible={showImageModal}
         transparent={true}
         animationType="fade"
-        onRequestClose={closeImageModal}
+        onRequestClose={closeCorImageModal}
       >
         <View style={styles.fullScreenModalOverlay}>
           <TouchableOpacity 
             style={styles.fullScreenCloseButton}
-            onPress={closeImageModal}
+            onPress={closeCorImageModal}
           >
             <Ionicons name="close" size={30} color="#fff" />
           </TouchableOpacity>
@@ -406,6 +587,31 @@ const SignUpScreen = ({ navigation }) => {
           {selectedImageIndex !== null && corPhotos[selectedImageIndex] && (
             <Image 
               source={{ uri: corPhotos[selectedImageIndex] }} 
+              style={styles.fullScreenImage} 
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
+
+      {/* Profile Image Full Screen Modal */}
+      <Modal
+        visible={showProfileImageModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeProfileImageModal}
+      >
+        <View style={styles.fullScreenModalOverlay}>
+          <TouchableOpacity 
+            style={styles.fullScreenCloseButton}
+            onPress={closeProfileImageModal}
+          >
+            <Ionicons name="close" size={30} color="#fff" />
+          </TouchableOpacity>
+          
+          {selectedProfileImageIndex !== null && profileImages[selectedProfileImageIndex] && (
+            <Image 
+              source={{ uri: profileImages[selectedProfileImageIndex] }} 
               style={styles.fullScreenImage} 
               resizeMode="contain"
             />
@@ -452,13 +658,18 @@ const styles = StyleSheet.create({
 
   errorText: { color: '#ff6b6b', fontSize: 14, marginBottom: 10 },
 
+<<<<<<< HEAD
+=======
+  // Images Section
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
   addImagesSection: {
-    marginBottom: 20,
+    marginBottom: 25,
   },
   addImagesTitle: { 
     fontSize: 14,  
-    marginBottom: 8, 
-    textAlign: 'left'
+    marginBottom: 12, 
+    textAlign: 'left',
+    fontWeight: '600'
   },
   imageGrid: { 
     flexDirection: 'row', 
@@ -483,9 +694,10 @@ const styles = StyleSheet.create({
     textAlign: 'center', 
     width: '100%',
     paddingVertical: 20,
+    fontSize: 14,
+    fontStyle: 'italic',
   },
   addImageButton: {
-    borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -514,6 +726,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 10,
+    marginBottom: 30,
   },
   buttonDisabled: { backgroundColor: 'rgba(255, 215, 0, 0.5)' },
   createAccountButtonText: { color: '#000', fontSize: 16, fontWeight: '600' },

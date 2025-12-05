@@ -32,7 +32,8 @@ const rotateValue = new Animated.Value(0);
 const HomeScreen = ({ navigation, route }) => {
   const { isDarkMode, colors, gradients, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState(route.params?.activeTab || "Home");
-  const [following, setFollowing] = useState({});
+  // CHANGED: Use followingUsers array instead of following object
+  const [followingUsers, setFollowingUsers] = useState([]);
   const [likes, setLikes] = useState({});
   const [likeCounts, setLikeCounts] = useState({}); 
   const [isFollowingLoaded, setIsFollowingLoaded] = useState(false);
@@ -48,6 +49,8 @@ const HomeScreen = ({ navigation, route }) => {
   
   const [moreModal, setMoreModal] = useState({ visible: false, post: null });
   const [blockedPosts, setBlockedPosts] = useState([]);
+  const [notInterestedPosts, setNotInterestedPosts] = useState([]);
+  const [reportedPosts, setReportedPosts] = useState([]);
   const slideAnim = useState(new Animated.Value(300))[0];
 
   const initialRequests = [
@@ -57,7 +60,7 @@ const HomeScreen = ({ navigation, route }) => {
       description: "Offering custom poster designs for events and orgs.",
       icon: "image-outline",
       category: "Graphic Design",
-      artist: "Kredaspirinz",
+      artist: "Kreideprinz", // Changed to match recommended user name
       email: "e-mail@poster.com",
       likes: 0
     },
@@ -67,7 +70,7 @@ const HomeScreen = ({ navigation, route }) => {
       description: "Need a modern logo for my startup company.",
       icon: "diamond-outline",
       category: "Graphic Design",
-      artist: "DesignPro",
+      artist: "Caribert", // Changed to match recommended user name
       email: "contact@designpro.com",
       likes: 0
     },
@@ -77,7 +80,7 @@ const HomeScreen = ({ navigation, route }) => {
       description: "Fantasy character art for book cover.",
       icon: "color-palette-outline",
       category: "Illustration",
-      artist: "ArtMaster",
+      artist: "Grace", // Changed to match recommended user name
       email: "art@master.com",
       likes: 0
     },
@@ -86,8 +89,8 @@ const HomeScreen = ({ navigation, route }) => {
       title: "Website Development",
       description: "Portfolio website with modern design.",
       icon: "code-outline",
-      category: "Graphic Design",
-      artist: "WebDevPro",
+      category: "Programming",
+      artist: "Caribert", // Changed to match recommended user name
       email: "dev@webpro.com",
       likes: 0
     },
@@ -97,7 +100,7 @@ const HomeScreen = ({ navigation, route }) => {
       description: "Blog articles for tech company.",
       icon: "document-text-outline",
       category: "Writing",
-      artist: "ContentWriter",
+      artist: "Trevenaa", // Changed to match recommended user name
       email: "write@content.com",
       likes: 0
     },
@@ -107,13 +110,14 @@ const HomeScreen = ({ navigation, route }) => {
       description: "Professional photo retouching services.",
       icon: "camera-outline",
       category: "Photography",
-      artist: "PhotoExpert",
+      artist: "Pierra", // Changed to match recommended user name
       email: "edit@photo.com",
       likes: 0
     }
   ];
 
   const [requests, setRequests] = useState([]);
+<<<<<<< HEAD
 
   const initialPosts = [
     {
@@ -177,6 +181,122 @@ const HomeScreen = ({ navigation, route }) => {
       email: "chiori@example.com"
     },
   ];
+=======
+const initialPosts = [
+  {
+    id: '1',
+    user: "Kreideprinz", 
+    role: "Illustrator",
+    title: "Logo Design",
+    description: "Unique logos for student organizations or small businesses.",
+    likes: 707,
+    type: "home",
+    category: "Illustration",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '2',
+    user: "Timaeus",
+    role: "Tutor",
+    title: "Peer Tutoring",
+    description: "Helping college students excel in creative writing.",
+    likes: 542,
+    type: "home",
+    category: "Tutoring",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '3',
+    user: "Pierro",
+    role: "Designer",
+    title: "Poster Commission",
+    description: "Offering custom poster designs for events and orgs.",
+    likes: 430,
+    type: "request",
+    category: "Graphic Design",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '4',
+    user: "Aelric",
+    role: "Writer",
+    title: "Content Writing",
+    description: "Professional blog and article writing services.",
+    likes: 320,
+    type: "home",
+    category: "Writing",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '5',
+    user: "Chiori",
+    role: "Crafter",
+    title: "Handmade Crafts",
+    description: "Custom handmade crafts and DIY projects.",
+    likes: 280,
+    type: "home",
+    category: "Crafting",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  
+  // Added Users
+  {
+    id: '6',
+    user: "Caribert",
+    role: "Programmer",
+    title: "Web Development Service",
+    description: "Full-stack web development for startups.",
+    likes: 150,
+    type: "home",
+    category: "Programming",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '7',
+    user: "Enjou",
+    role: "Writer",
+    title: "Proofreading Services",
+    description: "Professional proofreading for academic papers.",
+    likes: 120,
+    type: "home",
+    category: "Writing",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '8',
+    user: "Grace",
+    role: "Artist",
+    title: "Digital Portrait Commission",
+    description: "Custom digital portraits in various styles.",
+    likes: 200,
+    type: "home",
+    category: "Illustration",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '9',
+    user: "Trevenaa",
+    role: "Writer",
+    title: "Fiction Writing Workshop",
+    description: "Learn creative writing techniques.",
+    likes: 95,
+    type: "home",
+    category: "Writing",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '10',
+    user: "Pierra",
+    role: "Producer",
+    title: "Music Production Lessons",
+    description: "Learn music production from scratch.",
+    likes: 180,
+    type: "home",
+    category: "Music",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  }
+];
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
 
   const [posts, setPosts] = useState([]);
 
@@ -184,6 +304,7 @@ const HomeScreen = ({ navigation, route }) => {
     return CATEGORY_ICON_MAP[category] || 'create-outline';
   };
 
+<<<<<<< HEAD
   // ✅ FIXED: Added full profile details (bio, email, skills, joinedDate)
   // This ensures the RecommendedUsersInfoScreen displays data correctly instead of blank spaces.
   const recommendedUsers = [
@@ -235,7 +356,31 @@ const HomeScreen = ({ navigation, route }) => {
       bio: "Academic tutor specializing in sciences and research papers. Helping students achieve their best.",
       referencePhotos: []
     },
+=======
+  // UPDATED: Ensure these IDs match the USERS array in RecommendedUsersScreen.js
+  const recommendedUsers = [
+    { id: 1, name: "Kreideprinz", role: "Illustrator", followers: 707, category: "Illustration", image: `https://picsum.photos/seed/${Math.random()}/600/400`},
+    { id: 2, name: "Caribert", role: "Programmer, Artist, Writer", followers: 680, category: "Programming", image: `https://picsum.photos/seed/${Math.random()}/600/400`},
+    { id: 3, name: "Enjou", role: "Writer, Proofreader", followers: 423, category: "Writing", image: `https://picsum.photos/seed/${Math.random()}/600/400` },
+    { id: 4, name: "Grace", role: "Illustrator, Graphic Designer", followers: 520, category: "Illustration", image: `https://picsum.photos/seed/${Math.random()}/600/400` },
+    { id: 5, name: "Trevenaa", role: "Writer", followers: 532, category: "Writing", image: `https://picsum.photos/seed/${Math.random()}/600/400` },
+    { id: 6, name: "Pierra", role: "Producer", followers: 401, category: "Music", image: `https://picsum.photos/seed/${Math.random()}/600/400`},
+    // Add other users that might appear in posts
+    { id: 7, name: "Timaeus", role: "Tutor", followers: 542, category: "Tutoring",image: `https://picsum.photos/seed/${Math.random()}/600/400` },
+    { id: 8, name: "Aelric", role: "Writer", followers: 320, category: "Writing",image: `https://picsum.photos/seed/${Math.random()}/600/400` },
+    { id: 9, name: "Chiori", role: "Crafter", followers: 280, category: "Crafting",image: `https://picsum.photos/seed/${Math.random()}/600/400` },
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
   ];
+
+  // ADD: Helper function to check if a user is followed
+  const isUserFollowed = (userName) => {
+    // Find the user in recommendedUsers by name
+    const user = recommendedUsers.find(u => u.name === userName);
+    if (!user) return false;
+    
+    // Check if user ID is in followingUsers array
+    return followingUsers.includes(user.id);
+  };
 
   const loadPosts = async () => {
     try {
@@ -259,6 +404,30 @@ const HomeScreen = ({ navigation, route }) => {
     } catch (error) {
       console.log('Error loading posts:', error);
       setPosts(initialPosts);
+    }
+  };
+
+  // ADD: Load not interested posts from AsyncStorage
+  const loadNotInterestedPosts = async () => {
+    try {
+      const savedNotInterested = await AsyncStorage.getItem('notInterestedPosts');
+      if (savedNotInterested) {
+        setNotInterestedPosts(JSON.parse(savedNotInterested));
+      }
+    } catch (error) {
+      console.log('Error loading not interested posts:', error);
+    }
+  };
+
+  // ADD: Load reported posts from AsyncStorage
+  const loadReportedPosts = async () => {
+    try {
+      const savedReported = await AsyncStorage.getItem('reportedPosts');
+      if (savedReported) {
+        setReportedPosts(JSON.parse(savedReported));
+      }
+    } catch (error) {
+      console.log('Error loading reported posts:', error);
     }
   };
 
@@ -402,29 +571,53 @@ const HomeScreen = ({ navigation, route }) => {
     }).start();
   };
 
- const FILTER_CATEGORY_MAP = CATEGORY_LIST;
+  const FILTER_CATEGORY_MAP = CATEGORY_LIST;
 
   useEffect(() => {
     const loadAllData = async () => {
       await loadUserData();
-      await loadFollowingState();
+      await loadFollowingUsers();
       await loadLikesState();
       await loadRequests();
       await loadPosts();
       await loadLikeCounts();
+      await loadNotInterestedPosts();
+      await loadReportedPosts();
     };
     loadAllData();
   }, []);
 
+<<<<<<< HEAD
   // Refresh follow status on screen focus
+=======
+  // ADD: Handle refresh when coming from RecommendedUsersScreen
+  useEffect(() => {
+    if (route.params?.followingUpdated) {
+      console.log('Following tab update triggered');
+      setActiveTab('Following');
+      loadFollowingUsers();
+      // Clear the param
+      navigation.setParams({ followingUpdated: false });
+    }
+  }, [route.params?.followingUpdated]);
+
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
+      console.log('HomeScreen focused, refreshing data');
       loadLikesState();
       loadLikeCounts();
       loadRequests();
       loadPosts();
+<<<<<<< HEAD
       loadUserData();
       loadFollowingState(); 
+=======
+      loadUserData(); 
+      loadFollowingUsers();
+      loadNotInterestedPosts();
+      loadReportedPosts();
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
     });
     return unsubscribe;
   }, [navigation]);
@@ -456,19 +649,31 @@ const HomeScreen = ({ navigation, route }) => {
     }
   };
 
-  const loadFollowingState = async () => {
+  // UPDATED: Load following users from AsyncStorage with better logging
+  const loadFollowingUsers = async () => {
     try {
-      const savedFollowing = await AsyncStorage.getItem('followingState');
+      console.log('Loading following users...');
+      const savedFollowing = await AsyncStorage.getItem('followingUsers');
       if (savedFollowing) {
         try {
-          setFollowing(JSON.parse(savedFollowing));
+          const followingIds = JSON.parse(savedFollowing);
+          console.log('Loaded following IDs:', followingIds);
+          setFollowingUsers(followingIds);
+          
+          // Log which users are being followed
+          const followedUsers = recommendedUsers.filter(user => 
+            followingIds.includes(user.id)
+          );
+          console.log('Followed users:', followedUsers.map(u => u.name));
         } catch (e) {
-          console.log('Error parsing following state');
+          console.log('Error parsing following users');
         }
+      } else {
+        console.log('No following users saved yet');
       }
       setIsFollowingLoaded(true);
     } catch (error) {
-      console.log('Error loading following state:', error);
+      console.log('Error loading following users:', error);
       setIsFollowingLoaded(true);
     }
   };
@@ -610,19 +815,78 @@ const HomeScreen = ({ navigation, route }) => {
     }
   };
 
-  const handleReportPost = () => {
+  // UPDATED: Handle Not Interested with AsyncStorage persistence
+  const handleNotInterested = async () => {
     if (moreModal.post) {
-      console.log('Report post:', moreModal.post.title);
-      setMoreModal({ visible: false, post: null });
-      Alert.alert("Report Submitted", "Thank you for reporting this post");
+      try {
+        // Add to not interested list
+        const updatedNotInterested = [...notInterestedPosts, moreModal.post.id];
+        setNotInterestedPosts(updatedNotInterested);
+        
+        // Save to AsyncStorage
+        await AsyncStorage.setItem('notInterestedPosts', JSON.stringify(updatedNotInterested));
+        
+        // Close modal
+        setMoreModal({ visible: false, post: null });
+        
+        // Show success message
+        Alert.alert("Noted", "We'll show fewer posts like this in your feed.");
+        
+        console.log('Marked post as not interested:', moreModal.post.id);
+      } catch (error) {
+        console.log('Error saving not interested post:', error);
+        Alert.alert("Error", "Failed to save your preference. Please try again.");
+      }
     }
   };
 
-  const handleNotInterested = () => {
+  // UPDATED: Handle Report Post with AsyncStorage persistence and confirmation
+  const handleReportPost = async () => {
     if (moreModal.post) {
-      console.log('Not interested in:', moreModal.post.title);
-      setMoreModal({ visible: false, post: null });
-      Alert.alert("Noted", "We'll show you less content like this");
+      // Show confirmation dialog
+      Alert.alert(
+        "Report Post",
+        "Are you sure you want to report this post?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Report",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // Add to reported list
+                const updatedReported = [...reportedPosts, moreModal.post.id];
+                setReportedPosts(updatedReported);
+                
+                // Save to AsyncStorage
+                await AsyncStorage.setItem('reportedPosts', JSON.stringify(updatedReported));
+                
+                // Also block the post immediately
+                setBlockedPosts((prev) => [...prev, moreModal.post.id]);
+                
+                // Close modal
+                setMoreModal({ visible: false, post: null });
+                
+                // Show success message
+                Alert.alert("Report Submitted", "Thank you for reporting this post. Our team will review it.");
+                
+                console.log('Reported post:', {
+                  id: moreModal.post.id,
+                  title: moreModal.post.title,
+                  user: moreModal.post.user,
+                  timestamp: new Date().toISOString()
+                });
+              } catch (error) {
+                console.log('Error saving reported post:', error);
+                Alert.alert("Error", "Failed to submit report. Please try again.");
+              }
+            }
+          }
+        ]
+      );
     }
   };
 
@@ -639,17 +903,34 @@ const HomeScreen = ({ navigation, route }) => {
     });
   };
 
+  // UPDATED: Enhanced getFilteredPosts with better debugging
   const getFilteredPosts = () => {
+    console.log('🔍 getFilteredPosts called for tab:', activeTab);
+    console.log('📋 Following users IDs:', followingUsers);
+    console.log('👥 Total posts:', posts.length);
+    
     if (activeTab === "Following" && !isFollowingLoaded) {
+      console.log('⏳ Following data not loaded yet');
       return null;
     }
     
     let filtered = posts.filter((post) => {
-      if (activeTab === "Following") return following[post.user] === true;
+      if (activeTab === "Following") {
+        // Find the user in recommendedUsers by name
+        const user = recommendedUsers.find(u => u.name === post.user);
+        if (user) {
+          const isFollowed = followingUsers.includes(user.id);
+          console.log(`✅ Checking post by ${post.user} (ID: ${user.id}): ${isFollowed ? 'FOLLOWED ✓' : 'not followed'}`);
+          return isFollowed;
+        }
+        console.log(`❌ User "${post.user}" not found in recommendedUsers`);
+        return false;
+      }
       if (activeTab === "Requests") return post.type === "request";
       return post.type === "home";
     });
 
+    // Apply search and category filters
     filtered = filtered.filter((post) => {
       const matchesSearch = 
         post.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -662,8 +943,12 @@ const HomeScreen = ({ navigation, route }) => {
       return matchesSearch && matchesCategory;
     });
 
-    filtered = filtered.filter((post) => !blockedPosts.includes(post.id));
+    // Filter out blocked AND not interested posts
+    filtered = filtered.filter((post) => 
+      !blockedPosts.includes(post.id) && !notInterestedPosts.includes(post.id)
+    );
 
+    console.log(`📊 Filtered ${filtered.length} posts for "${activeTab}" tab`);
     return filtered;
   };
 
@@ -680,13 +965,50 @@ const HomeScreen = ({ navigation, route }) => {
     });
   };
 
+  // UPDATED: Enhanced toggleFollow function
   const toggleFollow = async (userName) => {
-    const newFollowing = { ...following, [userName]: !following[userName] };
-    setFollowing(newFollowing);
+    // Find the user in recommendedUsers by name
+    const user = recommendedUsers.find(u => u.name === userName);
+    if (!user) {
+      console.log(`❌ User "${userName}" not found in recommendedUsers`);
+      Alert.alert("Error", "User not found");
+      return;
+    }
+    
+    let updatedFollowingUsers;
+    const isCurrentlyFollowing = followingUsers.includes(user.id);
+    
+    console.log(`🔄 Toggle follow for ${userName} (ID: ${user.id}): currently ${isCurrentlyFollowing ? 'following' : 'not following'}`);
+    
+    if (isCurrentlyFollowing) {
+      // Unfollow: remove user ID from array
+      updatedFollowingUsers = followingUsers.filter(id => id !== user.id);
+      console.log(`➖ Unfollowing ${userName}, new list:`, updatedFollowingUsers);
+    } else {
+      // Follow: add user ID to array
+      updatedFollowingUsers = [...followingUsers, user.id];
+      console.log(`➕ Following ${userName}, new list:`, updatedFollowingUsers);
+    }
+    
+    setFollowingUsers(updatedFollowingUsers);
+    
     try {
-      await AsyncStorage.setItem('followingState', JSON.stringify(newFollowing));
+      // Save to AsyncStorage with same key as RecommendedUsersScreen
+      await AsyncStorage.setItem('followingUsers', JSON.stringify(updatedFollowingUsers));
+      console.log('💾 Saved following users to AsyncStorage');
+      
+      // Show feedback
+      Alert.alert(
+        isCurrentlyFollowing ? "Unfollowed" : "Following",
+        isCurrentlyFollowing 
+          ? `You have unfollowed ${userName}` 
+          : `You are now following ${userName}. Their posts will appear in your Following tab.`,
+        [{ text: "OK" }]
+      );
+      
     } catch (error) {
-      console.log('Error saving following state:', error);
+      console.log('❌ Error saving following state:', error);
+      Alert.alert("Error", "Failed to update follow status. Please try again.");
     }
   };
 
@@ -713,9 +1035,12 @@ const HomeScreen = ({ navigation, route }) => {
     }
   };
 
-    const renderPostCard = ({ item }) => {
-      const isOwner = item.user === userData.name;
+  const renderPostCard = ({ item }) => {
+    const isOwner = item.user === userData.name;
+    // Check if user is followed
+    const isUserFollowedCheck = isUserFollowed(item.user);
 
+<<<<<<< HEAD
       return (
       <TouchableOpacity 
         style={[styles.postCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
@@ -729,95 +1054,114 @@ const HomeScreen = ({ navigation, route }) => {
           } 
         })}
       >
+=======
+    return (
+    <TouchableOpacity 
+      style={[styles.postCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+      activeOpacity={0.9}
+      onPress={() => navigation.navigate('ProductInfo', { 
+        requestData: {
+          ...item,
+          artist: item.user,
+          referencePhotos: item.image ? [item.image] : [],
+          email: "email@example.com"
+        } 
+      })}
+    >
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
 
-        <View style={styles.postHeader}>
-          <View style={styles.postUser}>
-            {item.profileImage ? (
-              <Image source={{ uri: item.profileImage }} style={styles.avatar} />
-            ) : (
-              <Ionicons name="person-circle-outline" size={40} color={colors.primary} style={styles.avatar} />
-            )}
-            <View>
-              <Text style={[styles.userName, { color: colors.text }]}>{item.user}</Text>
-              <Text style={[styles.userRole, { color: colors.textSecondary }]}>{item.role}</Text>
-            </View>
-          </View>
-  
-          <View style={styles.postHeaderRight}>
-          
-          {isOwner ? (
-            <Text style={[styles.youText, { color: colors.textSecondary }]}>You</Text>
+      <View style={styles.postHeader}>
+        <View style={styles.postUser}>
+          {item.profileImage ? (
+            <Image source={{ uri: item.profileImage }} style={styles.avatar} />
           ) : (
-            <TouchableOpacity
-              style={[
-                styles.followBtn, 
-                { backgroundColor: following[item.user] ? colors.surface : colors.primary },
-                following[item.user] && styles.followingBtn
-              ]}
-              onPress={() => toggleFollow(item.user)}
-            >
-              <Text style={[
-                styles.followText, 
-                { color: following[item.user] ? colors.primary : (isDarkMode ? colors.text : "#000") },
-                following[item.user] && styles.followingBtn
-              ]}>
-                {following[item.user] ? "Following" : "Follow"}
-              </Text>
-            </TouchableOpacity>
+            <Ionicons name="person-circle-outline" size={40} color={colors.primary} style={styles.avatar} />
           )}
-            
-            <TouchableOpacity 
-              style={styles.ellipsisButton}
-              onPress={() => openMoreModal(item)}
-            >
-              <Ionicons name="ellipsis-vertical" size={16} color={colors.textMuted} />
-            </TouchableOpacity>
+          <View>
+            <Text style={[styles.userName, { color: colors.text }]}>{item.user}</Text>
+            <Text style={[styles.userRole, { color: colors.textSecondary }]}>{item.role}</Text>
           </View>
-        </View>
-  
-        <View style={[
-          styles.imagePlaceholder, { 
-          backgroundColor: item.image ? 'transparent' : colors.surfaceLight,
-          height: item.image ? 200 : 150 
-        }]}>
-          {item.image ? (
-            <Image 
-              source={{ uri: item.image }} 
-              style={{ width: '100%', height: '100%', borderRadius: 12 }} 
-              resizeMode="cover"
-            />
-          ) : null}
-        </View>
-  
-        <View style={styles.postBody}>
-          <Text style={[styles.postTitle, { color: colors.text }]}>{item.title}</Text>
-          <Text style={[styles.postDesc, { color: colors.textSecondary }]}>{item.description}</Text>
-          <View style={styles.categoryRow}>
-            {/* ✅ FIXED: Changed Icon color from primary to text */}
-            <Ionicons name={FILTER_CATEGORY_MAP.find(cat => cat.name === item.category)?.icon || 'apps-outline'} size={14} color={colors.text} />
-            {/* ✅ FIXED: Changed Text color from primary to text */}
-            <Text style={[styles.categoryText, { color: colors.text }]}>{item.category}</Text>
-          </View>
-        </View>
-  
-        <View style={styles.postFooter}>
-          <TouchableOpacity 
-            onPress={() => toggleLike(item.id, item.likes)}
-            style={styles.likeButton}
-          >
-            <Ionicons 
-              name={isLikesLoaded && likes[item.id] === true ? "heart" : "heart-outline"} 
-              size={18} 
-              color={isLikesLoaded && likes[item.id] === true ? "#FF5555" : colors.text} 
-            />
-          </TouchableOpacity>
-          <Text style={[styles.likeCount, { color: colors.text }]}>
-            {isLikeCountsLoaded && likeCounts[item.id] !== undefined ? likeCounts[item.id] : item.likes}
-          </Text>
         </View>
 
-      </TouchableOpacity>
-    );
+        <View style={styles.postHeaderRight}>
+        
+        {isOwner ? (
+          <Text style={[styles.youText, { color: colors.textSecondary }]}>You</Text>
+        ) : (
+          <TouchableOpacity
+            style={[
+              styles.followBtn, 
+              { 
+                backgroundColor: isUserFollowedCheck ? colors.surface : colors.primary,
+                borderWidth: isUserFollowedCheck ? 1.5 : 0,
+                borderColor: isUserFollowedCheck ? colors.primary : 'transparent'
+              },
+            ]}
+            onPress={() => toggleFollow(item.user)}
+          >
+            <Text style={[
+              styles.followText, 
+              { 
+                color: isUserFollowedCheck 
+                  ? colors.primary 
+                  : (isDarkMode ? colors.text : "#000") 
+              },
+            ]}>
+              {isUserFollowedCheck ? "Following" : "Follow"}
+            </Text>
+          </TouchableOpacity>
+        )}
+          
+          <TouchableOpacity 
+            style={styles.ellipsisButton}
+            onPress={() => openMoreModal(item)}
+          >
+            <Ionicons name="ellipsis-vertical" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={[
+        styles.imagePlaceholder, { 
+        backgroundColor: item.image ? 'transparent' : colors.surfaceLight,
+        height: item.image ? 200 : 150 
+      }]}>
+        {item.image ? (
+          <Image 
+            source={{ uri: item.image }} 
+            style={{ width: '100%', height: '100%', borderRadius: 12 }} 
+            resizeMode="cover"
+          />
+        ) : null}
+      </View>
+
+      <View style={styles.postBody}>
+        <Text style={[styles.postTitle, { color: colors.text }]}>{item.title}</Text>
+        <Text style={[styles.postDesc, { color: colors.textSecondary }]}>{item.description}</Text>
+        <View style={styles.categoryRow}>
+          <Ionicons name={FILTER_CATEGORY_MAP.find(cat => cat.name === item.category)?.icon || 'apps-outline'} size={14} color={colors.text} />
+          <Text style={[styles.categoryText, { color: colors.text }]}>{item.category}</Text>
+        </View>
+      </View>
+
+      <View style={styles.postFooter}>
+        <TouchableOpacity 
+          onPress={() => toggleLike(item.id, item.likes)}
+          style={styles.likeButton}
+        >
+          <Ionicons 
+            name={isLikesLoaded && likes[item.id] === true ? "heart" : "heart-outline"} 
+            size={18} 
+            color={isLikesLoaded && likes[item.id] === true ? "#FF5555" : colors.text} 
+          />
+        </TouchableOpacity>
+        <Text style={[styles.likeCount, { color: colors.text }]}>
+          {isLikeCountsLoaded && likeCounts[item.id] !== undefined ? likeCounts[item.id] : item.likes}
+        </Text>
+      </View>
+
+    </TouchableOpacity>
+  );
   };
 
   const renderRequestCard = ({ item }) => (
@@ -844,9 +1188,7 @@ const HomeScreen = ({ navigation, route }) => {
         <Text style={[styles.quickLinkTitle, { color: colors.text }]}>{item.title}</Text>
         <Text style={[styles.quickLinkDescription, { color: colors.textSecondary }]}>{item.description}</Text>
         <View style={styles.categoryRow}>
-          {/* ✅ FIXED: Changed Icon color from primary to text */}
           <Ionicons name={FILTER_CATEGORY_MAP.find(cat => cat.name === item.category)?.icon || 'apps-outline'} size={12} color={colors.text} />
-          {/* ✅ FIXED: Changed Text color from primary to text */}
           <Text style={[styles.categoryText, { color: colors.text }]}>{item.category}</Text>
         </View>
         {item.status === 'pending' && (
@@ -876,6 +1218,7 @@ const HomeScreen = ({ navigation, route }) => {
     </TouchableOpacity>
   );
 
+<<<<<<< HEAD
   const renderRecommendedCard = (user) => (
     <TouchableOpacity 
       key={user.id} 
@@ -905,19 +1248,52 @@ const HomeScreen = ({ navigation, route }) => {
           following[user.name] && styles.followingBtn
         ]}
         onPress={() => toggleFollow(user.name)}
+=======
+  const renderRecommendedCard = (user) => {
+    // Check if user is followed
+    const isUserFollowedCheck = followingUsers.includes(user.id);
+    
+    return (
+      <TouchableOpacity 
+        key={user.id} 
+        style={[styles.recommendedCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
+        onPress={() => navigation.navigate("RecommendedUsersInfoScreen", { user: user })}
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
       >
-        <Text
+        <Ionicons name="person-circle-outline" size={60} color={colors.primary} style={styles.avatarLarge} />
+        <Text style={[styles.recUserName, { color: colors.text }]}>{user.name}</Text>
+        <Text style={[styles.recUserRole, { color: colors.textSecondary }]}>{user.role}</Text>
+        <View style={styles.categoryRow}>
+          <Ionicons name={FILTER_CATEGORY_MAP.find(cat => cat.name === user.category)?.icon || 'apps-outline'} size={12} color={colors.text} />
+          <Text style={[styles.categoryText, { color: colors.text }]}>{user.category}</Text>
+        </View>
+        <TouchableOpacity
           style={[
-            styles.followText, 
-            { color: following[user.name] ? colors.primary : (isDarkMode ? colors.text : "#000") },
-            following[user.name] && styles.followingText
+            styles.followBtn, 
+            { 
+              backgroundColor: isUserFollowedCheck ? colors.surface : colors.primary,
+              borderWidth: isUserFollowedCheck ? 1.5 : 0,
+              borderColor: isUserFollowedCheck ? colors.primary : 'transparent'
+            },
           ]}
+          onPress={() => toggleFollow(user.name)}
         >
-          {following[user.name] ? "Following" : "Follow"}
-        </Text>
+          <Text
+            style={[
+              styles.followText, 
+              { 
+                color: isUserFollowedCheck 
+                  ? colors.primary 
+                  : (isDarkMode ? colors.text : "#000") 
+              },
+            ]}
+          >
+            {isUserFollowedCheck ? "Following" : "Follow"}
+          </Text>
+        </TouchableOpacity>
       </TouchableOpacity>
-    </TouchableOpacity>
-  );
+    );
+  };
 
   const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory }) => {
     const { isDarkMode, colors } = useTheme();
@@ -1005,14 +1381,20 @@ const HomeScreen = ({ navigation, route }) => {
                 <Ionicons name="logo-twitter" size={28} color={colors.text} />
               </TouchableOpacity>
             </View>
-            <View style={styles.optionRow}>
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleNotInterested}
+            >
               <Ionicons name="heart-dislike-outline" size={22} color="red" />
               <Text style={[styles.optionText, { color: colors.text }]}>Not interested</Text>
-            </View>
-            <View style={styles.optionRow}>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleReportPost}
+            >
               <Ionicons name="flag-outline" size={22} color="red" />
               <Text style={[styles.optionText, { color: colors.text }]}>Report Post</Text>
-            </View>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.optionRow}
               onPress={handleBlockPost}
@@ -1051,7 +1433,6 @@ const HomeScreen = ({ navigation, route }) => {
                 style={[styles.logo, animatedLogoStyle]}
                 resizeMode="contain"
               />
-              {/* FIX: Logo Text White */}
               <Text style={[styles.logoText, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Lumivana</Text>
             </View>
             
@@ -1068,7 +1449,7 @@ const HomeScreen = ({ navigation, route }) => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.profileIcon}
-                onPress={() => navigation.navigate('Profile')} // ✅ CHANGED: Back to Profile screen
+                onPress={() => navigation.navigate('Profile')}
               >
                 {userData.profileImage ? (
                   <Image 
@@ -1094,25 +1475,39 @@ const HomeScreen = ({ navigation, route }) => {
               onPress={() => setActiveTab(tab)}
               style={[styles.tabButton, activeTab === tab && { borderBottomWidth: 2, borderColor: colors.primary }]}
             >
-              {/* FIX: Tabs White */}
               <Text style={[
                 styles.tabText, 
                 { color: isDarkMode ? colors.textMuted : '#FFFFFF' }, 
                 activeTab === tab && { color: colors.primary, fontWeight: "bold" }
               ]}>{tab}</Text>
+              {/* Show badge for Following tab if there are followed users */}
+              {tab === "Following" && followingUsers.length > 0 && (
+                <View style={[styles.followingBadge, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.followingBadgeText}>{followingUsers.length}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           ))}
         </View>
 
+        {/* DEBUG INFO - Temporary for testing */}
+        {__DEV__ && activeTab === "Following" && (
+          <View style={[styles.debugContainer, { backgroundColor: isDarkMode ? 'rgba(255,0,0,0.1)' : 'rgba(255,0,0,0.2)' }]}>
+            <Text style={[styles.debugText, { color: 'red' }]}>
+              Following {followingUsers.length} user(s): {followingUsers.map(id => {
+                const user = recommendedUsers.find(u => u.id === id);
+                return user ? user.name : id;
+              }).join(', ')}
+            </Text>
+          </View>
+        )}
+
         {/* SEARCH BAR AND FILTER */}
         <View style={styles.searchBarContainer}>
-          {/* FIX: Make background more opaque in light mode for contrast */}
           <View style={[styles.searchBar, { 
             backgroundColor: isDarkMode ? colors.surface : 'rgba(255, 255, 255, 0.3)' 
           }]}>
-            {/* CHANGED: Search Icon to White */}
             <Ionicons name="search-outline" size={20} color="#FFFFFF" />
-            {/* FIX: Ensure Search Input Text and Placeholder are visible (Black in light mode) */}
             <TextInput
               placeholder="Search users, posts, requests..."
               placeholderTextColor={isDarkMode ? colors.textMuted : 'rgba(0, 0, 0, 0.5)'}
@@ -1124,7 +1519,6 @@ const HomeScreen = ({ navigation, route }) => {
           <TouchableOpacity style={[styles.filterButton, { 
             backgroundColor: isDarkMode ? colors.surface : 'rgba(255, 255, 255, 0.3)' 
           }]} onPress={() => setFilterVisible(true)}>
-            {/* CHANGED: Filter Icon to White */}
             <Ionicons name="filter-outline" size={22} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
@@ -1149,7 +1543,6 @@ const HomeScreen = ({ navigation, route }) => {
         {activeTab === "Requests" ? (
           <ScrollView style={styles.scrollableContent}>
             <View style={styles.quickLinksSection}>
-              {/* FIX: Ensure Title is visible (Black in light mode) */}
               <Text style={[styles.sectionTitle, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Available Requests</Text>
               {getFilteredRequests().length === 0 ? (
                 <View style={styles.noResultsContainer}>
@@ -1182,7 +1575,6 @@ const HomeScreen = ({ navigation, route }) => {
             {activeTab === "Home" && (
               <View style={styles.recommendedSection}>
                 <View style={styles.recommendedHeader}>
-                  {/* FIX: Ensure Title is visible (Black in light mode) */}
                   <Text style={[styles.sectionTitle, { color: isDarkMode ? colors.text : '#ffff' }]}>Recommended Users</Text>
                   <TouchableOpacity onPress={() => navigation.navigate("RecommendedUsersScreen")}>
                     <Text style={[styles.viewMore, { color: '#ffff', textDecorationLine: 'underline' }]}>View More</Text>
@@ -1208,7 +1600,6 @@ const HomeScreen = ({ navigation, route }) => {
             )}
 
             <View style={styles.postsSection}>
-              {/* FIX: Ensure Title is visible (Black in light mode) */}
               <Text style={[styles.sectionTitle, { color: isDarkMode ? colors.text : '#ffff' }]}>
                 {activeTab === "Following" ? "Posts from Following" : "Recent Posts"}
               </Text>
@@ -1228,14 +1619,25 @@ const HomeScreen = ({ navigation, route }) => {
                       <Text style={[styles.noResultsText, { color: isDarkMode ? colors.textSecondary : '#000000' }]}>
                         {searchQuery.length > 0
                           ? `No posts found for "${searchQuery}"`
-                          : `No ${selectedCategory} posts found`
+                          : activeTab === "Following"
+                            ? "Follow users to see their posts here"
+                            : `No ${selectedCategory} posts found`
                         }
                       </Text>
                       <Text style={[styles.noResultsSubText, { color: isDarkMode ? colors.textMuted : 'rgba(0, 0, 0, 0.5)' }]}>
                         {activeTab === "Following"
-                          ? "Follow more users to see their posts here"
-                          : "Try adjusting your search or filters"}
+                          ? "Visit the Recommended Users section to find users to follow"
+                          : "Try adjusting your search or filters"
+                        }
                       </Text>
+                      {activeTab === "Following" && followingUsers.length > 0 && (
+                        <TouchableOpacity 
+                          style={[styles.refreshButton, { backgroundColor: colors.primary }]}
+                          onPress={loadFollowingUsers}
+                        >
+                          <Text style={styles.refreshButtonText}>Refresh Following List</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   );
                 } else {
@@ -1445,13 +1847,44 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderBottomWidth: 1,
     marginTop: 10,
+    position: 'relative',
   },
   tabButton: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     marginRight: 10,
+    position: 'relative',
   },
   tabText: { fontSize: 13 },
+  followingBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FF3B30',
+  },
+  followingBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  
+  // Debug styles
+  debugContainer: {
+    marginHorizontal: 16,
+    padding: 8,
+    borderRadius: 8,
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  debugText: {
+    fontSize: 12,
+    textAlign: 'center',
+  },
   
   searchBarContainer: {
     flexDirection: "row",
@@ -1515,6 +1948,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 5,
     paddingHorizontal: 20,
+  },
+  refreshButton: {
+    marginTop: 15,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  refreshButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 
   recommendedSection: { paddingVertical: 10, paddingHorizontal: 16 },
@@ -1598,10 +2041,13 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   followText: { fontWeight: "600", fontSize: 12 },
-  followingBtn: {},
-  followingText: {},
   ellipsisButton: {
     padding: 4,
+  },
+  youText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginRight: 10,
   },
   imagePlaceholder: {
     borderRadius: 12,
@@ -1621,11 +2067,6 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   likeCount: { marginLeft: 6 },
-  youText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginRight: 10,
-  },
 
   footer: {
     flexDirection: 'row', 

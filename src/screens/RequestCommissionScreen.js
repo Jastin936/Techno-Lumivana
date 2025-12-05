@@ -24,6 +24,17 @@ import { useTheme } from '../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
+// Category options for dropdown with icons (same as AgreementFormScreen and OfferCommissionScreen)
+const CATEGORY_OPTIONS = [
+  { name: 'Graphic Design', icon: 'color-palette-outline' },
+  { name: 'Illustration', icon: 'brush-outline' },
+  { name: 'Crafting', icon: 'construct-outline' },
+  { name: 'Writing', icon: 'document-text-outline' },
+  { name: 'Photography', icon: 'camera-outline' },
+  { name: 'Tutoring', icon: 'school-outline' },
+  { name: 'Accessories', icon: 'diamond-outline' }
+];
+
 const RequestCommissionScreen = ({ navigation, route }) => {
   const { isDarkMode, colors, gradients } = useTheme();
   const [fontsLoaded] = useFonts({
@@ -40,6 +51,9 @@ const RequestCommissionScreen = ({ navigation, route }) => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  // ✅ NEW: State for dropdown
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
   if (!fontsLoaded) return null;
 
@@ -101,6 +115,7 @@ const RequestCommissionScreen = ({ navigation, route }) => {
     if (!dateRequested.trim()) { Alert.alert('Missing Information', 'Please select a date.'); return; }
     if (!contactInfo.trim()) { Alert.alert('Missing Information', 'Please enter your contact information.'); return; }
 
+<<<<<<< HEAD
     // ✅ FIXED: Fetch actual user name immediately from storage
     let realName = 'Student'; 
     try {
@@ -113,6 +128,41 @@ const RequestCommissionScreen = ({ navigation, route }) => {
         }
     } catch (e) {
         console.log("Error loading name", e);
+=======
+  // ✅ NEW: Handle category selection from dropdown
+  const handleCategorySelect = (selectedCategory) => {
+    setCategory(selectedCategory);
+    setShowCategoryDropdown(false);
+  };
+
+  // ✅ NEW: Get icon for selected category
+  const getSelectedCategoryIcon = () => {
+    const selectedOption = CATEGORY_OPTIONS.find(option => option.name === category);
+    return selectedOption ? selectedOption.icon : 'grid-outline';
+  };
+
+  const handleConfirm = () => {
+    // Validate required fields
+    if (!commissionName.trim()) {
+      Alert.alert('Missing Information', 'Please enter a commission name.');
+      return;
+    }
+    if (!description.trim()) {
+      Alert.alert('Missing Information', 'Please enter a description.');
+      return;
+    }
+    if (!dateRequested.trim()) {
+      Alert.alert('Missing Information', 'Please select a date.');
+      return;
+    }
+    if (!category.trim()) {
+      Alert.alert('Missing Information', 'Please select a category.');
+      return;
+    }
+    if (!contactInfo.trim()) {
+      Alert.alert('Missing Information', 'Please enter your contact information.');
+      return;
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
     }
 
     const newCommission = {
@@ -120,8 +170,12 @@ const RequestCommissionScreen = ({ navigation, route }) => {
       title: commissionName,
       description: description,
       date: dateRequested,
+<<<<<<< HEAD
       category: category || 'Custom Commission',
       artist: realName, // ✅ Uses the fetched name directly
+=======
+      category: category,
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
       contact: contactInfo,
       email: contactInfo,
       referencePhotos: referencePhotos,
@@ -185,9 +239,94 @@ const RequestCommissionScreen = ({ navigation, route }) => {
                 </TouchableOpacity>
               </View>
             </View>
+<<<<<<< HEAD
             <View style={styles.detailSection}>
               <Text style={[styles.detailLabel, { color: colors.primary }]}>Category</Text>
               <TextInput style={[styles.textInput, { borderColor: colors.inputBorder, color: colors.inputText, backgroundColor: colors.inputBackground }]} value={category} onChangeText={setCategory} placeholder="Custom Commission" placeholderTextColor={colors.inputPlaceholder} />
+=======
+
+            {/* Category - UPDATED to Dropdown with Icons */}
+            <View style={styles.detailSection}>
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Category</Text>
+              
+              {/* Category Dropdown Button */}
+              <TouchableOpacity 
+                style={[styles.categoryDropdownButton, { 
+                  borderColor: colors.primary,
+                  backgroundColor: colors.inputBackground
+                }]}
+                onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+              >
+                <View style={styles.categoryButtonContent}>
+                  {/* Icon on the left */}
+                  <Ionicons 
+                    name={getSelectedCategoryIcon()} 
+                    size={20} 
+                    color={colors.primary}
+                    style={styles.categoryButtonIcon}
+                  />
+                  <Text style={[styles.categorySelectedText, { 
+                    color: category ? colors.inputText : colors.inputPlaceholder
+                  }]}>
+                    {category || 'Select a category'}
+                  </Text>
+                </View>
+                <Ionicons 
+                  name={showCategoryDropdown ? "chevron-up" : "chevron-down"} 
+                  size={20} 
+                  color={colors.primary} 
+                />
+              </TouchableOpacity>
+
+              {/* Category Dropdown Options */}
+              {showCategoryDropdown && (
+                <View style={[styles.categoryDropdownOptions, { 
+                  backgroundColor: colors.card,
+                  borderColor: colors.primary,
+                  shadowColor: isDarkMode ? '#000' : colors.primary
+                }]}>
+                  <ScrollView style={styles.categoryScrollView} nestedScrollEnabled={true}>
+                    {CATEGORY_OPTIONS.map((option, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        style={[
+                          styles.categoryOption,
+                          { 
+                            borderBottomColor: colors.border,
+                            backgroundColor: option.name === category 
+                              ? (isDarkMode ? 'rgba(255, 215, 0, 0.2)' : 'rgba(255, 215, 0, 0.1)')
+                              : 'transparent'
+                          }
+                        ]}
+                        onPress={() => handleCategorySelect(option.name)}
+                      >
+                        {/* Icon on the left of each option */}
+                        <View style={styles.categoryOptionContent}>
+                          <Ionicons 
+                            name={option.icon} 
+                            size={18} 
+                            color={colors.primary}
+                            style={styles.categoryOptionIcon}
+                          />
+                          <Text style={[
+                            styles.categoryOptionText,
+                            { 
+                              color: colors.text,
+                              fontWeight: option.name === category ? '600' : '400'
+                            }
+                          ]}>
+                            {option.name}
+                          </Text>
+                        </View>
+                        {option.name === category && (
+                          <Ionicons name="checkmark" size={18} color={colors.primary} />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
             </View>
             <View style={styles.detailSection}>
               <Text style={[styles.detailLabel, { color: colors.primary }]}>Reference Photos ({referencePhotos.length})</Text>
@@ -259,6 +398,7 @@ const RequestCommissionScreen = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+<<<<<<< HEAD
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 50, paddingHorizontal: 24, paddingBottom: 16, backgroundColor: 'transparent' },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   backButtonText: { fontSize: 28, fontWeight: '300' },
@@ -292,6 +432,261 @@ const styles = StyleSheet.create({
   iosModalContent: { width: '100%', borderRadius: 15, padding: 20, alignItems: 'center' },
   iosDoneButton: { marginTop: 15, paddingVertical: 10, paddingHorizontal: 30, borderRadius: 10 },
   iosDoneText: { fontSize: 16, fontWeight: 'bold' }
+=======
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 50,
+    paddingHorizontal: 24,
+    paddingBottom: 16,
+    backgroundColor: 'transparent',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButtonText: {
+    fontSize: 28,
+    fontWeight: '300',
+  },
+  screenTitle: {
+    fontSize: 24,
+    textAlign: 'center',
+    flex: 1,
+  },
+  placeholder: {
+    width: 40,
+  },
+  content: { 
+    flex: 1, 
+    paddingHorizontal: 24,
+  },
+  detailsCard: {
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 30,
+    width: width * 1.0,
+    alignSelf: 'center',
+    borderWidth: 1,
+  },
+  detailSection: {
+    marginBottom: 25,
+  },
+  detailLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  textInput: {
+    fontSize: 16,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    textAlignVertical: 'top',
+  },
+  
+  // ✅ NEW: Category Dropdown Styles with Icons
+  categoryDropdownButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+  },
+  categoryButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  categoryButtonIcon: {
+    marginRight: 10,
+  },
+  categorySelectedText: {
+    fontSize: 16,
+    flex: 1,
+  },
+  categoryDropdownOptions: {
+    position: 'absolute',
+    top: 70,
+    left: 0,
+    right: 0,
+    borderWidth: 1,
+    borderRadius: 8,
+    maxHeight: 200,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1000,
+  },
+  categoryScrollView: {
+    maxHeight: 200,
+  },
+  categoryOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+  },
+  categoryOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  categoryOptionIcon: {
+    marginRight: 10,
+  },
+  categoryOptionText: {
+    fontSize: 16,
+    flex: 1,
+  },
+
+  dateInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+  },
+  dateTextInput: {
+    fontSize: 16,
+    padding: 12,
+    flex: 1,
+    textAlignVertical: 'top',
+  },
+  calendarButton: {
+    padding: 12,
+    borderLeftWidth: 1,
+  },
+  buttonInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
+  },
+  calendarPicker: {
+    backgroundColor: '#30204D',
+  },
+  photoGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    justifyContent: 'space-between' 
+  },
+  photoItem: { 
+    width: '48%', 
+    aspectRatio: 1, 
+    marginBottom: 10,
+    position: 'relative',
+  },
+  gridPhoto: { 
+    width: '100%', 
+    height: '100%', 
+    borderRadius: 8, 
+    borderWidth: 1,
+  },
+  noPhotosText: { 
+    textAlign: 'center', 
+    width: '100%',
+    paddingVertical: 20,
+  },
+  addPhotoButton: {
+    marginTop: 15,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+  },
+  addPhotoText: { 
+    fontSize: 14, 
+    fontWeight: '600', 
+    marginLeft: 5 
+  },
+  deleteOverlay: { 
+    position: 'absolute', 
+    top: 6, 
+    right: 6, 
+    backgroundColor: 'rgba(0,0,0,0.6)', 
+    borderRadius: 12, 
+    padding: 3 
+  },
+  deleteHintText: { 
+    fontSize: 12, 
+    textAlign: 'center', 
+    marginTop: 5, 
+  },
+  fullScreenModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenCloseButton: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    zIndex: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    padding: 5,
+  },
+  fullScreenPhoto: {
+    width: width * 0.9,
+    height: width * 0.9,
+    borderRadius: 10,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 15,
+  },
+  primaryButton: {
+    flex: 1,
+  },
+  secondaryButton: {
+    backgroundColor: 'transparent',
+    flex: 1,
+  },
+  primaryButtonText: { 
+    fontSize: 16, 
+    fontWeight: '600' 
+  },
+  secondaryButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  iosModalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+  },
+  iosModalContent: {
+    width: '100%',
+    borderRadius: 15,
+    padding: 20,
+    alignItems: 'center',
+  },
+  iosDoneButton: {
+    marginTop: 15,
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+  },
+  iosDoneText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  }
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
 });
 
 export default RequestCommissionScreen;

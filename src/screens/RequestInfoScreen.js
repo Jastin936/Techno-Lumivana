@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import {
+<<<<<<< HEAD
     Animated,
     Dimensions,
     Easing,
@@ -16,6 +17,21 @@ import {
     Text,
     TouchableOpacity,
     View,
+=======
+  Animated,
+  Dimensions,
+  Easing,
+  Image,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Alert,
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
@@ -32,20 +48,81 @@ const RequestInfoScreen = ({ navigation, route }) => {
   const [imageModal, setImageModal] = useState({ visible: false, imageUri: null });
   const [blockedRequests, setBlockedRequests] = useState([]);
   
+<<<<<<< HEAD
+=======
+  // ✅ State for not interested requests
+  const [notInterestedRequests, setNotInterestedRequests] = useState([]);
+  // ✅ State for reported requests
+  const [reportedRequests, setReportedRequests] = useState([]);
+  
+  // ✅ State to track if the current user is the owner of the request
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
   const [isOwner, setIsOwner] = useState(false);
+  // ✅ State to track if user is following
+  const [isFollowing, setIsFollowing] = useState(false);
 
   const slideAnim = useState(new Animated.Value(300))[0];
 
   const requestData = route.params?.requestData || {
+    id: 'default-request-id',
     title: 'Poster/Banner Design',
     type: 'Creative',
     artist: 'Kreideprinz',
     description: 'Unique logos for student organizations, or small businesses.',
     email: 'erinko@gmail.com',
-    referencePhotos: [],
+    referencePhotos: [  `https://picsum.photos/seed/Kreideprinz1/600/600`,
+  `https://picsum.photos/seed/Kreideprinz2/600/600`,
+  `https://picsum.photos/seed/Kreideprinz3/600/600`,],
     category: 'Graphic Design'
   };
 
+<<<<<<< HEAD
+=======
+  // ✅ LOAD NOT INTERESTED AND REPORTED REQUESTS FROM ASYNCSTORAGE
+  useEffect(() => {
+    const loadNotInterestedRequests = async () => {
+      try {
+        const savedNotInterested = await AsyncStorage.getItem('notInterestedRequests');
+        if (savedNotInterested) {
+          setNotInterestedRequests(JSON.parse(savedNotInterested));
+        }
+      } catch (error) {
+        console.log('Error loading not interested requests:', error);
+      }
+    };
+
+    const loadReportedRequests = async () => {
+      try {
+        const savedReported = await AsyncStorage.getItem('reportedRequests');
+        if (savedReported) {
+          setReportedRequests(JSON.parse(savedReported));
+        }
+      } catch (error) {
+        console.log('Error loading reported requests:', error);
+      }
+    };
+
+    const loadFollowingState = async () => {
+      try {
+        const savedFollowing = await AsyncStorage.getItem('followingState');
+        if (savedFollowing) {
+          const followingState = JSON.parse(savedFollowing);
+          if (followingState[requestData.artist]) {
+            setIsFollowing(true);
+          }
+        }
+      } catch (error) {
+        console.log('Error loading following state:', error);
+      }
+    };
+
+    loadNotInterestedRequests();
+    loadReportedRequests();
+    loadFollowingState();
+  }, [requestData.artist]);
+
+  // ✅ CHECK OWNER ON LOAD
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
   useEffect(() => {
     const checkOwnership = async () => {
       try {
@@ -85,9 +162,29 @@ const RequestInfoScreen = ({ navigation, route }) => {
 
   const handleProceed = () => {
     setModalVisible(false);
+    
+    // ✅ UPDATED: Create a proper commission object from request data
+    const commissionData = {
+      // Map request data to commission form fields
+      title: requestData.title || '',
+      description: requestData.description || '',
+      category: requestData.category || '',
+      contact: requestData.email || '',
+      referencePhotos: requestData.referencePhotos || [],
+      
+      // Additional fields that might be needed
+      artist: requestData.artist || '',
+      date: new Date().toLocaleDateString(), // Current date as default
+      
+      // Pass the original request data for reference
+      originalRequest: requestData
+    };
+    
+    console.log('Navigating to AgreementForm with data:', commissionData);
+    
     // Navigate to the Agreement Form screen with the request data
     navigation.navigate('AgreementForm', { 
-      requestData: requestData 
+      commissionData: commissionData 
     });
   };
 
@@ -102,6 +199,106 @@ const RequestInfoScreen = ({ navigation, route }) => {
     navigation.goBack();
   };
 
+<<<<<<< HEAD
+=======
+  // ✅ Handle Follow button press
+  const handleFollowPress = async () => {
+    try {
+      const savedFollowing = await AsyncStorage.getItem('followingState');
+      let followingState = savedFollowing ? JSON.parse(savedFollowing) : {};
+      
+      followingState[requestData.artist] = !isFollowing;
+      setIsFollowing(!isFollowing);
+      
+      await AsyncStorage.setItem('followingState', JSON.stringify(followingState));
+    } catch (error) {
+      console.log('Error updating follow state:', error);
+    }
+  };
+
+  // ✅ UPDATED: Handle Not Interested with AsyncStorage persistence
+  const handleNotInterested = async () => {
+    if (moreModal.request) {
+      try {
+        // Add to not interested list
+        const updatedNotInterested = [...notInterestedRequests, moreModal.request.id];
+        setNotInterestedRequests(updatedNotInterested);
+        
+        // Save to AsyncStorage
+        await AsyncStorage.setItem('notInterestedRequests', JSON.stringify(updatedNotInterested));
+        
+        // Close modal
+        setMoreModal({ visible: false, request: null });
+        
+        // Go back to previous screen
+        navigation.goBack();
+        
+        // Show success message
+        Alert.alert("Noted", "We'll show fewer requests like this in your feed.");
+        
+        console.log('Marked request as not interested:', moreModal.request.id);
+      } catch (error) {
+        console.log('Error saving not interested request:', error);
+        Alert.alert("Error", "Failed to save your preference. Please try again.");
+      }
+    }
+  };
+
+  // ✅ UPDATED: Handle Report Request with AsyncStorage persistence and confirmation
+  const handleReportRequest = async () => {
+    if (moreModal.request) {
+      // Show confirmation dialog
+      Alert.alert(
+        "Report Request",
+        "Are you sure you want to report this request?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Report",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // Add to reported list
+                const updatedReported = [...reportedRequests, moreModal.request.id];
+                setReportedRequests(updatedReported);
+                
+                // Save to AsyncStorage
+                await AsyncStorage.setItem('reportedRequests', JSON.stringify(updatedReported));
+                
+                // Also block the request immediately
+                setBlockedRequests((prev) => [...prev, moreModal.request.id]);
+                
+                // Close modal
+                setMoreModal({ visible: false, request: null });
+                
+                // Go back to previous screen
+                navigation.goBack();
+                
+                // Show success message
+                Alert.alert("Report Submitted", "Thank you for reporting this request. Our team will review it.");
+                
+                console.log('Reported request:', {
+                  id: moreModal.request.id,
+                  title: moreModal.request.title,
+                  artist: moreModal.request.artist,
+                  timestamp: new Date().toISOString()
+                });
+              } catch (error) {
+                console.log('Error saving reported request:', error);
+                Alert.alert("Error", "Failed to submit report. Please try again.");
+              }
+            }
+          }
+        ]
+      );
+    }
+  };
+
+  // Handle image click to open modal
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
   const handleImagePress = (imageUri) => {
     setImageModal({ visible: true, imageUri });
   };
@@ -151,10 +348,21 @@ const RequestInfoScreen = ({ navigation, route }) => {
                 <View style={styles.profileCircle}>
                   <Ionicons name="person-circle-outline" size={40} color="#FFFFFF" />
                 </View>
+<<<<<<< HEAD
                 <Text style={[styles.artistName, { color: '#FFFFFF' }]}>{requestData.artist}</Text>
+=======
+                <View>
+                  <Text style={[styles.artistName, { color: '#FFFFFF' }]}>{requestData.artist}</Text>
+                  {/* ✅ Show "You" indicator separately */}
+                  {isOwner && (
+                    <Text style={[styles.youIndicator, { color: colors.primary }]}>You</Text>
+                  )}
+                </View>
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
               </View>
 
               <View style={styles.rightSideActions}>
+<<<<<<< HEAD
                 {isOwner ? (
                   <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 16, marginRight: 8 }}>You</Text>
                 ) : (
@@ -162,6 +370,30 @@ const RequestInfoScreen = ({ navigation, route }) => {
                     <Text style={[styles.followButtonText, { color: '#FFFFFF' }]}>Follow</Text>
                   </TouchableOpacity>
                 )}
+=======
+                
+                {/* ✅ ALWAYS SHOW FOLLOW BUTTON (even if owner) */}
+                <TouchableOpacity 
+                  style={[
+                    styles.followButton, 
+                    { 
+                      borderColor: '#FFFFFF',
+                      backgroundColor: isFollowing ? 'rgba(255, 255, 255, 0.2)' : 'transparent'
+                    }
+                  ]}
+                  onPress={handleFollowPress}
+                >
+                  <Text style={[
+                    styles.followButtonText, 
+                    { 
+                      color: '#FFFFFF',
+                      fontWeight: isFollowing ? 'bold' : 'normal'
+                    }
+                  ]}>
+                    {isFollowing ? "Following" : "Follow"}
+                  </Text>
+                </TouchableOpacity>
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
 
                 <TouchableOpacity style={styles.menuButton} onPress={openMoreModal}>
                   <Ionicons name="ellipsis-vertical" size={24} color="#FFFFFF" />
@@ -171,6 +403,7 @@ const RequestInfoScreen = ({ navigation, route }) => {
           </View>
 
           <View style={styles.section}>
+<<<<<<< HEAD
             <View style={styles.sectionHeaderRow}>
                 <Text style={[styles.sectionTitle, { color: '#FFFFFF' }]}>Commission Details</Text>
                 
@@ -188,12 +421,51 @@ const RequestInfoScreen = ({ navigation, route }) => {
             <View style={styles.detailItem}>
               <Text style={[styles.detailLabel, { color: '#FFFFFF' }]}>Description</Text>
               <Text style={[styles.detailValue, { color: '#000000', backgroundColor: '#FFFFFF' }]}>{requestData.description}</Text>
+=======
+            <Text style={[styles.sectionTitle, { color: '#FFFFFF' }]}>Commission Details</Text>
+
+            {/* Description */}
+            <View style={styles.detailItem}>
+              <Text style={[styles.detailLabel, { color: '#FFFFFF' }]}>Description</Text>
+              
+              <Text style={[styles.detailValue, { 
+                color: '#000000', 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.9)' : colors.surfaceLight 
+              }]}>{requestData.description}</Text>
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
             </View>
 
             <View style={styles.detailItem}>
               <Text style={[styles.detailLabel, { color: '#FFFFFF' }]}>Contact Information</Text>
               <Text style={[styles.detailValue, { color: '#000000', backgroundColor: '#FFFFFF' }]}>{requestData.email}</Text>
             </View>
+<<<<<<< HEAD
+=======
+
+            {/* ✅ ALWAYS SHOW ACCEPT BUTTON (even if owner) */}
+            <View style={{ alignItems: 'flex-end' }}>
+              <TouchableOpacity 
+                style={[
+                  styles.acceptButton, 
+                  { 
+                    borderColor: '#FF4136',
+                    backgroundColor: isOwner ? 'rgba(255, 65, 54, 0.1)' : 'transparent'
+                  }
+                ]} 
+                onPress={handleAcceptPress}
+              >
+                <Text style={[
+                  styles.acceptButtonText, 
+                  { 
+                    color: '#FF4136',
+                    opacity: isOwner ? 0.7 : 1
+                  }
+                ]}>
+                  Accept {/* ✅ REMOVED: Always shows "Accept" */}
+                </Text>
+              </TouchableOpacity>
+            </View>
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
           </View>
 
           <View style={styles.imageGrid}>
@@ -251,18 +523,64 @@ const RequestInfoScreen = ({ navigation, route }) => {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalTitle}>Send an inquiry</Text>
-            <View style={styles.modalTitleUnderline} />
-            <Text style={styles.modalDescription}>
+          <View style={[
+            styles.modalView,
+            { backgroundColor: isDarkMode ? colors.card : '#FFFFFF' }
+          ]}>
+            <Text style={[
+              styles.modalTitle,
+              { color: isDarkMode ? colors.text : '#000000' }
+            ]}>Send an inquiry</Text>
+            <View style={[
+              styles.modalTitleUnderline,
+              { backgroundColor: isDarkMode ? colors.primary : '#000000' }
+            ]} />
+            <Text style={[
+              styles.modalDescription,
+              { color: isDarkMode ? colors.textSecondary : '#666666' }
+            ]}>
               Let's coordinate and start the agreement process together.
             </Text>
             <View style={styles.modalButtonContainer}>
+<<<<<<< HEAD
               <TouchableOpacity style={[styles.modalButton, styles.buttonHoldOff]} onPress={handleHoldOff}>
                 <Text style={styles.textHoldOff}>Hold off</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalButton, styles.buttonProceed]} onPress={handleProceed}>
                 <Text style={styles.textProceed}>Proceed</Text>
+=======
+              <TouchableOpacity
+                style={[
+                  styles.modalButton,
+                  styles.buttonHoldOff,
+                  {
+                    backgroundColor: isDarkMode ? colors.surface : '#F0F0F0',
+                    borderColor: isDarkMode ? colors.border : '#CCCCCC'
+                  }
+                ]}
+                onPress={handleHoldOff}
+              >
+                <Text style={[
+                  styles.textHoldOff,
+                  { color: isDarkMode ? colors.text : '#000000' }
+                ]}>Hold off</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalButton,
+                  styles.buttonProceed,
+                  {
+                    backgroundColor: colors.primary,
+                    borderColor: colors.primary
+                  }
+                ]}
+                onPress={handleProceed}
+              >
+                <Text style={[
+                  styles.textProceed,
+                  { color: isDarkMode ? '#000000' : '#000000' }
+                ]}>Proceed</Text>
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
               </TouchableOpacity>
             </View>
           </View>
@@ -289,9 +607,38 @@ const RequestInfoScreen = ({ navigation, route }) => {
                 <Ionicons name="send-outline" size={28} color="#1DA1F2" />
                 <Ionicons name="logo-twitter" size={28} color={colors.text} />
             </View>
+<<<<<<< HEAD
             <TouchableOpacity style={styles.optionRow} onPress={handleBlockRequest}>
                 <Ionicons name="close-circle-outline" size={22} color="red" />
                 <Text style={[styles.optionText, { color: colors.text }]}>Block user</Text>
+=======
+            
+            {/* ✅ UPDATED: Not Interested with onPress handler */}
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleNotInterested}
+            >
+              <Ionicons name="heart-dislike-outline" size={22} color="red" />
+              <Text style={[styles.optionText, { color: colors.text }]}>Not interested</Text>
+            </TouchableOpacity>
+            
+            {/* ✅ UPDATED: Report Post with onPress handler */}
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleReportRequest}
+            >
+              <Ionicons name="flag-outline" size={22} color="red" />
+              <Text style={[styles.optionText, { color: colors.text }]}>Report Post</Text>
+            </TouchableOpacity>
+            
+            {/* Block User option */}
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleBlockRequest}
+            >
+              <Ionicons name="close-circle-outline" size={22} color="red" />
+              <Text style={[styles.optionText, { color: colors.text }]}>Block user</Text>
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
             </TouchableOpacity>
             <TouchableOpacity style={styles.closeBtn} onPress={() => setMoreModal({ visible: false, request: null })}>
                 <Ionicons name="close" size={24} color={colors.primary} />
@@ -303,6 +650,7 @@ const RequestInfoScreen = ({ navigation, route }) => {
   );
 };
 
+// Updated Styles
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingTop: 50, paddingHorizontal: 24, paddingBottom: 10 },
@@ -310,6 +658,7 @@ const styles = StyleSheet.create({
   backButton: { marginRight: 12, padding: 4 },
   backButtonText: { fontSize: 28, fontWeight: 'bold' },
   content: { flex: 1, paddingHorizontal: 24, paddingTop: 10 },
+<<<<<<< HEAD
   topImagePlaceholder: { width: SCREEN_WIDTH - 48, height: 180, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderWidth: 1.5, borderStyle: 'dashed', overflow: 'hidden' },
   mainImage: { width: '100%', height: '100%' },
   infoSection: { marginBottom: 20 },
@@ -323,6 +672,100 @@ const styles = StyleSheet.create({
   followButton: { backgroundColor: 'transparent', borderWidth: 1.5, paddingHorizontal: 14, paddingVertical: 5, borderRadius: 8 },
   followButtonText: { fontWeight: 'bold', fontSize: 16 },
   menuButton: { padding: 5 },
+=======
+
+  topImagePlaceholder: {
+    width: SCREEN_WIDTH - 48,
+    height: 180,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    overflow: 'hidden',
+  },
+  mainImage: {
+    width: '100%',
+    height: '100%',
+  },
+
+  infoSection: {
+    marginBottom: 20,
+  },
+  requestTitle: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    fontFamily: 'Milonga',
+  },
+  requestType: {
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  artistRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  leftSide: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  rightSideActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  profileCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  artistName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  youIndicator: {
+    fontSize: 12,
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
+
+  // Follow button (Transparent with white border)
+  followButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  followButtonText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  menuButton: {
+    padding: 5,
+  },
+
+  // Accept button (RED BORDER AND TEXT, TRANSPARENT BACKGROUND)
+  acceptButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#FF4136',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  acceptButtonText: {
+    color: '#FF4136',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
   section: { marginBottom: 20 },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold' },
@@ -339,6 +782,7 @@ const styles = StyleSheet.create({
   footerText: { fontSize: 12, marginTop: 2, textAlign: 'center' },
   activeFooterText: { fontWeight: 'bold' },
   plusSquareButton: { alignItems: 'center', marginHorizontal: 10 },
+<<<<<<< HEAD
   plusSquareContainer: { width: 45, height: 45, borderWidth: 2, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   centeredView: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.6)' },
   modalView: { margin: 20, borderRadius: 15, padding: 25, alignItems: 'flex-start', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5, width: '85%', backgroundColor: '#FFF' },
@@ -361,6 +805,158 @@ const styles = StyleSheet.create({
   optionRow: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
   optionText: { marginLeft: 8, fontSize: 15 },
   closeBtn: { position: "absolute", top: 10, right: 15 },
+=======
+  plusSquareContainer: {
+    width: 45,
+    height: 45,
+    borderWidth: 2,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // --- MODAL STYLES ---
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  modalView: {
+    margin: 20,
+    borderRadius: 15,
+    padding: 25,
+    alignItems: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: '85%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  modalTitleUnderline: {
+    width: '100%',
+    height: 2,
+    marginBottom: 15,
+  },
+  modalDescription: {
+    fontSize: 15,
+    textAlign: 'left',
+    marginBottom: 25,
+    lineHeight: 22,
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    gap: 15,
+  },
+  modalButton: {
+    flex: 1,
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+  },
+  buttonHoldOff: {
+    // backgroundColor will be set dynamically based on theme
+  },
+  textHoldOff: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  buttonProceed: {
+    // backgroundColor will be set dynamically based on theme
+  },
+  textProceed: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
+  // IMAGE MODAL STYLES
+  imageModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalBackground: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalContainer: {
+    width: '90%',
+    height: '80%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  fullSizeImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+  },
+  imageModalCloseButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 20,
+    padding: 8,
+    zIndex: 10,
+  },
+
+  // --- BOTTOM SHEET STYLES ---
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  bottomSheet: {
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
+    padding: 20,
+  },
+  bottomSheetModalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  iconRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginBottom: 16,
+  },
+  optionRow: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    marginBottom: 12 
+  },
+  optionText: { 
+    marginLeft: 8, 
+    fontSize: 15 
+  },
+  closeBtn: { 
+    position: "absolute", 
+    top: 10, 
+    right: 15 
+  },
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
 });
 
 export default RequestInfoScreen;

@@ -13,6 +13,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Image,
   View
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
@@ -130,10 +131,48 @@ const SignInScreen = ({ navigation }) => {
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}><Ionicons name={showPassword ? 'eye' : 'eye-off'} size={22} color={colors.primary} /></TouchableOpacity>
               </View>
               {isPasswordInvalid && <Text style={styles.errorText}>Password must be at least 6 characters</Text>}
+<<<<<<< HEAD
               <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('ForgotPasswordEmail')}><Text style={[styles.forgotPasswordText, { color: colors.primary }]}>Forgot password?</Text></TouchableOpacity>
               <TouchableOpacity style={[styles.signInButton, { backgroundColor: colors.primary }]} onPress={handleSignIn}><Text style={styles.signInButtonText}>Sign In</Text></TouchableOpacity>
               <View style={styles.divider}><View style={[styles.dividerLine, { backgroundColor: isDarkMode ? '#777' : 'rgba(255, 255, 255, 0.3)' }]} /><View style={[styles.dividerLine, { backgroundColor: isDarkMode ? '#777' : 'rgba(255, 255, 255, 0.3)' }]} /></View>
               <View style={styles.bottomText}><Text style={[styles.bottomNormal, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.9)' }]}>Don't have an account? </Text><TouchableOpacity onPress={() => navigation.navigate('SignUp')}><Text style={[styles.bottomLink, { color: colors.primary }]}>Sign up</Text></TouchableOpacity></View>
+=======
+
+              <TouchableOpacity
+                style={styles.forgotPassword}
+                onPress={() => navigation.navigate('ForgotPasswordEmail')}
+              >
+                <Text style={[styles.forgotPasswordText, { color: colors.primary }]}>Forgot password?</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.signInButton, { backgroundColor: colors.primary }]} 
+                onPress={handleSignIn}
+              >
+                <Text style={styles.signInButtonText}>Sign In</Text>
+              </TouchableOpacity>
+
+              <View style={styles.dividerContainer}>
+                <View style={styles.dividerLine} />
+                <Text style={[styles.dividerText, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.7)' }]}>Or</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <TouchableOpacity style={[styles.googleButton, { backgroundColor: isDarkMode ? '#FFFFFF' : 'rgba(255, 255, 255, 0.1)' }]}>
+                <Image
+                  source={require('../../assets/google.png')}
+                  style={styles.googleIcon}
+                />
+                <Text style={[styles.googleButtonText, { color: isDarkMode ? '#000000' : '#FFFFFF' }]}>Sign in with Google</Text>
+              </TouchableOpacity>
+
+              <View style={styles.bottomText}>
+                <Text style={[styles.bottomNormal, { color: isDarkMode ? colors.textSecondary : 'rgba(255, 255, 255, 0.9)' }]}>Don't have an account? </Text>
+                <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+                  <Text style={[styles.bottomLink, { color: colors.primary }]}>Sign up</Text>
+                </TouchableOpacity>
+              </View>
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -159,6 +198,7 @@ const styles = StyleSheet.create({
   errorText: { color: '#ff3b30', fontSize: 12, marginBottom: 8 },
   forgotPassword: { alignSelf: 'flex-end', marginBottom: 20 },
   forgotPasswordText: { fontSize: 13 },
+<<<<<<< HEAD
   signInButton: { borderRadius: 50, paddingVertical: 16, alignItems: 'center', marginBottom: 24 },
   signInButtonText: { color: '#000', fontSize: 16, fontWeight: '600' },
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: 20 },
@@ -166,6 +206,75 @@ const styles = StyleSheet.create({
   bottomText: { flexDirection: 'row', justifyContent: 'center' },
   bottomNormal: { fontSize: 14 },
   bottomLink: { fontSize: 14, fontWeight: '600' },
+=======
+  signInButton: { 
+    borderRadius: 50, 
+    paddingVertical: 16, 
+    alignItems: 'center', 
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  signInButtonText: { 
+    color: '#000', 
+    fontSize: 16, 
+    fontWeight: '600',
+  },
+  dividerContainer: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 24,
+  },
+  dividerLine: { 
+    flex: 1, 
+    height: 1, 
+    backgroundColor: 'rgba(255, 255, 255, 0.2)' 
+  },
+  dividerText: { 
+    marginHorizontal: 10, 
+    fontSize: 14, 
+    fontWeight: '500',
+  },
+  googleButton: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    borderRadius: 50, 
+    paddingVertical: 16, 
+    justifyContent: 'center', 
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: '#FFD700',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  googleIcon: { 
+    width: 20, 
+    height: 20, 
+    marginRight: 12,
+  },
+  googleButtonText: { 
+    fontSize: 16, 
+    fontWeight: '500',
+  },
+  bottomText: { 
+    flexDirection: 'row', 
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  bottomNormal: { 
+    fontSize: 14,
+  },
+  bottomLink: { 
+    fontSize: 14, 
+    fontWeight: '600',
+  },
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
 });
 
 export default SignInScreen;

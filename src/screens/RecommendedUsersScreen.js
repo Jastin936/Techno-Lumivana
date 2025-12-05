@@ -4,6 +4,7 @@ import { useFonts } from "expo-font";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
 import {
+<<<<<<< HEAD
     Animated,
     Dimensions,
     Easing,
@@ -16,6 +17,22 @@ import {
     Text,
     TouchableOpacity,
     View,
+=======
+  Animated,
+  Dimensions,
+  Easing,
+  Linking,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Alert,
+  Image,
+>>>>>>> e7c24aef90195490b50ef30ef7af5a8a7a04c8d0
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 
@@ -58,7 +75,9 @@ const RecommendedUsersScreen = ({ navigation }) => {
       bio: "Professional illustrator and graphic designer with 5+ years of experience. Specializing in brand identity and digital art creation for various clients.",
       followers: 70,
       milestone: true,
-      referencePhotos: []
+      referencePhotos: [  `https://picsum.photos/seed/Kreideprinz1/600/600`,
+  `https://picsum.photos/seed/Kreideprinz2/600/600`,
+  `https://picsum.photos/seed/Kreideprinz3/600/600`,]
     },
     {
       id: 2,
@@ -71,7 +90,9 @@ const RecommendedUsersScreen = ({ navigation }) => {
       bio: "Full-stack developer and creative coder passionate about building interactive experiences and writing technical content.",
       followers: 70,
       milestone: true,
-      referencePhotos: []
+      referencePhotos: [  `https://picsum.photos/seed/Caribert1/600/600`,
+  `https://picsum.photos/seed/Caribert2/600/600`,
+  `https://picsum.photos/seed/Caribert3/600/600`,]
     },
     {
       id: 3,
@@ -84,7 +105,9 @@ const RecommendedUsersScreen = ({ navigation }) => {
       bio: "Experienced writer and proofreader with a passion for creating engaging content and ensuring grammatical perfection.",
       followers: 70,
       milestone: true,
-      referencePhotos: []
+      referencePhotos: [  `https://picsum.photos/seed/Enjou1/600/600`,
+  `https://picsum.photos/seed/Enjou2/600/600`,
+  `https://picsum.photos/seed/Enjou3/600/600`,]
     },
     {
       id: 4,
@@ -97,7 +120,9 @@ const RecommendedUsersScreen = ({ navigation }) => {
       bio: "Digital artist specializing in character design and concept art for games and animation projects.",
       followers: 70,
       milestone: true,
-      referencePhotos: []
+      referencePhotos: [  `https://picsum.photos/seed/Grace1/600/600`,
+  `https://picsum.photos/seed/Grace2/600/600`,
+  `https://picsum.photos/seed/Grace3/600/600`,]
     },
     {
       id: 5,
@@ -110,7 +135,9 @@ const RecommendedUsersScreen = ({ navigation }) => {
       bio: "Award-winning fiction writer and content creator with multiple published works and extensive blogging experience.",
       followers: 532,
       milestone: false,
-      referencePhotos: [] // FIX: Added missing referencePhotos to prevent crash
+      referencePhotos: [  `https://picsum.photos/seed/Trevenaa1/600/600`,
+  `https://picsum.photos/seed/Trevenaa2/600/600`,
+  `https://picsum.photos/seed/Trevenaa3/600/600`,]
     },
     {
       id: 6,
@@ -123,35 +150,77 @@ const RecommendedUsersScreen = ({ navigation }) => {
       bio: "Professional music producer and sound designer with expertise in various genres and audio production techniques.",
       followers: 401,
       milestone: false,
-      referencePhotos: []
+      referencePhotos: [  `https://picsum.photos/seed/pierra1/600/600`,
+  `https://picsum.photos/seed/pierra2/600/600`,
+  `https://picsum.photos/seed/pierra3/600/600`,]
     },
   ];
 
   const [selectedFilter, setSelectedFilter] = useState("All");
-  const [following, setFollowing] = useState({});
+  // Change from object to array to store user IDs that are followed
+  const [followingUsers, setFollowingUsers] = useState([]);
   const [blockedUsers, setBlockedUsers] = useState([]);
+  const [notInterestedUsers, setNotInterestedUsers] = useState([]);
+  const [reportedUsers, setReportedUsers] = useState([]);
   const [moreModal, setMoreModal] = useState({ visible: false, user: null });
 
   const slideAnim = useState(new Animated.Value(300))[0];
 
-  // Load following state from AsyncStorage
+  // Load states from AsyncStorage
   useEffect(() => {
-    loadFollowingState();
+    loadAllData();
   }, []);
 
-  const loadFollowingState = async () => {
+  const loadAllData = async () => {
     try {
-      const savedFollowing = await AsyncStorage.getItem('followingState');
+      await loadFollowingUsers();
+      await loadNotInterestedUsers();
+      await loadReportedUsers();
+    } catch (error) {
+      console.log('Error loading data:', error);
+    }
+  };
+
+  // Updated: Load following users from AsyncStorage
+  const loadFollowingUsers = async () => {
+    try {
+      const savedFollowing = await AsyncStorage.getItem('followingUsers');
       if (savedFollowing) {
-        // FIX: Added try-catch for JSON parsing
         try {
-          setFollowing(JSON.parse(savedFollowing));
+          setFollowingUsers(JSON.parse(savedFollowing));
         } catch (e) {
-          console.log('Error parsing following state');
+          console.log('Error parsing following users');
         }
       }
     } catch (error) {
-      console.log('Error loading following state:', error);
+      console.log('Error loading following users:', error);
+    }
+  };
+
+  // Check if a user is followed
+  const isFollowing = (userId) => {
+    return followingUsers.includes(userId);
+  };
+
+  const loadNotInterestedUsers = async () => {
+    try {
+      const savedNotInterested = await AsyncStorage.getItem('notInterestedUsers');
+      if (savedNotInterested) {
+        setNotInterestedUsers(JSON.parse(savedNotInterested));
+      }
+    } catch (error) {
+      console.log('Error loading not interested users:', error);
+    }
+  };
+
+  const loadReportedUsers = async () => {
+    try {
+      const savedReported = await AsyncStorage.getItem('reportedUsers');
+      if (savedReported) {
+        setReportedUsers(JSON.parse(savedReported));
+      }
+    } catch (error) {
+      console.log('Error loading reported users:', error);
     }
   };
 
@@ -169,7 +238,6 @@ const RecommendedUsersScreen = ({ navigation }) => {
     try {
       const savedUserData = await AsyncStorage.getItem("userProfileData");
       if (savedUserData) {
-        // FIX: Added try-catch for JSON parsing
         try {
           const parsedData = JSON.parse(savedUserData);
           setUserData((prev) => ({
@@ -192,40 +260,121 @@ const RecommendedUsersScreen = ({ navigation }) => {
 
   useEffect(() => {
     loadUserData();
-    loadFollowingState();
+    loadAllData();
   }, []);
 
   // Refresh following state when screen comes into focus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      loadFollowingState();
+      loadFollowingUsers();
     });
 
     return unsubscribe;
   }, [navigation]);
 
+  // Filter out blocked users, not interested users, and reported users
   const filteredUsers = USERS.filter(
     (u) =>
       !blockedUsers.includes(u.id) &&
+      !notInterestedUsers.includes(u.id) &&
       (selectedFilter === "All" || u.role.includes(selectedFilter))
   );
 
-  const toggleFollow = async (id) => {
-    const userName = USERS.find(u => u.id === id)?.name;
-    if (!userName) return;
+  // Updated: Toggle follow function
+  const toggleFollow = async (userId) => {
+    const user = USERS.find(u => u.id === userId);
+    if (!user) return;
     
-    const newFollowing = { ...following, [userName]: !following[userName] };
-    setFollowing(newFollowing);
+    let updatedFollowingUsers;
+    
+    if (isFollowing(userId)) {
+      // Unfollow: remove user ID from array
+      updatedFollowingUsers = followingUsers.filter(id => id !== userId);
+    } else {
+      // Follow: add user ID to array
+      updatedFollowingUsers = [...followingUsers, userId];
+    }
+    
+    setFollowingUsers(updatedFollowingUsers);
+    
     try {
-      await AsyncStorage.setItem('followingState', JSON.stringify(newFollowing));
+      // Save to AsyncStorage
+      await AsyncStorage.setItem('followingUsers', JSON.stringify(updatedFollowingUsers));
+      
+      // Show feedback
+      Alert.alert(
+        isFollowing(userId) ? "Unfollowed" : "Following",
+        isFollowing(userId) 
+          ? `You have unfollowed ${user.name}` 
+          : `You are now following ${user.name}. They will appear in your Following tab.`,
+        [{ text: "OK" }]
+      );
+      
     } catch (error) {
       console.log('Error saving following state:', error);
+      Alert.alert("Error", "Failed to update follow status. Please try again.");
     }
   };
 
   const handleBlockUser = (user) => {
     setBlockedUsers((prev) => [...prev, user.id]);
     setMoreModal({ visible: false, user: null });
+  };
+
+  const handleNotInterested = async () => {
+    if (moreModal.user) {
+      try {
+        const updatedNotInterested = [...notInterestedUsers, moreModal.user.id];
+        setNotInterestedUsers(updatedNotInterested);
+        
+        await AsyncStorage.setItem('notInterestedUsers', JSON.stringify(updatedNotInterested));
+        
+        setMoreModal({ visible: false, user: null });
+        
+        Alert.alert("Noted", "We'll show fewer users like this in your recommendations.");
+        
+      } catch (error) {
+        console.log('Error saving not interested user:', error);
+        Alert.alert("Error", "Failed to save your preference. Please try again.");
+      }
+    }
+  };
+
+  const handleReportUser = async () => {
+    if (moreModal.user) {
+      Alert.alert(
+        "Report User",
+        "Are you sure you want to report this user?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Report",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                const updatedReported = [...reportedUsers, moreModal.user.id];
+                setReportedUsers(updatedReported);
+                
+                await AsyncStorage.setItem('reportedUsers', JSON.stringify(updatedReported));
+                
+                setBlockedUsers((prev) => [...prev, moreModal.user.id]);
+                
+                setMoreModal({ visible: false, user: null });
+                
+                Alert.alert("Report Submitted", "Thank you for reporting this user. Our team will review it.");
+                
+              } catch (error) {
+                console.log('Error saving reported user:', error);
+                Alert.alert("Error", "Failed to submit report. Please try again.");
+              }
+            }
+          }
+        ]
+      );
+    }
   };
 
   const openMoreModal = (user) => {
@@ -235,7 +384,6 @@ const RecommendedUsersScreen = ({ navigation }) => {
 
   // Function to handle user card press
   const handleUserPress = (user) => {
-    // FIX: Updated navigation name to match App.js exactly
     navigation.navigate("RecommendedUsersInfoScreen", { 
       requestData: {
         title: user.title,
@@ -244,7 +392,6 @@ const RecommendedUsersScreen = ({ navigation }) => {
         skills: user.skills,
         joinedDate: user.joinedDate,
         bio: user.bio,
-        // Safe access to referencePhotos
         referencePhotos: user.referencePhotos || []
       }
     });
@@ -334,8 +481,11 @@ const RecommendedUsersScreen = ({ navigation }) => {
                   <TouchableOpacity
                     style={[
                       styles.followBtn,
-                      { backgroundColor: following[user.name] ? 'transparent' : colors.primary },
-                      following[user.name] && { borderWidth: 1.5, borderColor: colors.primary },
+                      { 
+                        backgroundColor: isFollowing(user.id) ? 'transparent' : colors.primary,
+                        borderWidth: isFollowing(user.id) ? 1.5 : 0,
+                        borderColor: isFollowing(user.id) ? colors.primary : 'transparent'
+                      },
                     ]}
                     onPress={(e) => {
                       e.stopPropagation();
@@ -345,10 +495,14 @@ const RecommendedUsersScreen = ({ navigation }) => {
                     <Text
                       style={[
                         styles.followText,
-                        { color: following[user.name] ? colors.primary : (isDarkMode ? colors.text : "#000") },
+                        { 
+                          color: isFollowing(user.id) 
+                            ? colors.primary 
+                            : (isDarkMode ? colors.text : "#000") 
+                        },
                       ]}
                     >
-                      {following[user.name] ? "Following" : "Follow"}
+                      {isFollowing(user.id) ? "Following" : "Follow"}
                     </Text>
                   </TouchableOpacity>
 
@@ -373,11 +527,25 @@ const RecommendedUsersScreen = ({ navigation }) => {
                 )}
 
                 {/* Post Preview */}
-                <View style={styles.postPreviewRow}>
-                  <View style={[styles.postImagePlaceholder, { backgroundColor: colors.surfaceLight }]} />
-                  <View style={[styles.postImagePlaceholder, { backgroundColor: colors.surfaceLight }]} />
-                  <View style={[styles.postImagePlaceholder, { backgroundColor: colors.surfaceLight }]} />
-                </View>
+                {/* Post Preview with real images */}
+<View style={styles.postPreviewRow}>
+  {user.referencePhotos?.slice(0, 3).map((img, index) => (
+    <Image
+      key={index}
+      source={{ uri: img }}
+      style={styles.previewImage}
+    />
+  ))}
+
+  {/* If images < 3, fill the rest with placeholders */}
+  {[...Array(Math.max(0, 3 - (user.referencePhotos?.length || 0)))].map((_, i) => (
+    <View 
+      key={`placeholder-${i}`} 
+      style={[styles.previewImage, { backgroundColor: colors.surfaceLight }]}
+    />
+  ))}
+</View>
+
               </TouchableOpacity>
             ))
           ) : (
@@ -417,14 +585,23 @@ const RecommendedUsersScreen = ({ navigation }) => {
                 <Ionicons name="logo-twitter" size={28} color={colors.text} />
               </TouchableOpacity>
             </View>
-              <View style={styles.optionRow}>
+              
+              <TouchableOpacity
+                style={styles.optionRow}
+                onPress={handleNotInterested}
+              >
                 <Ionicons name="heart-dislike-outline" size={22} color="red" />
                 <Text style={[styles.optionText, { color: colors.text }]}>Not interested</Text>
-              </View>
-              <View style={styles.optionRow}>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.optionRow}
+                onPress={handleReportUser}
+              >
                 <Ionicons name="flag-outline" size={22} color="red" />
-                <Text style={[styles.optionText, { color: colors.text }]}>Report Post</Text>
-              </View>
+                <Text style={[styles.optionText, { color: colors.text }]}>Report User</Text>
+              </TouchableOpacity>
+              
               <TouchableOpacity
                 style={styles.optionRow}
                 onPress={() => handleBlockUser(moreModal.user)}
@@ -575,6 +752,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 8,
     marginLeft: 'auto',
+    marginRight: 10,
   },
   followText: { fontWeight: "600", fontSize: 14 },
   postPreviewRow: {
@@ -655,6 +833,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
   },
+  previewImage: {
+  width: IMAGE_SIZE,
+  height: IMAGE_SIZE,
+  borderRadius: 10,
+  marginRight: 6,
+  backgroundColor: "#ccc",
+}
+
 });
 
 export default RecommendedUsersScreen;

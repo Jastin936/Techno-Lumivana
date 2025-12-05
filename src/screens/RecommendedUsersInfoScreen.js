@@ -45,7 +45,9 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
     skills: 'Logo Design, Brand Identity, Vector Illustration, Typography, Digital Art',
     joinedDate: 'January 15, 2023',
     bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-    referencePhotos: []
+    referencePhotos: [  `https://picsum.photos/seed/Kreideprinz1/600/600`,
+  `https://picsum.photos/seed/Kreideprinz2/600/600`,
+  `https://picsum.photos/seed/Kreideprinz3/600/600`,]
   };
 
   // LOAD FOLLOWING STATE ON MOUNT
