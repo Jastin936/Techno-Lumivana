@@ -97,7 +97,6 @@ const mockCommissionsData = [
 // Filter categories - Same as CommissionsScreen
 const FILTER_CATEGORY_MAP = CATEGORY_LIST;
 
-
 const COMMISSION_QUICK_LINKS = [
   { 
     id: 1, 
@@ -190,7 +189,6 @@ const CommissionItem = ({ date, title, description, status, category, onPress })
         <Text style={[styles.titleText, { color: colors.text }]}>{title}</Text>
         <Text style={[styles.descriptionText, { color: colors.textSecondary }]}>{description}</Text>
         <View style={styles.categoryRow}>
-          {/* FIX: Safe find for category icon */}
           <Ionicons name={FILTER_CATEGORY_MAP.find(cat => cat.name === category)?.icon || 'apps-outline'} size={14} color={colors.primary} />
           <Text style={[styles.categoryText, { color: colors.primary }]}>{category}</Text>
         </View>
@@ -311,7 +309,6 @@ const SearchScreen = ({ navigation }) => {
     try {
       const savedUserData = await AsyncStorage.getItem('userProfileData');
       if (savedUserData) {
-        // FIX: Safer parsing
         try {
           const parsedData = JSON.parse(savedUserData);
           setUserData(prevData => ({
@@ -344,22 +341,63 @@ const SearchScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation]);
 
-  // Filter commissions based on search and category - Same logic as CommissionsScreen
-  const filteredCommissions = mockCommissionsData.filter((commission) => {
-    const matchesSearch = 
-      commission.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      commission.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = 
-      selectedCategory === 'All' || commission.category === selectedCategory;
-    
-    return matchesSearch && matchesCategory;
-  });
+  // Filter data based on search query and category
+  const filterData = () => {
+    const searchResults = {
+      commissions: [],
+      quickLinks: []
+    };
 
-  // Filter quick links based on selected category
-  const filteredQuickLinks = COMMISSION_QUICK_LINKS.filter((link) => {
-    return selectedCategory === 'All' || link.category === selectedCategory;
-  });
+    if (searchQuery.length > 0) {
+      // Filter commissions based on search query
+      const filteredCommissionsFromSearch = mockCommissionsData.filter((commission) => {
+        const matchesSearch = 
+          commission.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          commission.description.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        const matchesCategory = 
+          selectedCategory === 'All' || commission.category === selectedCategory;
+        
+        return matchesSearch && matchesCategory;
+      });
+
+      // Filter quick links based on search query
+      const filteredQuickLinksFromSearch = COMMISSION_QUICK_LINKS.filter((link) => {
+        const matchesSearch =
+          link.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          link.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          link.searchTag.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        const matchesCategory = 
+          selectedCategory === 'All' || link.category === selectedCategory;
+        
+        return matchesSearch && matchesCategory;
+      });
+
+      searchResults.commissions = filteredCommissionsFromSearch;
+      searchResults.quickLinks = filteredQuickLinksFromSearch;
+    } else {
+      // When no search query, use category filters only
+      const filteredByCategoryCommissions = mockCommissionsData.filter((commission) => {
+        return selectedCategory === 'All' || commission.category === selectedCategory;
+      });
+
+      const filteredByCategoryQuickLinks = COMMISSION_QUICK_LINKS.filter((link) => {
+        return selectedCategory === 'All' || link.category === selectedCategory;
+      });
+
+      searchResults.commissions = filteredByCategoryCommissions;
+      searchResults.quickLinks = filteredByCategoryQuickLinks;
+    }
+
+    return searchResults;
+  };
+
+  const searchResults = filterData();
+  const hasSearchQuery = searchQuery.length > 0;
+  const hasCategoryFilter = selectedCategory !== 'All';
+  const hasCommissionResults = searchResults.commissions.length > 0;
+  const hasQuickLinkResults = searchResults.quickLinks.length > 0;
 
   // Handle commission item click
   const handleCommissionItemPress = (commission) => {
@@ -407,7 +445,6 @@ const SearchScreen = ({ navigation }) => {
         <Text style={[styles.quickLinkTitle, { color: colors.text }]}>{item.title}</Text>
         <Text style={[styles.quickLinkDescription, { color: colors.textSecondary }]}>{item.description}</Text>
         <View style={styles.quickLinkCategory}>
-          {/* FIX: Safe find for category icon */}
           <Ionicons name={FILTER_CATEGORY_MAP.find(cat => cat.name === item.category)?.icon || 'apps-outline'} size={12} color={colors.primary} />
           <Text style={[styles.quickLinkCategoryText, { color: colors.primary }]}>{item.category}</Text>
         </View>
@@ -519,55 +556,73 @@ const SearchScreen = ({ navigation }) => {
           contentContainerStyle={styles.scrollableContentContainer}
           showsVerticalScrollIndicator={false}
         >
-          {/* Commission Quick Links (Only visible when search bar is empty) */}
-          {searchQuery.length === 0 && (
+          {/* Quick Links Section - Always visible but filtered by search */}
+          {(!hasSearchQuery || hasQuickLinkResults) && (
             <View style={styles.quickLinksSection}>
-              <Text style={[styles.sectionTitle, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>Browse Commission Types</Text>
-              <FlatList
-                data={filteredQuickLinks}
-                renderItem={renderQuickLink}
-                keyExtractor={(item) => item.id.toString()}
-                numColumns={2}
-                scrollEnabled={false}
-                columnWrapperStyle={styles.quickLinkColumnWrapper}
-              />
+              <Text style={[styles.sectionTitle, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>
+                {hasSearchQuery ? `Quick Links Matching "${searchQuery}"` : 'Browse Commission Types'}
+              </Text>
+              {hasQuickLinkResults ? (
+                <FlatList
+                  data={searchResults.quickLinks}
+                  renderItem={renderQuickLink}
+                  keyExtractor={(item) => item.id.toString()}
+                  numColumns={2}
+                  scrollEnabled={false}
+                  columnWrapperStyle={styles.quickLinkColumnWrapper}
+                />
+              ) : (
+                hasSearchQuery && (
+                  <View style={styles.noQuickLinksContainer}>
+                    <Ionicons name="link-outline" size={30} color={colors.textMuted} />
+                    <Text style={[styles.noQuickLinksText, { color: colors.textSecondary }]}>
+                      No quick links match your search
+                    </Text>
+                  </View>
+                )
+              )}
             </View>
           )}
 
-          {/* Search Results (Displayed when searching or when category filter is active) */}
-          {(searchQuery.length > 0 || selectedCategory !== 'All') && (
+          {/* Commission Results Section */}
+          {(hasSearchQuery || hasCategoryFilter || hasCommissionResults) && (
             <View style={styles.resultsContainer}>
               <Text style={[styles.sectionTitle, { color: isDarkMode ? colors.text : '#FFFFFF' }]}>
-                {searchQuery.length > 0 
-                  ? `Search Results for "${searchQuery}"`
-                  : `All ${selectedCategory} Commissions`
+                {hasSearchQuery 
+                  ? `Commission Results for "${searchQuery}"`
+                  : hasCategoryFilter
+                  ? `All ${selectedCategory} Commissions`
+                  : 'Recent Commissions'
                 }
               </Text>
               <View style={styles.commissionsList}>
-                {filteredCommissions.map((item) => (
-                  <CommissionItem
-                    key={item.id}
-                    date={item.date}
-                    title={item.title}
-                    description={item.description}
-                    status={item.status}
-                    category={item.category}
-                    onPress={() => handleCommissionItemPress(item)}
-                  />
-                ))}
-                {filteredCommissions.length === 0 && (
-                  <View style={styles.noResultsContainer}>
-                    <Ionicons name="search-outline" size={50} color={colors.textMuted} />
-                    <Text style={[styles.noResultsText, { color: colors.textSecondary }]}>
-                      {searchQuery.length > 0 
-                        ? `No results found for "${searchQuery}"`
-                        : `No ${selectedCategory} commissions found`
-                      }
-                    </Text>
-                    <Text style={[styles.noResultsSubText, { color: colors.textMuted }]}>
-                      Try adjusting your search or filters
-                    </Text>
-                  </View>
+                {hasCommissionResults ? (
+                  searchResults.commissions.map((item) => (
+                    <CommissionItem
+                      key={item.id}
+                      date={item.date}
+                      title={item.title}
+                      description={item.description}
+                      status={item.status}
+                      category={item.category}
+                      onPress={() => handleCommissionItemPress(item)}
+                    />
+                  ))
+                ) : (
+                  (hasSearchQuery || hasCategoryFilter) && (
+                    <View style={styles.noResultsContainer}>
+                      <Ionicons name="search-outline" size={50} color={colors.textMuted} />
+                      <Text style={[styles.noResultsText, { color: colors.textSecondary }]}>
+                        {hasSearchQuery 
+                          ? `No commission results found for "${searchQuery}"`
+                          : `No ${selectedCategory} commissions found`
+                        }
+                      </Text>
+                      <Text style={[styles.noResultsSubText, { color: colors.textMuted }]}>
+                        Try adjusting your search or filters
+                      </Text>
+                    </View>
+                  )
                 )}
               </View>
             </View>
@@ -670,10 +725,9 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'transparent', // Will be set dynamically
+    borderColor: 'transparent',
   },
   
-  // NEW: Image Placeholder Styles - Now positioned above search bar
   imagePlaceholderContainer: {
     paddingHorizontal: 16,
     marginTop: 10,
@@ -700,7 +754,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
 
-  // 🔍 SEARCH BAR STYLES - Same as CommissionsScreen
   searchBarContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -726,7 +779,6 @@ const styles = StyleSheet.create({
     padding: 10,
   },
 
-  // Active Filter Indicator
   activeFilterContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -747,7 +799,6 @@ const styles = StyleSheet.create({
     padding: 4,
   },
 
-  // SCROLLABLE CONTENT
   scrollableContent: {
     flex: 1,
   },
@@ -799,12 +850,10 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 
-  // Results container
   resultsContainer: {
     marginBottom: 10,
   },
 
-  // Commission List Styles - Same as CommissionsScreen
   commissionsList: {
     // List container
   },
@@ -867,7 +916,6 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 
-  // No Results Styles - SAME AS HOME SCREEN
   noResultsContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -886,14 +934,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
 
-  // Section Title
+  noQuickLinksContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 30,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: 12,
+    marginTop: 10,
+  },
+  noQuickLinksText: {
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 12,
   },
 
-  // Footer
   footer: { 
     flexDirection: 'row', 
     justifyContent: 'space-around', 
@@ -923,7 +983,7 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderWidth: 2,
-    borderColor: 'transparent', // Will be set dynamically
+    borderColor: 'transparent',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',

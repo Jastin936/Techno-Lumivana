@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
@@ -8,6 +9,7 @@ import {
   Dimensions,
   Easing,
   Image,
+  Linking,
   Modal,
   SafeAreaView,
   ScrollView,
@@ -30,8 +32,11 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
 
   const [isModalVisible, setModalVisible] = useState(false);
   const [isStopProcessModalVisible, setStopProcessModalVisible] = useState(false);
-  const [moreModal, setMoreModal] = useState({ visible: false, request: null });
-  const [blockedRequests, setBlockedRequests] = useState([]);
+  const [moreModal, setMoreModal] = useState({ visible: false, post: null });
+  const [imageModal, setImageModal] = useState({ visible: false, imageUri: null });
+  const [blockedPosts, setBlockedPosts] = useState([]);
+  const [notInterestedPosts, setNotInterestedPosts] = useState([]);
+  const [reportedPosts, setReportedPosts] = useState([]);
   const [commissionStatus, setCommissionStatus] = useState('ongoing');
   const [cancellationModalVisible, setCancellationModalVisible] = useState(false);
   const [confirmationText, setConfirmationText] = useState('');
@@ -51,6 +56,13 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
       status: 'accepted'
     }
   );
+
+  // Load not interested and reported posts from AsyncStorage
+  useEffect(() => {
+    loadNotInterestedPosts();
+    loadReportedPosts();
+    loadBlockedCommissions();
+  }, []);
 
   // Handle route params updates - including cancellation and completion data
   useEffect(() => {
@@ -80,6 +92,39 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
       setCancellationModalVisible(true);
     }
   }, [route.params?.showCancellationModal]);
+
+  const loadNotInterestedPosts = async () => {
+    try {
+      const savedNotInterested = await AsyncStorage.getItem('notInterestedPosts');
+      if (savedNotInterested) {
+        setNotInterestedPosts(JSON.parse(savedNotInterested));
+      }
+    } catch (error) {
+      console.log('Error loading not interested posts:', error);
+    }
+  };
+
+  const loadReportedPosts = async () => {
+    try {
+      const savedReported = await AsyncStorage.getItem('reportedPosts');
+      if (savedReported) {
+        setReportedPosts(JSON.parse(savedReported));
+      }
+    } catch (error) {
+      console.log('Error loading reported posts:', error);
+    }
+  };
+
+  const loadBlockedCommissions = async () => {
+    try {
+      const savedBlocked = await AsyncStorage.getItem('blockedCommissions');
+      if (savedBlocked) {
+        setBlockedPosts(JSON.parse(savedBlocked));
+      }
+    } catch (error) {
+      console.log('Error loading blocked commissions:', error);
+    }
+  };
 
   if (!fontsLoaded) {
     return (
@@ -114,25 +159,197 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
   };
 
   const openMoreModal = () => {
-    setMoreModal({ visible: true, request: requestData });
+    setMoreModal({ visible: true, post: requestData });
     slideUp();
   };
 
-  const handleBlockRequest = () => {
-    setBlockedRequests((prev) => [...prev, requestData.id]);
-    setMoreModal({ visible: false, request: null });
-    navigation.goBack(); // Go back to previous screen after blocking
+  // UPDATED: Handle Not Interested with AsyncStorage persistence AND commission removal
+  const handleNotInterested = async () => {
+    if (moreModal.post) {
+      try {
+        // Generate commission ID (use the same format as CommissionsScreen)
+        const commissionId = moreModal.post.id || 
+          `${moreModal.post.title}-${moreModal.post.artist}`;
+        
+        console.log('Processing not interested for commission:', commissionId);
+        
+        // 1. Add to not interested list
+        const updatedNotInterested = [...notInterestedPosts, commissionId];
+        setNotInterestedPosts(updatedNotInterested);
+        
+        // Save to AsyncStorage
+        await AsyncStorage.setItem('notInterestedPosts', JSON.stringify(updatedNotInterested));
+        
+        // 2. Add to blocked commissions list
+        const blockedCommissionsKey = 'blockedCommissions';
+        const savedBlocked = await AsyncStorage.getItem(blockedCommissionsKey);
+        let blockedCommissions = savedBlocked ? JSON.parse(savedBlocked) : [];
+        
+        if (!blockedCommissions.includes(commissionId)) {
+          blockedCommissions.push(commissionId);
+          await AsyncStorage.setItem(blockedCommissionsKey, JSON.stringify(blockedCommissions));
+          console.log('Added to blockedCommissions:', commissionId);
+        }
+        
+        // 3. Remove from saved commissions
+        const savedCommissionsKey = 'savedCommissions';
+        const savedCommissions = await AsyncStorage.getItem(savedCommissionsKey);
+        if (savedCommissions) {
+          let commissionsArray = JSON.parse(savedCommissions);
+          const initialLength = commissionsArray.length;
+          
+          // Filter out the commission using multiple ID formats
+          commissionsArray = commissionsArray.filter(commission => {
+            // Check multiple possible ID formats
+            const currentCommissionId = commission.id || 
+              `${commission.title}-${commission.artist}`;
+            const compositeId = `${commission.title}-${commission.artist}-${commission.date || ''}`;
+            
+            // Return false if any ID matches
+            if (currentCommissionId === commissionId) return false;
+            if (compositeId === commissionId) return false;
+            if (commission.id === commissionId) return false;
+            
+            return true;
+          });
+          
+          if (commissionsArray.length < initialLength) {
+            await AsyncStorage.setItem(savedCommissionsKey, JSON.stringify(commissionsArray));
+            console.log(`Removed commission from savedCommissions. Was: ${initialLength}, Now: ${commissionsArray.length}`);
+          } else {
+            console.log('Commission not found in savedCommissions');
+          }
+        }
+        
+        // 4. Close modal
+        setMoreModal({ visible: false, post: null });
+        
+        // 5. Show success message
+        Alert.alert("Success", "Commission has been removed from your list.");
+        
+        // 6. Navigate back to Commissions with params to trigger refresh
+        navigation.navigate('Commissions', { 
+          commissionBlocked: true,
+          blockedCommissionId: commissionId,
+          refreshTimestamp: Date.now() // Force refresh
+        });
+        
+      } catch (error) {
+        console.log('Error saving not interested post:', error);
+        Alert.alert("Error", "Failed to remove commission. Please try again.");
+      }
+    }
   };
 
-  const handleReportRequest = () => {
-    console.log('Report request:', requestData.title);
-    setMoreModal({ visible: false, request: null });
+  // UPDATED: Handle Report Post with AsyncStorage persistence and confirmation (same as HomeScreen)
+  const handleReportPost = async () => {
+    if (moreModal.post) {
+      // Show confirmation dialog
+      Alert.alert(
+        "Report Post",
+        "Are you sure you want to report this post?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Report",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                // Add to reported list
+                const updatedReported = [...reportedPosts, moreModal.post.id];
+                setReportedPosts(updatedReported);
+                
+                // Save to AsyncStorage
+                await AsyncStorage.setItem('reportedPosts', JSON.stringify(updatedReported));
+                
+                // Also block the commission immediately
+                await handleBlockCommission();
+                
+                // Close modal
+                setMoreModal({ visible: false, post: null });
+                
+                // Show success message
+                Alert.alert("Report Submitted", "Thank you for reporting this post. Our team will review it.");
+                
+                console.log('Reported post:', {
+                  id: moreModal.post.id,
+                  title: moreModal.post.title,
+                  user: moreModal.post.artist,
+                  timestamp: new Date().toISOString()
+                });
+                
+                // Navigate back
+                navigation.goBack();
+              } catch (error) {
+                console.log('Error saving reported post:', error);
+                Alert.alert("Error", "Failed to submit report. Please try again.");
+              }
+            }
+          }
+        ]
+      );
+    }
   };
 
-  const handleNotInterested = () => {
-    console.log('Not interested in:', requestData.title);
-    setMoreModal({ visible: false, request: null });
-    navigation.goBack(); // Go back to previous screen
+  // NEW: Function to block commission and save to AsyncStorage
+  const handleBlockCommission = async () => {
+    if (moreModal.post) {
+      try {
+        // Generate a unique ID for the commission if it doesn't have one
+        const commissionId = moreModal.post.id || 
+          `${moreModal.post.title}-${moreModal.post.artist}`;
+        
+        // Save blocked commission to AsyncStorage
+        const blockedCommissionsKey = 'blockedCommissions';
+        const savedBlocked = await AsyncStorage.getItem(blockedCommissionsKey);
+        let blockedCommissions = savedBlocked ? JSON.parse(savedBlocked) : [];
+        
+        // Add the commission ID to blocked list
+        if (!blockedCommissions.includes(commissionId)) {
+          blockedCommissions.push(commissionId);
+          await AsyncStorage.setItem(blockedCommissionsKey, JSON.stringify(blockedCommissions));
+        }
+        
+        // Also add to local state
+        setBlockedPosts((prev) => [...prev, commissionId]);
+        
+        console.log('Commission blocked:', commissionId);
+        return commissionId;
+        
+      } catch (error) {
+        console.log('Error blocking commission:', error);
+        throw error;
+      }
+    }
+  };
+
+  // UPDATED: Handle Block Post - Now saves to AsyncStorage and notifies CommissionsScreen
+  const handleBlockPost = async () => {
+    if (moreModal.post) {
+      try {
+        // Block the commission
+        const blockedCommissionId = await handleBlockCommission();
+        
+        // Close modal
+        setMoreModal({ visible: false, post: null });
+        
+        // Show success message
+        Alert.alert("Success", "Commission has been blocked and will be removed from your list.");
+        
+        // Navigate back to Commissions with a flag to refresh
+        navigation.navigate('Commissions', { 
+          commissionBlocked: true,
+          blockedCommissionId: blockedCommissionId
+        });
+        
+      } catch (error) {
+        console.log('Error blocking commission:', error);
+        Alert.alert("Error", "Failed to block commission. Please try again.");
+      }
+    }
   };
 
   const handleStatusChange = (status) => {
@@ -231,20 +448,6 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
     console.log('Commission kept - cancellation cancelled');
   };
 
-  // Helper function to get icon based on category
-  const getIconForCategory = (category) => {
-    const categoryMap = {
-      'Graphic Design': 'color-palette-outline',
-      'Illustration': 'brush-outline',
-      'Crafting': 'hammer-outline',
-      'Writing': 'document-text-outline',
-      'Photography': 'camera-outline',
-      'Tutoring': 'school-outline',
-      'Custom Commission': 'create-outline'
-    };
-    return categoryMap[category] || 'create-outline';
-  };
-
   // Status Badges for the image corner - UPDATED WITH COMPLETE AND CLAIMED
   const ImageStatusBadges = () => {
     const isCancelled = requestData.status === 'cancelled' || requestData.status === 'Canceled' || requestData.status === 'canceled';
@@ -330,6 +533,71 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
           This commission was completed on {requestData.completedAt ? new Date(requestData.completedAt).toLocaleDateString() : new Date().toLocaleDateString()}
         </Text>
       </View>
+    );
+  };
+
+  // UPDATED: More Operations Modal (same as HomeScreen)
+  const EllipsisModal = () => {
+    const { isDarkMode, colors } = useTheme();
+    return (
+      <Modal transparent visible={moreModal.visible} animationType="none">
+        <View style={styles.modalOverlay}>
+          <Animated.View
+            style={[
+              styles.bottomSheet,
+              { 
+                transform: [{ translateY: slideAnim }], 
+                backgroundColor: colors.card,
+                borderColor: colors.primary
+              },
+            ]}
+          >
+            <Text style={[styles.modalTitle, { color: colors.primary }]}>More Operations</Text>
+            <View style={styles.iconRow}>
+              <TouchableOpacity onPress={() => Linking.openURL('https://www.facebook.com')}>
+                <Ionicons name="logo-facebook" size={28} color="#1877F2" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => Linking.openURL('mailto:support@lumivana.com')}>
+                <Ionicons name="mail-outline" size={28} color="#EA4335" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => Linking.openURL('https://t.me/lumivana')}>
+                <Ionicons name="send-outline" size={28} color="#1DA1F2" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => Linking.openURL('https://twitter.com/lumivana')}>
+                <Ionicons name="logo-twitter" size={28} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleNotInterested}
+            >
+              <Ionicons name="heart-dislike-outline" size={22} color="red" />
+              <Text style={[styles.optionText, { color: colors.text }]}>Not interested</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleReportPost}
+            >
+              <Ionicons name="flag-outline" size={22} color="red" />
+              <Text style={[styles.optionText, { color: colors.text }]}>Report Post</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={handleBlockPost}
+            >
+              <Ionicons name="close-circle-outline" size={22} color="red" />
+              <Text style={[styles.optionText, { color: colors.text }]}>Block user</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => setMoreModal({ visible: false, post: null })}
+            >
+              <Ionicons name="close" size={24} color={colors.primary} />
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      </Modal>
     );
   };
 
@@ -649,56 +917,13 @@ const AcceptedCommissionInfoScreen = ({ navigation, route }) => {
         </View>
       </Modal>
 
-      {/* MORE OPERATIONS MODAL */}
-      <Modal transparent visible={moreModal.visible} animationType="none">
-        <View style={styles.modalOverlay}>
-          <Animated.View
-            style={[
-              styles.bottomSheet,
-              { 
-                transform: [{ translateY: slideAnim }],
-                backgroundColor: colors.card,
-                borderColor: colors.primary
-              },
-            ]}
-          >
-            <Text style={[styles.modalTitle, { color: colors.primary }]}>More Operations</Text>
-            <View style={styles.iconRow}>
-              <Ionicons name="logo-facebook" size={28} color="#1877F2" />
-              <Ionicons name="mail-outline" size={28} color="#EA4335" />
-              <Ionicons name="send-outline" size={28} color="#1DA1F2" />
-              <Ionicons name="logo-twitter" size={28} color={colors.text} />
-            </View>
-            
-            {/* All text properly wrapped in Text components */}
-            <TouchableOpacity style={styles.optionRow} onPress={handleNotInterested}>
-              <Ionicons name="heart-dislike-outline" size={22} color="red" />
-              <Text style={[styles.optionText, { color: colors.text }]}>Not interested</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.optionRow} onPress={handleReportRequest}>
-              <Ionicons name="flag-outline" size={22} color="red" />
-              <Text style={[styles.optionText, { color: colors.text }]}>Report Post</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.optionRow} onPress={handleBlockRequest}>
-              <Ionicons name="close-circle-outline" size={22} color="red" />
-              <Text style={[styles.optionText, { color: colors.text }]}>Block user</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.closeBtn}
-              onPress={() => setMoreModal({ visible: false, request: null })}
-            >
-              <Ionicons name="close" size={24} color={colors.primary} />
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </Modal>
+      {/* UPDATED: More Operations Modal (same as HomeScreen) */}
+      <EllipsisModal />
     </LinearGradient>
   );
 };
 
+// ... (styles remain the same)
 const styles = StyleSheet.create({
   container: { flex: 1 },
 
@@ -1069,7 +1294,7 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 5,
   },
-   modalTitle2: {
+  modalTitle2: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#FF4136',
@@ -1089,9 +1314,9 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   redText: {
-  color: '#FF4136',
-  fontWeight: 'bold',
- },
+    color: '#FF4136',
+    fontWeight: 'bold',
+  },
   modalButtonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1146,7 +1371,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
-  // --- BOTTOM SHEET STYLES ---
+  // --- BOTTOM SHEET STYLES (same as HomeScreen) ---
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',

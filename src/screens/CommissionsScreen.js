@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import {
+  Alert,
   Animated,
   Dimensions,
   Image,
@@ -235,8 +236,9 @@ const CommissionsScreen = ({ navigation, route }) => {
   const [filterVisible, setFilterVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   
-  // UPDATED: State for commissions
+  // UPDATED: State for commissions and blocked commissions
   const [commissions, setCommissions] = useState([]);
+  const [blockedCommissions, setBlockedCommissions] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const [fontsLoaded] = useFonts({
@@ -265,25 +267,124 @@ const CommissionsScreen = ({ navigation, route }) => {
     return Array.from(unique.values());
   };
 
+  // NEW: Function to load blocked commissions from AsyncStorage
+  const loadBlockedCommissions = async () => {
+    try {
+      const savedBlocked = await AsyncStorage.getItem('blockedCommissions');
+      if (savedBlocked) {
+        const blockedIds = JSON.parse(savedBlocked);
+        console.log('Loaded blocked commission IDs:', blockedIds);
+        setBlockedCommissions(blockedIds);
+        return blockedIds;
+      }
+    } catch (error) {
+      console.log('Error loading blocked commissions:', error);
+    }
+    return [];
+  };
+
   // UPDATED: Load commissions from AsyncStorage on mount
   const loadCommissionsFromStorage = async () => {
     try {
+      console.log('=== LOADING COMMISSIONS ===');
+      
+      // Load blocked commissions first
+      const blockedIds = await loadBlockedCommissions();
+      console.log('Blocked IDs:', blockedIds);
+      
+      // Load all commissions
       const savedData = await AsyncStorage.getItem('savedCommissions');
+      let allCommissions = [];
+      
       if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        console.log('Loaded commissions from storage:', parsedData.length);
-        setCommissions(parsedData);
+        allCommissions = JSON.parse(savedData);
+        console.log('Loaded commissions from storage:', allCommissions.length);
       } else {
         console.log('No saved commissions, loading mock data');
         // Save mock data to storage for first time
         await AsyncStorage.setItem('savedCommissions', JSON.stringify(mockCommissionsData));
-        setCommissions(mockCommissionsData);
+        allCommissions = mockCommissionsData;
       }
+      
+      // Filter out blocked commissions using multiple identifier methods
+      const filteredCommissions = allCommissions.filter(commission => {
+        // Check various ID formats
+        const commissionId = commission.id || `${commission.title}-${commission.artist}`;
+        const compositeId = `${commission.title}-${commission.artist}-${commission.date || ''}`;
+        
+        const isBlocked = 
+          blockedIds.includes(commissionId) || 
+          blockedIds.includes(compositeId) ||
+          blockedIds.includes(commission.id);
+        
+        if (isBlocked) {
+          console.log('Filtering out blocked commission:', {
+            title: commission.title,
+            id: commission.id,
+            commissionId,
+            compositeId
+          });
+        }
+        
+        return !isBlocked;
+      });
+      
+      console.log(`After filtering: ${filteredCommissions.length} commissions (removed ${allCommissions.length - filteredCommissions.length} blocked)`);
+      console.log('Filtered commissions:', filteredCommissions.map(c => c.title));
+      setCommissions(filteredCommissions);
+      
     } catch (error) {
       console.log('Error loading commissions:', error);
       setCommissions(mockCommissionsData);
     } finally {
       setIsLoaded(true);
+    }
+  };
+
+  // NEW: Function to remove blocked commission
+  const removeBlockedCommission = async (blockedCommissionId) => {
+    try {
+      console.log('Removing blocked commission:', blockedCommissionId);
+      
+      // Get current commissions
+      const savedData = await AsyncStorage.getItem('savedCommissions');
+      if (!savedData) return;
+      
+      let allCommissions = JSON.parse(savedData);
+      const initialLength = allCommissions.length;
+      
+      // Remove commission with matching ID
+      const filteredCommissions = allCommissions.filter(commission => {
+        // Check direct ID match
+        if (commission.id === blockedCommissionId) {
+          console.log('Removing blocked commission by ID:', blockedCommissionId);
+          return false;
+        }
+        
+        // Check composite ID match (title-artist-date)
+        const compositeId = `${commission.title}-${commission.artist}-${commission.date || ''}`;
+        if (compositeId === blockedCommissionId) {
+          console.log('Removing blocked commission by composite ID:', blockedCommissionId);
+          return false;
+        }
+        
+        // Check title-artist ID
+        const titleArtistId = `${commission.title}-${commission.artist}`;
+        if (titleArtistId === blockedCommissionId) {
+          console.log('Removing blocked commission by title-artist ID:', blockedCommissionId);
+          return false;
+        }
+        
+        return true;
+      });
+      
+      // Save filtered commissions back to storage
+      await AsyncStorage.setItem('savedCommissions', JSON.stringify(filteredCommissions));
+      
+      console.log(`Removed ${initialLength - filteredCommissions.length} commission(s)`);
+      
+    } catch (error) {
+      console.log('Error removing blocked commission:', error);
     }
   };
 
@@ -302,11 +403,18 @@ const CommissionsScreen = ({ navigation, route }) => {
     return unsubscribe;
   }, [navigation]);
 
-  // Handle route parameters for new/updated commissions
+  // Handle route parameters for new/updated/blocked commissions
   useEffect(() => {
     if (!isLoaded) return;
 
     console.log('Checking route params:', route.params);
+
+    // Handle blocked commission from AcceptedCommissionInfoScreen
+    if (route.params?.commissionBlocked && route.params?.blockedCommissionId) {
+      console.log('Processing blocked commission:', route.params.blockedCommissionId);
+      handleBlockedCommission(route.params.blockedCommissionId);
+      navigation.setParams({ commissionBlocked: false, blockedCommissionId: null });
+    }
 
     // Handle new commission from AgreementFormScreen
     if (route.params?.newCommission) {
@@ -337,13 +445,60 @@ const CommissionsScreen = ({ navigation, route }) => {
     }
   }, [route.params, isLoaded]);
 
+  // NEW: Function to handle blocked commission
+  const handleBlockedCommission = async (blockedCommissionId) => {
+    try {
+      console.log('=== HANDLING BLOCKED COMMISSION ===');
+      console.log('Blocked Commission ID:', blockedCommissionId);
+      
+      // 1. Add to blocked list
+      const blockedKey = 'blockedCommissions';
+      const savedBlocked = await AsyncStorage.getItem(blockedKey);
+      let blockedCommissions = savedBlocked ? JSON.parse(savedBlocked) : [];
+      
+      if (!blockedCommissions.includes(blockedCommissionId)) {
+        blockedCommissions.push(blockedCommissionId);
+        await AsyncStorage.setItem(blockedKey, JSON.stringify(blockedCommissions));
+        console.log('Added to blocked list:', blockedCommissionId);
+      }
+      
+      // 2. Remove from saved commissions
+      await removeBlockedCommission(blockedCommissionId);
+      
+      // 3. Refresh the list
+      await loadCommissionsFromStorage();
+      
+      // 4. Show success message
+      Alert.alert(
+        "Success", 
+        "Commission has been removed from your list.",
+        [{ text: "OK" }]
+      );
+      
+      console.log('Blocked commission handled successfully');
+      
+    } catch (error) {
+      console.log('Error handling blocked commission:', error);
+      Alert.alert(
+        "Error", 
+        "Failed to remove commission. Please try again.",
+        [{ text: "OK" }]
+      );
+    }
+  };
+
   // Function to handle new commission
   const handleNewCommission = async (newCommission) => {
     try {
+      console.log('=== HANDLING NEW COMMISSION ===');
+      
+      // Generate unique ID if not provided
+      const commissionId = newCommission.id || `commission-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
       // Format the commission with proper data
       const formattedCommission = {
         ...newCommission,
-        id: newCommission.id || `commission-${Date.now()}`,
+        id: commissionId,
         date: newCommission.date || new Date().toLocaleDateString('en-US', {
           year: 'numeric', month: 'long', day: 'numeric'
         }),
@@ -363,24 +518,31 @@ const CommissionsScreen = ({ navigation, route }) => {
       const savedData = await AsyncStorage.getItem('savedCommissions');
       let currentCommissions = savedData ? JSON.parse(savedData) : [];
       
-      // Check if commission already exists
+      // Check if commission already exists (by ID)
       const existingIndex = currentCommissions.findIndex(c => c.id === formattedCommission.id);
       
       if (existingIndex !== -1) {
         // Update existing commission
         currentCommissions[existingIndex] = formattedCommission;
+        console.log('Updated existing commission');
       } else {
         // Add new commission at the beginning
         currentCommissions.unshift(formattedCommission);
+        console.log('Added new commission');
       }
       
       // Save to AsyncStorage
       await AsyncStorage.setItem('savedCommissions', JSON.stringify(currentCommissions));
       
       // Update state
-      setCommissions(currentCommissions);
+      setCommissions(prev => {
+        // Remove existing commission with same ID
+        const filtered = prev.filter(c => c.id !== formattedCommission.id);
+        // Add new commission at the beginning
+        return [formattedCommission, ...filtered];
+      });
       
-      console.log('New commission saved successfully');
+      console.log('New commission saved successfully. Total:', currentCommissions.length);
       
     } catch (error) {
       console.log('Error handling new commission:', error);
@@ -539,6 +701,7 @@ const CommissionsScreen = ({ navigation, route }) => {
     });
   };
 
+  // Filter commissions based on search and category, excluding blocked ones
   const filteredCommissions = getUniqueCommissions(commissions).filter((commission) => {
     const matchesSearch = 
       (commission.title?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
@@ -629,11 +792,12 @@ const CommissionsScreen = ({ navigation, route }) => {
           </View>
         )}
 
-        {/* Debug Info */}
+        {/* Debug Info - Updated to show blocked commissions info */}
         {commissions.length > 0 && (
           <View style={styles.debugContainer}>
             <Text style={styles.debugText}>
               Showing {filteredCommissions.length} of {commissions.length} commissions
+              {blockedCommissions.length > 0 && ` (${blockedCommissions.length} blocked)`}
             </Text>
           </View>
         )}
@@ -651,7 +815,10 @@ const CommissionsScreen = ({ navigation, route }) => {
                   }
                 </Text>
                 <Text style={[styles.noResultsSubText, { color: isDarkMode ? colors.textMuted : 'rgba(255, 255, 255, 0.7)' }]}>
-                  Try adjusting your search or filters
+                  {blockedCommissions.length > 0 && commissions.length === 0
+                    ? 'All commissions have been blocked or removed'
+                    : 'Try adjusting your search or filters'
+                  }
                 </Text>
                 {commissions.length === 0 && (
                   <TouchableOpacity 

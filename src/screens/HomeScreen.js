@@ -1074,6 +1074,7 @@ const initialPosts = [
     </TouchableOpacity>
   );
 
+  // UPDATED: Fixed renderRecommendedCard function with correct navigation
   const renderRecommendedCard = (user) => {
     // Check if user is followed
     const isUserFollowedCheck = followingUsers.includes(user.id);
@@ -1082,7 +1083,9 @@ const initialPosts = [
       <TouchableOpacity 
         key={user.id} 
         style={[styles.recommendedCard, { backgroundColor: colors.card, borderColor: colors.cardBorder }]}
-        onPress={() => navigation.navigate("RecommendedUsersInfoScreen", { user: user })}
+        onPress={() => navigation.navigate("RecommendedUsersInfoScreen", { 
+          userData: user  // Fixed: Changed to 'userData' to match expected param
+        })}
       >
         <Ionicons name="person-circle-outline" size={60} color={colors.primary} style={styles.avatarLarge} />
         <Text style={[styles.recUserName, { color: colors.text }]}>{user.name}</Text>

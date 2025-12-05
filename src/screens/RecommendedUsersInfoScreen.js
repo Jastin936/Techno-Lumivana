@@ -1,24 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // ✅ Added Import
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  Easing,
-  Image,
-  Linking // ✅ Added Linking import if it was missing or needed for social icons
-  ,
-
-  Modal,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    Animated,
+    Dimensions,
+    Easing,
+    Image,
+    Linking,
+    Modal,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
@@ -35,36 +33,163 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
   const [imageModal, setImageModal] = useState({ visible: false, imageUri: null });
   const [blockedRequests, setBlockedRequests] = useState([]);
   
-  // ✅ Changed initial state to false, will load true state from storage
   const [isFollowing, setIsFollowing] = useState(false);
 
-  const slideAnim = useState(new Animated.Value(300))[0];
-
-  // Get user data from navigation parameters
-  const userData = route.params?.requestData || {
+  // Get user data from navigation parameters - FIXED: changed from requestData to userData
+  const userDataFromParams = route.params?.userData || route.params?.requestData || {
     title: 'Student Information',
     artist: 'Kreideprinz',
     email: 'erinko@gmail.com',
     skills: 'Logo Design, Brand Identity, Vector Illustration, Typography, Digital Art',
     joinedDate: 'January 15, 2023',
     bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-    referencePhotos: [  `https://picsum.photos/seed/Kreideprinz1/600/600`,
-  `https://picsum.photos/seed/Kreideprinz2/600/600`,
-  `https://picsum.photos/seed/Kreideprinz3/600/600`,]
+    referencePhotos: [  
+      `https://picsum.photos/seed/Kreideprinz1/600/600`,
+      `https://picsum.photos/seed/Kreideprinz2/600/600`,
+      `https://picsum.photos/seed/Kreideprinz3/600/600`,
+    ]
   };
 
-  // ✅ LOAD FOLLOWING STATE ON MOUNT
+  // Define default user data based on artist name
+  const defaultUsersData = {
+    'Kreideprinz': {
+      title: 'Illustrator Profile',
+      artist: 'Kreideprinz',
+      email: 'kreideprinz@art.com',
+      skills: 'Logo Design, Brand Identity, Vector Illustration, Typography, Digital Art',
+      joinedDate: 'January 15, 2023',
+      bio: 'Specializes in digital illustrations and character design. Available for commissions.',
+      referencePhotos: [  
+        `https://picsum.photos/seed/Kreideprinz1/600/600`,
+        `https://picsum.photos/seed/Kreideprinz2/600/600`,
+        `https://picsum.photos/seed/Kreideprinz3/600/600`,
+      ]
+    },
+    'Caribert': {
+      title: 'Programmer & Artist Profile',
+      artist: 'Caribert',
+      email: 'caribert@dev.com',
+      skills: 'Web Development, Graphic Design, Technical Writing, UI/UX Design',
+      joinedDate: 'February 28, 2023',
+      bio: 'Full-stack developer with a passion for creative projects. Also does graphic design and content writing.',
+      referencePhotos: [  
+        `https://picsum.photos/seed/Caribert1/600/600`,
+        `https://picsum.photos/seed/Caribert2/600/600`,
+      ]
+    },
+    'Enjou': {
+      title: 'Illustrator & Designer Profile',
+      artist: 'Enjou',
+      email: 'enjou@example.com',
+      skills: 'Content Writing, Proofreading, Editing, Creative Writing',
+      joinedDate: 'February 10, 2023',
+      bio: 'Experienced writer and proofreader with a passion for creating engaging content and ensuring grammatical perfection."',
+      referencePhotos: [  
+        `https://picsum.photos/seed/Enjou1/600/600`,
+        `https://picsum.photos/seed/Enjou2/600/600`,
+        `https://picsum.photos/seed/Enjou3/600/600`,
+      ]
+    },
+    'Grace': {
+      title: 'Illustrator & Designer Profile',
+      artist: 'Grace',
+      email: 'grace@design.com',
+      skills: 'Digital Portraits, Graphic Design, Brand Identity, Character Design',
+      joinedDate: 'March 10, 2023',
+      bio: 'Digital artist with expertise in portrait illustrations and graphic design.',
+      referencePhotos: [  
+        `https://picsum.photos/seed/Grace1/600/600`,
+        `https://picsum.photos/seed/Grace2/600/600`,
+        `https://picsum.photos/seed/Grace3/600/600`,
+      ]
+    },
+    'Trevenaa': {
+      title: 'Writer Profile',
+      artist: 'Trevenaa',
+      email: 'trevenaa@fiction.com',
+      skills: 'Fiction Writing, Workshop Instruction, Story Development, Editing',
+      joinedDate: 'April 5, 2023',
+      bio: 'Fiction writer and writing workshop instructor. Specializes in fantasy and sci-fi.',
+      referencePhotos: [  
+        `https://picsum.photos/seed/Trevenaa1/600/600`
+      ]
+    },
+    'Pierra': {
+      title: 'Producer Profile',
+      artist: 'Pierra',
+      email: 'pierra@music.com',
+      skills: 'Music Production, Audio Engineering, Sound Design, Mixing',
+      joinedDate: 'May 20, 2023',
+      bio: 'Music producer and audio engineer. Offers music production lessons and mixing services.',
+      referencePhotos: [  
+        `https://picsum.photos/seed/Pierra1/600/600`,
+        `https://picsum.photos/seed/Pierra2/600/600`
+      ]
+    },
+    'Timaeus': {
+      title: 'Peer Tutoring',
+      artist: 'Timaeus',
+      email: 'timaeus@tutoring.com',
+      skills: 'Tutoring, Academic Support, Study Skills, Time Management',
+      joinedDate: 'May 20, 2023',
+      bio: 'Helping college students excel in creative writing.',
+      referencePhotos: [  
+        'https://picsum.photos/seed/${Math.random()}/600/400'
+      ]
+    },
+    'Aelric': {
+      title: 'Content Writing',
+      artist: 'Aelric',
+      email: 'aelric@writer.com',
+      skills: 'Content Writing, Blogging, SEO, Copywriting',
+      joinedDate: 'June 15, 2023',
+      bio: 'Professional content writer specializing in tech and lifestyle topics.',
+      referencePhotos: [  
+        'https://picsum.photos/seed/${Math.random()}/600/400'
+      ]
+    },
+    'Chiori': {
+      title: 'Crafter',
+      artist: 'Chiori',
+      email: 'chiori@crafter.com',
+      skills: 'Handmade Crafts, DIY Projects, Artisanal Goods',
+      joinedDate: 'July 10, 2023',
+      bio: 'Creating unique handmade crafts for all occasions.',
+      referencePhotos: [  
+        'https://picsum.photos/seed/${Math.random()}/600/400'
+      ]
+    },
+    
+  };
+
+  // Determine which user data to use
+  const userData = defaultUsersData[userDataFromParams.artist] || defaultUsersData[userDataFromParams.name] || userDataFromParams;
+
+  const slideAnim = useState(new Animated.Value(300))[0];
+
+  // LOAD FOLLOWING STATE ON MOUNT
   useEffect(() => {
     loadFollowingStatus();
   }, []);
 
   const loadFollowingStatus = async () => {
     try {
-      const savedFollowing = await AsyncStorage.getItem('followingState');
+      const savedFollowing = await AsyncStorage.getItem('followingUsers');
       if (savedFollowing) {
         const followingData = JSON.parse(savedFollowing);
-        // Check if this specific artist is being followed
-        if (followingData[userData.artist] === true) {
+        
+        // Find the user ID from your HomeScreen's recommendedUsers array
+        const userMap = {
+          'Kreideprinz': 1,
+          'Caribert': 2,
+          'Grace': 3,
+          'Trevenaa': 4,
+          'Pierra': 5
+        };
+        
+        const userId = userMap[userData.artist] || userMap[userData.name];
+        
+        if (userId && followingData.includes(userId)) {
           setIsFollowing(true);
         } else {
           setIsFollowing(false);
@@ -104,49 +229,53 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
     navigation.goBack();
   };
 
-  const handleReportRequest = () => {
-    console.log('Report request:', userData.title);
-    setMoreModal({ visible: false, request: null });
-  };
-
-  const handleNotInterested = () => {
-    console.log('Not interested in:', userData.title);
-    setMoreModal({ visible: false, request: null });
-    navigation.goBack();
-  };
-
-  // ✅ UPDATED TOGGLE FOLLOW FUNCTION TO SAVE TO ASYNCSTORAGE
   const toggleFollow = async () => {
     const newStatus = !isFollowing;
     setIsFollowing(newStatus);
     
     try {
-      const savedFollowing = await AsyncStorage.getItem('followingState');
-      let followingData = savedFollowing ? JSON.parse(savedFollowing) : {};
+      const savedFollowing = await AsyncStorage.getItem('followingUsers');
+      let followingData = savedFollowing ? JSON.parse(savedFollowing) : [];
       
-      // Update the status for this specific artist
-      followingData[userData.artist] = newStatus;
+      // Find the user ID from your HomeScreen's recommendedUsers array
+      const userMap = {
+        'Kreideprinz': 1,
+        'Caribert': 2,
+        'Grace': 3,
+        'Trevenaa': 4,
+        'Pierra': 5
+      };
       
-      await AsyncStorage.setItem('followingState', JSON.stringify(followingData));
+      const userId = userMap[userData.artist] || userMap[userData.name];
+      
+      if (userId) {
+        if (newStatus) {
+          // Add to following
+          if (!followingData.includes(userId)) {
+            followingData.push(userId);
+          }
+        } else {
+          // Remove from following
+          followingData = followingData.filter(id => id !== userId);
+        }
+      }
+      
+      await AsyncStorage.setItem('followingUsers', JSON.stringify(followingData));
     } catch (error) {
       console.log('Error saving following status:', error);
     }
   };
 
-  // Handle image click to open modal
   const handleImagePress = (imageUri) => {
     setImageModal({ visible: true, imageUri });
   };
 
-  // Handle closing image modal
   const closeImageModal = () => {
     setImageModal({ visible: false, imageUri: null });
   };
 
-  // Handle social media icon press
   const handleSocialMediaPress = (platform) => {
     console.log(`Pressed ${platform} icon`);
-    // You can add navigation or linking logic here
   };
 
   return (
@@ -156,22 +285,21 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
       style={styles.container}
     >
       <SafeAreaView style={{ flex: 1 }}>
-        {/* FIX: Set status bar to dark-content in light mode for visibility on yellow */}
-        <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} translucent backgroundColor="transparent" />
+        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-              {/* FIX: Force Black color for Back Arrow in Light Mode */}
-              <Text style={[styles.backButtonText, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>←</Text>
+              {/* FIX: Force White color for Back Arrow */}
+              <Text style={[styles.backButtonText, { color: '#FFFFFF' }]}>←</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Main Content */}
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Top Image Placeholder - Show first reference photo if available */}
+          {/* Top Image Placeholder */}
           <TouchableOpacity 
             style={[styles.topImagePlaceholder, { 
               backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight,
@@ -180,7 +308,6 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
             onPress={() => userData.referencePhotos?.length > 0 && 
               handleImagePress(userData.referencePhotos[0])}
           >
-            {/* FIX: Use optional chaining to prevent crash if referencePhotos is missing */}
             {userData.referencePhotos?.length > 0 ? (
               <Image 
                 source={{ uri: userData.referencePhotos[0] }} 
@@ -192,15 +319,13 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
             )}
           </TouchableOpacity>
 
-          {/* Info Section (below image) */}
+          {/* Info Section */}
           <View style={styles.infoSection}>
-            {/* Title Row with Profile Icon on the right */}
             <View style={styles.titleRow}>
               <View style={styles.titleContainer}>
-                {/* FIX: Use White in Dark Mode, Black in Light Mode */}
-                <Text style={[styles.requestTitle, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>{userData.title}</Text>
+                {/* FIX: Force White color for Title */}
+                <Text style={[styles.requestTitle, { color: '#FFFFFF', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: {width: 1, height: 1}, textShadowRadius: 2 }]}>{userData.title}</Text>
                 
-                {/* Social Media Icons - Below the title */}
                 <View style={styles.socialMediaContainer}>
                   <TouchableOpacity 
                     style={styles.socialIcon}
@@ -237,45 +362,43 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
                 </View>
               </View>
               
-              {/* Profile Icon moved to the right side - Made bigger */}
               <View style={styles.profileIconContainer}>
                 <View style={styles.profileCircle}>
-                   {/* FIX: Profile Icon Color White/Black */}
-                  <Ionicons name="person-circle-outline" size={80} color={isDarkMode ? '#FFFFFF' : '#000000'} />
+                   {/* FIX: Force White color for Profile Icon */}
+                  <Ionicons name="person-circle-outline" size={80} color="#FFFFFF" />
                 </View>
               </View>
             </View>
 
-            {/* Artist Name and Actions Row */}
             <View style={styles.artistRow}>
-               {/* FIX: Artist Name Color White/Black */}
-              <Text style={[styles.artistName, { color: isDarkMode ? '#FFFFFF' : '#000000' }]}>{userData.artist}</Text>
+               {/* FIX: Force White color for Artist Name */}
+              <Text style={[styles.artistName, { color: '#FFFFFF', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: {width: 1, height: 1}, textShadowRadius: 2 }]}>{userData.artist}</Text>
               
-              {/* Right Side Actions: Follow + Menu */}
               <View style={styles.rightSideActions}>
                 <TouchableOpacity 
                   style={[
                     styles.followButton,
-                    { borderColor: isDarkMode ? '#FFFFFF' : '#000000' },
-                    isFollowing && { backgroundColor: colors.surface }
+                    // FIX: Force White Border
+                    { borderColor: '#FFFFFF' },
+                    isFollowing && { backgroundColor: 'rgba(255,255,255,0.2)' }
                   ]}
                   onPress={toggleFollow}
                 >
                   <Text style={[
                     styles.followButtonText,
-                    { color: isDarkMode ? '#FFFFFF' : '#000000' }
+                    // FIX: Force White Text
+                    { color: '#FFFFFF' }
                   ]}>
                     {isFollowing ? "Following" : "Follow"}
                   </Text>
                 </TouchableOpacity>
 
-                {/* Menu Button */}
                 <TouchableOpacity
                   style={styles.menuButton}
                   onPress={openMoreModal}
                 >
-                   {/* FIX: Menu Icon Color White/Black */}
-                  <Ionicons name="ellipsis-vertical" size={24} color={isDarkMode ? '#FFFFFF' : '#000000'} />
+                   {/* FIX: Force White color for Menu Icon */}
+                  <Ionicons name="ellipsis-vertical" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -283,42 +406,45 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
 
           {/* Contact Information Section */}
             <View style={styles.detailItem}>
-              <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Contact Information</Text>
+              {/* FIX: Force White Label (Outside Box) */}
+              <Text style={[styles.detailLabel, { color: '#FFFFFF' }]}>Contact Information</Text>
+              {/* FIX: Box content styles (Inside Box) */}
               <Text style={[styles.detailValue, { 
-                color: isDarkMode ? '#FFFFFF' : '#000000', 
-                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+                color: '#000000', 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.9)' : '#FFFFFF' 
               }]}>{userData.email}</Text>
             </View>
 
           {/* Skills Section */}
             <View style={styles.detailItem}>
-              <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Skills & Specializations</Text>
+              {/* FIX: Force White Label (Outside Box) */}
+              <Text style={[styles.detailLabel, { color: '#FFFFFF' }]}>Skills & Specializations</Text>
               <Text style={[styles.detailValue, { 
-                color: isDarkMode ? '#FFFFFF' : '#000000', 
-                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+                color: '#000000', 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.9)' : '#FFFFFF' 
               }]}>{userData.skills}</Text>
             </View>
 
           {/* Joined Date Section */}
             <View style={styles.detailItem}>
-              <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Joined Date</Text>
+              {/* FIX: Force White Label (Outside Box) */}
+              <Text style={[styles.detailLabel, { color: '#FFFFFF' }]}>Joined Date</Text>
               <Text style={[styles.detailValue, { 
-                color: isDarkMode ? '#FFFFFF' : '#000000', 
-                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+                color: '#000000', 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.9)' : '#FFFFFF' 
               }]}>{userData.joinedDate}</Text>
             </View>
 
           {/* Bio Section */}
             <View style={styles.detailItem}>
               <Text style={[styles.detailValue, { 
-                color: isDarkMode ? '#FFFFFF' : '#000000', 
-                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
+                color: '#000000', 
+                backgroundColor: isDarkMode ? 'rgba(255,255,255,0.9)' : '#FFFFFF' 
               }]}>{userData.bio}</Text>
             </View>
 
-          {/* Image Grid Section - Show all reference photos */}
+          {/* Image Grid Section */}
           <View style={styles.imageGrid}>
-            {/* FIX: Use optional chaining to prevent crash */}
             {userData.referencePhotos?.length > 0 ? (
               userData.referencePhotos.map((photoUri, index) => (
                 <TouchableOpacity 
@@ -336,7 +462,6 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
                 </TouchableOpacity>
               ))
             ) : (
-              // Show placeholder images if no reference photos
               [1, 2, 3, 4].map((_, index) => (
                 <View key={`placeholder-${index}`} style={[styles.gridImage, { 
                   backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : colors.surfaceLight 
@@ -400,7 +525,6 @@ const RecommendedUsersInfoScreen = ({ navigation, route }) => {
                 />
               )}
               
-              {/* Close Button */}
               <TouchableOpacity 
                 style={styles.imageModalCloseButton}
                 onPress={closeImageModal}
@@ -565,6 +689,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
     lineHeight: 20,
+    overflow: 'hidden',
   },
   socialMediaContainer: {
     flexDirection: 'row',

@@ -424,13 +424,13 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
               </View>
             </View>
 
-            {/* Reference Photos */}
+            {/* Proof of Payment Photos */}
             <View style={styles.detailSection}>
-              <Text style={[styles.detailLabel, { color: colors.primary }]}>Reference Photos ({referencePhotos.length})</Text>
+              <Text style={[styles.detailLabel, { color: colors.primary }]}>Proof of Payment ({referencePhotos.length})</Text>
               <View style={styles.photoGrid}>
                 {referencePhotos.length === 0 ? (
                   <Text style={[styles.noPhotosText, { color: colors.primary }]}>
-                    No reference photos yet. Add one below!
+                    No proof of payment photo yet. Add one below!
                   </Text>
                 ) : (
                   referencePhotos.map((uri, index) => (
