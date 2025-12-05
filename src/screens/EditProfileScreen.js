@@ -372,12 +372,12 @@ const EditProfileScreen = ({ navigation, route }) => {
                   ) : (
                     <Ionicons name="person-circle-outline" size={120} color={colors.primary} />
                   )}
-                  <TouchableOpacity 
-                    style={[styles.editIconContainer, { backgroundColor: colors.primary }]} 
-                    onPress={openImagePickerModal}
+                 <TouchableOpacity 
+                  style={[styles.editIconContainer, { backgroundColor: colors.primary }]} 
+                  onPress={openImagePickerModal}
                   >
-                    <Ionicons name="camera" size={20} color={isDarkMode ? colors.text : colors.buttonText} />
-                  </TouchableOpacity>
+                  <Ionicons name="camera" size={20} color="#FFFFFF" />
+                </TouchableOpacity>
                 </View>
               </View>
 
@@ -454,8 +454,8 @@ const EditProfileScreen = ({ navigation, route }) => {
                     )}
                   </View>
 
-                  <TouchableOpacity style={[styles.addImageButton, { backgroundColor: colors.primary }]} onPress={pickImage}>
-                    <Ionicons name="add-circle-outline" size={28} color={isDarkMode ? colors.text : colors.buttonText} />
+                  <TouchableOpacity style={[styles.addImageButton]} onPress={pickImage}>
+                    <Ionicons name="add-circle-outline" size={28} color={isDarkMode ? colors.primary : colors.primary} />
                   </TouchableOpacity>
 
                   {portfolioImages.length > 0 && (
@@ -468,14 +468,14 @@ const EditProfileScreen = ({ navigation, route }) => {
                 {/* Buttons */}
                 <View style={styles.buttonsContainer}>
                   <TouchableOpacity style={[styles.updateButton, { backgroundColor: colors.primary }]} onPress={handleUpdateProfile}>
-                    <Text style={[styles.updateButtonText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Update Profile</Text>
+                    <Text style={[styles.updateButtonText, { color: isDarkMode ? colors.background : colors.buttonText }]}>Update Profile</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.cancelButton, { borderColor: colors.border }]}
+                    style={[styles.cancelButton, { borderColor: colors.primary }]}
                     onPress={handleCancel}
                   >
-                    <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancel</Text>
+                    <Text style={[styles.cancelButtonText, { color: colors.primary }]}>Cancel</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -529,11 +529,12 @@ const EditProfileScreen = ({ navigation, route }) => {
                 </Text>
               </TouchableOpacity>
 
+              {/* Fixed Cancel Button with proper text color */}
               <TouchableOpacity 
                 style={[styles.modalCancelButton, { borderColor: colors.border }]} 
                 onPress={closeImagePickerModal}
               >
-                <Text style={[styles.modalCancelText, { color: colors.text }]}>Cancel</Text>
+                <Text style={[styles.modalCancelText, { color: colors.primary }]}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -547,11 +548,12 @@ const EditProfileScreen = ({ navigation, route }) => {
           onRequestClose={closeProfilePictureModal}
         >
           <View style={styles.fullScreenModalOverlay}>
+            {/* Fixed Close Button with primary color */}
             <TouchableOpacity 
               style={styles.fullScreenCloseButton}
               onPress={closeProfilePictureModal}
             >
-              <Ionicons name="close" size={30} color={colors.text} />
+              <Ionicons name="close" size={30} color={colors.primary} />
             </TouchableOpacity>
             
             {profileImage && (
@@ -573,6 +575,7 @@ const styles = StyleSheet.create({
   keyboardAvoid: { flex: 1 },
   scrollContent: { flexGrow: 1, paddingBottom: 40 },
   content: { flex: 1, paddingHorizontal: 20 },
+  
   // Header Styles
   header: {
     flexDirection: 'row',
@@ -585,6 +588,7 @@ const styles = StyleSheet.create({
   backButtonText: { fontSize: 28, fontWeight: '300' },
   headerTitleContainer: { flex: 1, alignItems: 'center' },
   headerTitle: { fontSize: 28 },
+  
   profileIconContainer: { 
     alignItems: 'center', 
     marginBottom: 20, 
@@ -609,15 +613,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
+  
+  form: { width: '100%' },
   subtitle: { 
     fontSize: 14, 
     textAlign: 'center', 
     marginBottom: 32 
   },
-  form: { width: '100%' 
-  },
-
+  
   infoLabel: { 
     fontSize: 14, 
     marginBottom: 6, 
@@ -635,6 +640,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 16,
   },
+  
   // Add Images Section Styles
   addImagesSection: {
     marginBottom: 20,
@@ -668,7 +674,6 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   addImageButton: {
-    borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -695,6 +700,7 @@ const styles = StyleSheet.create({
     marginTop: 8, 
     opacity: 0.6 
   },
+  
   buttonsContainer: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -722,6 +728,7 @@ const styles = StyleSheet.create({
     fontSize: 16, 
     fontWeight: '600' 
   },
+  
   // Modal Styles
   modalOverlay: {
     flex: 1,
@@ -766,8 +773,7 @@ const styles = StyleSheet.create({
   disabledOption: {
     opacity: 0.5,
   },
-  disabledText: {
-  },
+  
   // Full Screen Image Modal Styles
   fullScreenModalOverlay: {
     flex: 1,
