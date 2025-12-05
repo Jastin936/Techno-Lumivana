@@ -90,7 +90,7 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
 
   const showPhotoOptions = () => {
     Alert.alert(
-      'Add Reference Photo',
+      'Add Proof of Payment',
       'Choose an option',
       [
         {
@@ -451,7 +451,7 @@ const ConfirmPaymentScreen = ({ navigation, route }) => {
 
               <TouchableOpacity style={[styles.addPhotoButton, { backgroundColor: colors.primary }]} onPress={showPhotoOptions}>
                 <Ionicons name="add-circle-outline" size={28} color={isDarkMode ? colors.text : colors.buttonText} />
-                <Text style={[styles.addPhotoText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Add Reference Photo</Text>
+                <Text style={[styles.addPhotoText, { color: isDarkMode ? colors.text : colors.buttonText }]}>Add Proof of Payment</Text>
               </TouchableOpacity>
 
               {referencePhotos.length > 0 && (
