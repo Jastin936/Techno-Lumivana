@@ -53,7 +53,9 @@ const RequestInfoScreen = ({ navigation, route }) => {
     artist: 'Kreideprinz',
     description: 'Unique logos for student organizations, or small businesses.',
     email: 'erinko@gmail.com',
-    referencePhotos: [],
+    referencePhotos: [  `https://picsum.photos/seed/Kreideprinz1/600/600`,
+  `https://picsum.photos/seed/Kreideprinz2/600/600`,
+  `https://picsum.photos/seed/Kreideprinz3/600/600`,],
     category: 'Graphic Design'
   };
 

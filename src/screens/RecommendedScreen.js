@@ -57,7 +57,7 @@ const RecommendedScreen = ({ navigation }) => {
       followers: 532,
       title: "Logo Design",
       description: "Designs sleek, minimal logos for small businesses.",
-      referencePhotos: []
+      referencePhotos:  []
     },
     {
       id: 3,
