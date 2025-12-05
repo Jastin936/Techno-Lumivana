@@ -117,120 +117,120 @@ const HomeScreen = ({ navigation, route }) => {
   ];
 
   const [requests, setRequests] = useState([]);
-
-  const initialPosts = [
-    {
-      id: '1',
-      user: "Kreideprinz", 
-      role: "Illustrator",
-      title: "Logo Design",
-      description: "Unique logos for student organizations or small businesses.",
-      likes: 707,
-      type: "home",
-      category: "Illustration",
-      image: null
-    },
-    {
-      id: '2',
-      user: "Timaeus",
-      role: "Tutor",
-      title: "Peer Tutoring",
-      description: "Helping college students excel in creative writing.",
-      likes: 542,
-      type: "home",
-      category: "Tutoring",
-      image: null
-    },
-    {
-      id: '3',
-      user: "Pierro",
-      role: "Designer",
-      title: "Poster Commission",
-      description: "Offering custom poster designs for events and orgs.",
-      likes: 430,
-      type: "request",
-      category: "Graphic Design",
-      image: null
-    },
-    {
-      id: '4',
-      user: "Aelric",
-      role: "Writer",
-      title: "Content Writing",
-      description: "Professional blog and article writing services.",
-      likes: 320,
-      type: "home",
-      category: "Writing",
-      image: null
-    },
-    {
-      id: '5',
-      user: "Chiori",
-      role: "Crafter",
-      title: "Handmade Crafts",
-      description: "Custom handmade crafts and DIY projects.",
-      likes: 280,
-      type: "home",
-      category: "Crafting",
-      image: null
-    },
-    // ADD: More posts from recommended users
-    {
-      id: '6',
-      user: "Caribert",
-      role: "Programmer",
-      title: "Web Development Service",
-      description: "Full-stack web development for startups.",
-      likes: 150,
-      type: "home",
-      category: "Programming",
-      image: null
-    },
-    {
-      id: '7',
-      user: "Enjou",
-      role: "Writer",
-      title: "Proofreading Services",
-      description: "Professional proofreading for academic papers.",
-      likes: 120,
-      type: "home",
-      category: "Writing",
-      image: null
-    },
-    {
-      id: '8',
-      user: "Grace",
-      role: "Artist",
-      title: "Digital Portrait Commission",
-      description: "Custom digital portraits in various styles.",
-      likes: 200,
-      type: "home",
-      category: "Illustration",
-      image: null
-    },
-    {
-      id: '9',
-      user: "Trevenaa",
-      role: "Writer",
-      title: "Fiction Writing Workshop",
-      description: "Learn creative writing techniques.",
-      likes: 95,
-      type: "home",
-      category: "Writing",
-      image: null
-    },
-    {
-      id: '10',
-      user: "Pierra",
-      role: "Producer",
-      title: "Music Production Lessons",
-      description: "Learn music production from scratch.",
-      likes: 180,
-      type: "home",
-      category: "Music",
-      image: null
-    },
-  ];
+const initialPosts = [
+  {
+    id: '1',
+    user: "Kreideprinz", 
+    role: "Illustrator",
+    title: "Logo Design",
+    description: "Unique logos for student organizations or small businesses.",
+    likes: 707,
+    type: "home",
+    category: "Illustration",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '2',
+    user: "Timaeus",
+    role: "Tutor",
+    title: "Peer Tutoring",
+    description: "Helping college students excel in creative writing.",
+    likes: 542,
+    type: "home",
+    category: "Tutoring",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '3',
+    user: "Pierro",
+    role: "Designer",
+    title: "Poster Commission",
+    description: "Offering custom poster designs for events and orgs.",
+    likes: 430,
+    type: "request",
+    category: "Graphic Design",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '4',
+    user: "Aelric",
+    role: "Writer",
+    title: "Content Writing",
+    description: "Professional blog and article writing services.",
+    likes: 320,
+    type: "home",
+    category: "Writing",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '5',
+    user: "Chiori",
+    role: "Crafter",
+    title: "Handmade Crafts",
+    description: "Custom handmade crafts and DIY projects.",
+    likes: 280,
+    type: "home",
+    category: "Crafting",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  
+  // Added Users
+  {
+    id: '6',
+    user: "Caribert",
+    role: "Programmer",
+    title: "Web Development Service",
+    description: "Full-stack web development for startups.",
+    likes: 150,
+    type: "home",
+    category: "Programming",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '7',
+    user: "Enjou",
+    role: "Writer",
+    title: "Proofreading Services",
+    description: "Professional proofreading for academic papers.",
+    likes: 120,
+    type: "home",
+    category: "Writing",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '8',
+    user: "Grace",
+    role: "Artist",
+    title: "Digital Portrait Commission",
+    description: "Custom digital portraits in various styles.",
+    likes: 200,
+    type: "home",
+    category: "Illustration",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '9',
+    user: "Trevenaa",
+    role: "Writer",
+    title: "Fiction Writing Workshop",
+    description: "Learn creative writing techniques.",
+    likes: 95,
+    type: "home",
+    category: "Writing",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  },
+  {
+    id: '10',
+    user: "Pierra",
+    role: "Producer",
+    title: "Music Production Lessons",
+    description: "Learn music production from scratch.",
+    likes: 180,
+    type: "home",
+    category: "Music",
+    image: `https://picsum.photos/seed/${Math.random()}/600/400`
+  }
+];
 
   const [posts, setPosts] = useState([]);
 
@@ -240,16 +240,16 @@ const HomeScreen = ({ navigation, route }) => {
 
   // UPDATED: Ensure these IDs match the USERS array in RecommendedUsersScreen.js
   const recommendedUsers = [
-    { id: 1, name: "Kreideprinz", role: "Illustrator", followers: 707, category: "Illustration" },
-    { id: 2, name: "Caribert", role: "Programmer, Artist, Writer", followers: 680, category: "Programming" },
-    { id: 3, name: "Enjou", role: "Writer, Proofreader", followers: 423, category: "Writing" },
-    { id: 4, name: "Grace", role: "Illustrator, Graphic Designer", followers: 520, category: "Illustration" },
-    { id: 5, name: "Trevenaa", role: "Writer", followers: 532, category: "Writing" },
-    { id: 6, name: "Pierra", role: "Producer", followers: 401, category: "Music" },
+    { id: 1, name: "Kreideprinz", role: "Illustrator", followers: 707, category: "Illustration", image: `https://picsum.photos/seed/${Math.random()}/600/400`},
+    { id: 2, name: "Caribert", role: "Programmer, Artist, Writer", followers: 680, category: "Programming", image: `https://picsum.photos/seed/${Math.random()}/600/400`},
+    { id: 3, name: "Enjou", role: "Writer, Proofreader", followers: 423, category: "Writing", image: `https://picsum.photos/seed/${Math.random()}/600/400` },
+    { id: 4, name: "Grace", role: "Illustrator, Graphic Designer", followers: 520, category: "Illustration", image: `https://picsum.photos/seed/${Math.random()}/600/400` },
+    { id: 5, name: "Trevenaa", role: "Writer", followers: 532, category: "Writing", image: `https://picsum.photos/seed/${Math.random()}/600/400` },
+    { id: 6, name: "Pierra", role: "Producer", followers: 401, category: "Music", image: `https://picsum.photos/seed/${Math.random()}/600/400`},
     // Add other users that might appear in posts
-    { id: 7, name: "Timaeus", role: "Tutor", followers: 542, category: "Tutoring" },
-    { id: 8, name: "Aelric", role: "Writer", followers: 320, category: "Writing" },
-    { id: 9, name: "Chiori", role: "Crafter", followers: 280, category: "Crafting" },
+    { id: 7, name: "Timaeus", role: "Tutor", followers: 542, category: "Tutoring",image: `https://picsum.photos/seed/${Math.random()}/600/400` },
+    { id: 8, name: "Aelric", role: "Writer", followers: 320, category: "Writing",image: `https://picsum.photos/seed/${Math.random()}/600/400` },
+    { id: 9, name: "Chiori", role: "Crafter", followers: 280, category: "Crafting",image: `https://picsum.photos/seed/${Math.random()}/600/400` },
   ];
 
   // ADD: Helper function to check if a user is followed

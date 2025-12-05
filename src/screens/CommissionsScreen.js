@@ -190,24 +190,6 @@ const FilterModal = ({ isVisible, onClose, selectedCategory, setSelectedCategory
                 onClose();
               }}
             >
-              <View style={modalStyles.categoryTextContainer}>
-                <Ionicons 
-                  name="apps-outline" 
-                  size={25} 
-                  color={colors.primary}
-                  style={modalStyles.categoryIcon}
-                />
-                <Text style={[modalStyles.categoryText, { color: colors.textSecondary }]}>All Categories</Text>
-              </View>
-
-              <View style={[modalStyles.checkbox(selectedCategory === 'All'), { 
-                borderColor: selectedCategory === 'All' ? colors.primary : colors.border,
-                backgroundColor: selectedCategory === 'All' ? colors.primary : 'transparent'
-              }]}>
-                {selectedCategory === 'All' && (
-                  <Ionicons name="checkmark-sharp" size={16} color={isDarkMode ? "#000000ff" : "#000"} />
-                )}
-              </View>
             </TouchableOpacity>
             
             {FILTER_CATEGORY_MAP.map((item) => (

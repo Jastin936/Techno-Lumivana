@@ -17,6 +17,7 @@ import {
   TouchableOpacity,
   View,
   Alert,
+  Image,
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 
@@ -59,7 +60,9 @@ const RecommendedUsersScreen = ({ navigation }) => {
       bio: "Professional illustrator and graphic designer with 5+ years of experience. Specializing in brand identity and digital art creation for various clients.",
       followers: 70,
       milestone: true,
-      referencePhotos: []
+      referencePhotos: [  `https://picsum.photos/seed/Kreideprinz1/600/600`,
+  `https://picsum.photos/seed/Kreideprinz2/600/600`,
+  `https://picsum.photos/seed/Kreideprinz3/600/600`,]
     },
     {
       id: 2,
@@ -72,7 +75,9 @@ const RecommendedUsersScreen = ({ navigation }) => {
       bio: "Full-stack developer and creative coder passionate about building interactive experiences and writing technical content.",
       followers: 70,
       milestone: true,
-      referencePhotos: []
+      referencePhotos: [  `https://picsum.photos/seed/Caribert1/600/600`,
+  `https://picsum.photos/seed/Caribert2/600/600`,
+  `https://picsum.photos/seed/Caribert3/600/600`,]
     },
     {
       id: 3,
@@ -85,7 +90,9 @@ const RecommendedUsersScreen = ({ navigation }) => {
       bio: "Experienced writer and proofreader with a passion for creating engaging content and ensuring grammatical perfection.",
       followers: 70,
       milestone: true,
-      referencePhotos: []
+      referencePhotos: [  `https://picsum.photos/seed/Enjou1/600/600`,
+  `https://picsum.photos/seed/Enjou2/600/600`,
+  `https://picsum.photos/seed/Enjou3/600/600`,]
     },
     {
       id: 4,
@@ -98,7 +105,9 @@ const RecommendedUsersScreen = ({ navigation }) => {
       bio: "Digital artist specializing in character design and concept art for games and animation projects.",
       followers: 70,
       milestone: true,
-      referencePhotos: []
+      referencePhotos: [  `https://picsum.photos/seed/Grace1/600/600`,
+  `https://picsum.photos/seed/Grace2/600/600`,
+  `https://picsum.photos/seed/Grace3/600/600`,]
     },
     {
       id: 5,
@@ -111,7 +120,9 @@ const RecommendedUsersScreen = ({ navigation }) => {
       bio: "Award-winning fiction writer and content creator with multiple published works and extensive blogging experience.",
       followers: 532,
       milestone: false,
-      referencePhotos: []
+      referencePhotos: [  `https://picsum.photos/seed/Trevenaa1/600/600`,
+  `https://picsum.photos/seed/Trevenaa2/600/600`,
+  `https://picsum.photos/seed/Trevenaa3/600/600`,]
     },
     {
       id: 6,
@@ -124,7 +135,9 @@ const RecommendedUsersScreen = ({ navigation }) => {
       bio: "Professional music producer and sound designer with expertise in various genres and audio production techniques.",
       followers: 401,
       milestone: false,
-      referencePhotos: []
+      referencePhotos: [  `https://picsum.photos/seed/pierra1/600/600`,
+  `https://picsum.photos/seed/pierra2/600/600`,
+  `https://picsum.photos/seed/pierra3/600/600`,]
     },
   ];
 
@@ -499,11 +512,25 @@ const RecommendedUsersScreen = ({ navigation }) => {
                 )}
 
                 {/* Post Preview */}
-                <View style={styles.postPreviewRow}>
-                  <View style={[styles.postImagePlaceholder, { backgroundColor: colors.surfaceLight }]} />
-                  <View style={[styles.postImagePlaceholder, { backgroundColor: colors.surfaceLight }]} />
-                  <View style={[styles.postImagePlaceholder, { backgroundColor: colors.surfaceLight }]} />
-                </View>
+                {/* Post Preview with real images */}
+<View style={styles.postPreviewRow}>
+  {user.referencePhotos?.slice(0, 3).map((img, index) => (
+    <Image
+      key={index}
+      source={{ uri: img }}
+      style={styles.previewImage}
+    />
+  ))}
+
+  {/* If images < 3, fill the rest with placeholders */}
+  {[...Array(Math.max(0, 3 - (user.referencePhotos?.length || 0)))].map((_, i) => (
+    <View 
+      key={`placeholder-${i}`} 
+      style={[styles.previewImage, { backgroundColor: colors.surfaceLight }]}
+    />
+  ))}
+</View>
+
               </TouchableOpacity>
             ))
           ) : (
@@ -791,6 +818,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
   },
+  previewImage: {
+  width: IMAGE_SIZE,
+  height: IMAGE_SIZE,
+  borderRadius: 10,
+  marginRight: 6,
+  backgroundColor: "#ccc",
+}
+
 });
 
 export default RecommendedUsersScreen;
