@@ -24,9 +24,8 @@ import { useTheme } from '../context/ThemeContext';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-// Improved hash function for password (reduces collisions by using salt and better algorithm)
 const hashPassword = (password) => {
-  // Add a simple salt based on password length to reduce collisions
+  
   const salt = password.length.toString();
   let hash = 0;
   const combined = password + salt;
@@ -34,10 +33,10 @@ const hashPassword = (password) => {
   for (let i = 0; i < combined.length; i++) {
     const char = combined.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
+    hash = hash & hash; 
   }
   
-  // Add password length and first/last chars to hash to further reduce collisions
+  
   const firstChar = password.length > 0 ? password.charCodeAt(0) : 0;
   const lastChar = password.length > 0 ? password.charCodeAt(password.length - 1) : 0;
   hash = ((hash << 3) - hash) + firstChar + lastChar;
@@ -88,7 +87,7 @@ const SignUpScreen = ({ navigation }) => {
     return true;
   };
 
-  // Pick COR photo from gallery
+  
   const pickCorPhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -141,7 +140,7 @@ const SignUpScreen = ({ navigation }) => {
           onPress: () => {
             setCorPhotos((prev) => prev.filter((_, i) => i !== index));
             
-            // Close modal if the deleted image was currently selected
+            
             if (selectedImageIndex === index) {
               setShowImageModal(false);
               setSelectedImageIndex(null);
@@ -206,7 +205,7 @@ const SignUpScreen = ({ navigation }) => {
 
     setIsLoading(true);
     try {
-      // Check if email already exists
+      
       const existingData = await AsyncStorage.getItem('userProfileData');
       if (existingData) {
         const parsed = JSON.parse(existingData);
@@ -218,12 +217,12 @@ const SignUpScreen = ({ navigation }) => {
       }
 
       await new Promise(resolve => setTimeout(resolve, 2000));
-      // Persist user profile data so MyAccountScreen can load it
+      
       try {
         const userProfile = {
           name: fullName.trim(),
           email: email.trim().toLowerCase(),
-          password: hashPassword(password), // Hash password before storing
+          password: hashPassword(password), 
           skills: [],
           joinedDate: new Date().toISOString(),
           description: '',
@@ -231,7 +230,7 @@ const SignUpScreen = ({ navigation }) => {
 
         await AsyncStorage.setItem('userProfileData', JSON.stringify(userProfile));
 
-        // Save first COR photo as profileImage and all COR photos as portfolio
+        
         if (corPhotos && corPhotos.length > 0) {
           await AsyncStorage.setItem('profileImage', corPhotos[0]);
           await AsyncStorage.setItem('portfolioImages', JSON.stringify(corPhotos));
@@ -476,7 +475,6 @@ const SignUpScreen = ({ navigation }) => {
         </KeyboardAvoidingView>
       </SafeAreaView>
 
-      {/* COR Photo Full Screen Modal */}
       <Modal
         visible={showImageModal}
         transparent={true}
@@ -635,7 +633,6 @@ const styles = StyleSheet.create({
   buttonDisabled: { backgroundColor: 'rgba(255, 215, 0, 0.5)' },
   createAccountButtonText: { color: '#000', fontSize: 16, fontWeight: '600' },
 
-  // Full Screen Image Modal Styles
   fullScreenModalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
